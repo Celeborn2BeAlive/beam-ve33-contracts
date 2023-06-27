@@ -26,7 +26,7 @@ contract AirdropClaim is ReentrancyGuard {
     bool public init;
 
     uint256 public INIT_SHARE;
-    // 50% vethe, 25% instant claim the, 25% 3 weeks linear $the
+    // 50% vethe, 25% instant claim the, 25% 3 weeks linear $retro
     uint256 constant public PRECISION = 1000;
     uint256 constant public VESTED_SHARE = 500;
     uint256 constant public LINEAR_DISTRO = 250;

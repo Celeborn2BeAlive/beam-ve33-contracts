@@ -10,12 +10,12 @@ async function main () {
     console.log('Deploying Contract...');
     
     
-    data = await ethers.getContractFactory("Thena");
+    data = await ethers.getContractFactory("Retro");
     thena = await data.deploy();
     txDeployed = await thena.deployed();
-    console.log("thena Address: ", thena.address)
+    console.log("retro Address: ", thena.address)
 
-    data = await ethers.getContractFactory("VeArtProxy");
+    /*data = await ethers.getContractFactory("VeArtProxy");
     veArtProxy = await data.deploy();
     txDeployed = await veArtProxy.deployed();
     console.log("veArtProxy Address: ", veArtProxy.address)
@@ -28,7 +28,7 @@ async function main () {
     data = await ethers.getContractFactory("RewardsDistributor");
     RewardsDistributor = await data.deploy(veThena.address);
     txDeployed = await RewardsDistributor.deployed();
-    console.log("RewardsDistributor Address: ", RewardsDistributor.address)
+    console.log("RewardsDistributor Address: ", RewardsDistributor.address)*/
 
 
 }

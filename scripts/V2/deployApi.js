@@ -9,8 +9,8 @@ async function main () {
     accounts = await ethers.getSigners();
     owner = accounts[0]
 
-    const voter = ethers.utils.getAddress("0x3a1d0952809f4948d15ebce8d345962a282c4fcb")
-    const rewDistro = ethers.utils.getAddress("0xE9fE83aA430Ace4b703C299701142f9dFdde730E")
+    const voter = ethers.utils.getAddress("0x8388556C586F08DDdd9e4b113b4A4c9360746C48")
+    const rewDistro = ethers.utils.getAddress("0xcbbfb57f8B32100DeDF08eD2D4a481c35d8EceaE")
     
    // deploy
    data = await ethers.getContractFactory("PairAPI");        

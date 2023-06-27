@@ -133,12 +133,12 @@ contract veNFTAPI is Initializable {
         voter = IVoter(_voter);
         rewardDisitributor = IRewardsDistributor(_rewarddistro);
 
-        require(rewardDisitributor.voting_escrow() == voter.ve(), 've!=ve');
+        require(rewardDisitributor.voting_escrow() == voter._ve(), 've!=ve');
         
         ve = IVotingEscrow( rewardDisitributor.voting_escrow() );
         underlyingToken = IVotingEscrow(ve).token();
 
-        pairFactory = IPairFactory(voter.factory());
+        pairFactory = IPairFactory(address(0x1fC46294195aA87F77fAE299A14Bd1728dC1Cca9));
 
     }
 
@@ -358,7 +358,7 @@ contract veNFTAPI is Initializable {
         require(msg.sender == owner);
         
         rewardDisitributor = IRewardsDistributor(_rewarddistro);
-        require(rewardDisitributor.voting_escrow() == voter.ve(), 've!=ve');
+        require(rewardDisitributor.voting_escrow() == voter._ve(), 've!=ve');
 
         ve = IVotingEscrow( rewardDisitributor.voting_escrow() );
         underlyingToken = IVotingEscrow(ve).token();

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.13;
 
-import "./interfaces/IThena.sol";
+import "./interfaces/IRetro.sol";
 
-contract Thena is IThena {
+contract Retro is IRetro {
 
-    string public constant name = "THENA";
-    string public constant symbol = "THE";
+    string public constant name = "RETRO";
+    string public constant symbol = "RETRO";
     uint8 public constant decimals = 18;
     uint public totalSupply = 0;
 
@@ -15,8 +15,6 @@ contract Thena is IThena {
 
     bool public initialMinted;
     address public minter;
-    address public redemptionReceiver;
-    address public merkleClaim;
 
     event Transfer(address indexed from, address indexed to, uint value);
     event Approval(address indexed owner, address indexed spender, uint value);

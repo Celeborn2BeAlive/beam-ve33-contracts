@@ -35,11 +35,12 @@ contract BribeFactoryV3 is OwnableUpgradeable {
         voter = _voter;
         
         //bribe default tokens
-        defaultRewardToken.push(address(0xF4C8E32EaDEC4BFe97E0F595AdD0f4450a863a11));   // $the
-        defaultRewardToken.push(address(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c));   // $wbnb
-        defaultRewardToken.push(address(0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d));   // $usdc
-        defaultRewardToken.push(address(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56));   // $busd
-        defaultRewardToken.push(address(0x55d398326f99059fF775485246999027B3197955));   // $usdt
+        defaultRewardToken.push(address(0x85A2638E652d4265ca7567Dd2935464FF74740c2));   // $retro
+        defaultRewardToken.push(address(0x5D066D022EDE10eFa2717eD3D79f22F949F8C175));   // $cash
+        defaultRewardToken.push(address(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270));   // $wmatic
+        defaultRewardToken.push(address(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174));   // $usdc
+        defaultRewardToken.push(address(0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063));   // $dai
+        defaultRewardToken.push(address(0xc2132D05D31c914a87C6611C10748AEb04B58e8F));   // $usdt
 
         // registry to check accesses
         permissionsRegistry = IPermissionsRegistry(_permissionsRegistry);
@@ -48,7 +49,7 @@ contract BribeFactoryV3 is OwnableUpgradeable {
 
 
     /// @notice create a bribe contract
-    /// @dev    _owner must be thenaTeamMultisig
+    /// @dev    _owner must be retroTeamMultisig
     function createBribe(address _owner,address _token0,address _token1, string memory _type) external returns (address) {
         require(msg.sender == voter || msg.sender == owner(), 'only voter');
 

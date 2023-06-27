@@ -45,7 +45,7 @@ contract CLFeesVault {
     address public gammaRecipient;
     address public dibs;
     address public theNftStakingConverter;
-    address public pairFactoryClassic = address(0xAFD89d21BdB66d00817d4153E055830B1c2B3970);
+    address public pairFactoryClassic = address(0x1fC46294195aA87F77fAE299A14Bd1728dC1Cca9);
     IPermissionsRegistry public permissionsRegsitry;
 
     mapping(address => bool) public isHypervisor;           //address   =>  boolean         check if caller is gamma strategy. Hypervisor calls updatedFees
@@ -209,7 +209,7 @@ contract CLFeesVault {
     /// @notice Recover ERC20 from the contract.
     function emergencyRecoverERC20(address tokenAddress, uint256 tokenAmount) external onlyAdmin {
         require(tokenAmount <= IERC20(tokenAddress).balanceOf(address(this)));
-        IERC20(tokenAddress).safeTransfer(permissionsRegsitry.thenaTeamMultisig(), tokenAmount);
+        IERC20(tokenAddress).safeTransfer(permissionsRegsitry.retroTeamMultisig(), tokenAmount);
     }
 
 }

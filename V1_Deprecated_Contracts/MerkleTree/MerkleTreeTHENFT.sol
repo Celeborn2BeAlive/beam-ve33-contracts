@@ -12,16 +12,16 @@ interface IAirdropClaim {
 
 
 
-/// @title MerkleTreeTHENFT
+/// @title MerkleTreeRETRONFT
 /// @notice ERC20 claimable by members of a merkle tree
 /// @author Anish Agnihotri <contact@anishagnihotri.com>
 /// @dev Solmate ERC20 includes unused _burn logic that can be removed to optimize deployment cost
 
 /*
-    Based off Solmate [thanks]. Merkle contract to claim Thena Airdrop.
+    Based off Solmate [thanks]. Merkle contract to claim Retro Airdrop.
 */
 
-contract MerkleTreeTHENFT {
+contract MerkleTreeRETRONFT {
 
     /// ============ Mutable storage ============
 
@@ -62,7 +62,7 @@ contract MerkleTreeTHENFT {
     /// @notice Creates a new MerkleClaimERC20 contract
     /// @param _airdropClaim claim manager
     constructor(address _airdropClaim) {
-        airdropClaim = _airdropClaim; // THE NFT AIRDROP CLAIM CONTRACT
+        airdropClaim = _airdropClaim; // RETRO NFT AIRDROP CLAIM CONTRACT
         owner = msg.sender;
     }
 

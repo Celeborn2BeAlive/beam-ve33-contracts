@@ -10,19 +10,14 @@ async function main () {
     owner = accounts[0]
 
     // deployed on v1 
-    const ve = ethers.utils.getAddress("0xfBBF371C9B0B994EebFcC977CEf603F7f31c070D")
-    const pairFactory = ethers.utils.getAddress("0xAFD89d21BdB66d00817d4153E055830B1c2B3970")
-    
-    //const permissionRegistry = ethers.utils.getAddress("0xe3Db58904B868eFDECD374Ed4f7b75e2A0f3e0Eb")
-    /*const gaugeFactoryV2 = ethers.utils.getAddress("0x2c788FE40A417612cb654b14a944cd549B5BF130")
-    const bribeFactoryV3 = ethers.utils.getAddress("0xD50CEAB3071c61c85D04bDD65Feb12FEe7C91375")*/
-
+    const ve = ethers.utils.getAddress("0x83AA7C0074f128434d7c5Dc1AeC36266E36d484E")
+    const pairFactory = ethers.utils.getAddress("0x1fC46294195aA87F77fAE299A14Bd1728dC1Cca9")
 
     console.log('Deploying Contracts...');
     
     
     // PERMISSION REGISTRY
-    data = await ethers.getContractFactory("PermissionsRegistry");
+    /*data = await ethers.getContractFactory("PermissionsRegistry");
     PermissionsRegistry = await data.deploy();
     txDeployed = await PermissionsRegistry.deployed();
     console.log("PermissionsRegistry: ", PermissionsRegistry.address)
@@ -43,23 +38,19 @@ async function main () {
 
     // GAUGE FACTORY _ CL
     data = await ethers.getContractFactory("GaugeFactoryV2_CL");
-    input = [PermissionsRegistry.address, '0x993Ae2b514677c7AC52bAeCd8871d2b362A9D693']
+    input = [PermissionsRegistry.address, '0xc8949dbaf261365083a4b46ab683BaE1C9273203']
     GaugeFactoryV2_CL = await upgrades.deployProxy(data,input, {initializer: 'initialize'});
     txDeployed = await GaugeFactoryV2_CL.deployed();
-    console.log("GaugeFactoryV2_CL: ", GaugeFactoryV2_CL.address)
+    console.log("GaugeFactoryV2_CL: ", GaugeFactoryV2_CL.address)*/
 
-
+    const GaugeFactoryV2Address = "0xD6b8faF86Aa90cbFf34CF8161f35eFC8dd59056c"
+    const BribeFactoryV3Address = "0x597fbC82F0c6B026537CFAb42623Bb702F9CDdBc"
     // VOTER
     data = await ethers.getContractFactory("VoterV3");
-    input = [ve, pairFactory , GaugeFactoryV2.address,BribeFactoryV3.address]
+    input = [ve, pairFactory , GaugeFactoryV2Address,BribeFactoryV3Address]
     VoterV3 = await upgrades.deployProxy(data,input, {initializer: 'initialize'});
     txDeployed = await VoterV3.deployed();
     console.log("VoterV3: ", VoterV3.address)
-
-    
-
-
-
 
 }
 

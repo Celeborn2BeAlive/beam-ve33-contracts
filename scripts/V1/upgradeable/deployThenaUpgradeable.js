@@ -1,4 +1,4 @@
-const ether = require('@openzeppelin/test-helpers/src/ether');
+//const ether = require('@openzeppelin/test-helpers/src/ether');
 const { ethers  } = require('hardhat');
 
 
@@ -16,12 +16,13 @@ async function main () {
     txDeployed = await thena.deployed();
     console.log("thena Address: ", thena.address)*/
 
+    
     data = await ethers.getContractFactory("VeArtProxyUpgradeable");
     veArtProxy = await upgrades.deployProxy(data,[], {initializer: 'initialize'});
     txDeployed = await veArtProxy.deployed();
     console.log("veArtProxy Address: ", veArtProxy.address)
 
-    const thena = ethers.utils.getAddress("0xF4C8E32EaDEC4BFe97E0F595AdD0f4450a863a11")
+    const thena = ethers.utils.getAddress("0x85A2638E652d4265ca7567Dd2935464FF74740c2")
 
     data = await ethers.getContractFactory("VotingEscrow");
     veThena = await data.deploy(thena, veArtProxy.address);

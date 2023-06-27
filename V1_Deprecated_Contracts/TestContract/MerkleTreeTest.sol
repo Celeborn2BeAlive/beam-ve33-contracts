@@ -16,7 +16,7 @@ interface IAirdropClaim {
 /// @dev Solmate ERC20 includes unused _burn logic that can be removed to optimize deployment cost
 
 /*
-    Based off Solmate [thanks]. Merkle contract to claim Thena Airdrop.
+    Based off Solmate [thanks]. Merkle contract to claim Retro Airdrop.
 */
 
 contract MerkleTreeTest {

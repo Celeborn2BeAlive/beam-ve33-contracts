@@ -41,6 +41,13 @@ module.exports = {
       accounts: PRIVATEKEY
     },
 
+    polygon: {
+      url: "https://polygon-rpc.com",
+      chainId: 137,
+      accounts: PRIVATEKEY,
+      gasPrice: 500e9
+    },
+
     bscTestnet: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
@@ -57,8 +64,8 @@ module.exports = {
 
     hardhat: {
       forking: {
-          url: "https://bsc-dataseed1.binance.org",
-          chainId: 56,
+          url: "https://polygon-rpc.com",
+          chainId: 137,
       },
       //accounts: []
     }
@@ -66,9 +73,17 @@ module.exports = {
   },
 
   etherscan: {
-    // Your API key for Etherscan
-    // Obtain one at https://etherscan.io/
-    apiKey: APIKEY
+    apiKey: APIKEY,
+    customChains: [
+      {
+        network: "polygon",
+        chainId: 137,
+        urls: {
+          apiURL: "https://api.polygonscan.com/api",
+          browserURL: "https://polygonscan.com"
+        }
+      }
+    ]
   },
 
   mocha: {

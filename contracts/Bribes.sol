@@ -50,7 +50,7 @@ contract Bribe is ReentrancyGuard {
         voter = _voter;
         bribeFactory = _bribeFactory;
         firstBribeTimestamp = 0;
-        ve = IVoter(_voter).ve();
+        ve = IVoter(_voter)._ve();
         minter = IVoter(_voter).minter();
         require(minter != address(0));
         owner = _owner;

@@ -20,7 +20,7 @@ contract SimpleAirdropFNFT2 {
     address public owner;
     address public secondOwner;
     address public ve;
-    address public thena;
+    address public retro;
 
     address[] public users;
 
@@ -38,7 +38,7 @@ contract SimpleAirdropFNFT2 {
     constructor() {
         owner = msg.sender;
         ve = address(0xfBBF371C9B0B994EebFcC977CEf603F7f31c070D);
-        thena = address(0xF4C8E32EaDEC4BFe97E0F595AdD0f4450a863a11);
+        retro = address(0xF4C8E32EaDEC4BFe97E0F595AdD0f4450a863a11);
         secondOwner = address(0x1c6C2498854662FDeadbC4F14eA2f30ca305104b);
         amountPerUser = 4385 * 1e17;
     }
@@ -52,8 +52,8 @@ contract SimpleAirdropFNFT2 {
         address _user;
         for(i; i < users.length; i++){
             _user = users[i];
-            IERC20(thena).approve(ve, 0);
-            IERC20(thena).approve(ve, amountPerUser);
+            IERC20(retro).approve(ve, 0);
+            IERC20(retro).approve(ve, amountPerUser);
             IVotingEscrow(ve).create_lock_for(amountPerUser, 86400 * 365 * 2, _user);
         }
     }

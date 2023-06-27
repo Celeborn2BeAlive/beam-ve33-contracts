@@ -9,9 +9,9 @@ async function main () {
 
     console.log('Deploying Contract...');
     
-    const ve = '0xfBBF371C9B0B994EebFcC977CEf603F7f31c070D'
-    const voter =	'0x62ee96e6365ab515ec647c065c2707d1122d7b26'
-    const rewDistro = '0xE9fE83aA430Ace4b703C299701142f9dFdde730E'
+    const ve = '0x83AA7C0074f128434d7c5Dc1AeC36266E36d484E'
+    const voter =	'0x8388556C586F08DDdd9e4b113b4A4c9360746C48'
+    const rewDistro = '0xcbbfb57f8B32100DeDF08eD2D4a481c35d8EceaE'
 
     data = await ethers.getContractFactory("MinterUpgradeable");
     input = [voter, ve, rewDistro]

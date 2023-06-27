@@ -9,7 +9,6 @@ import '../interfaces/IGaugeFactory.sol';
 import '../interfaces/IERC20.sol';
 import '../interfaces/IMinter.sol';
 import '../interfaces/IPair.sol';
-import '../interfaces/IPairInfo.sol';
 import '../interfaces/IPairFactory.sol';
 import '../interfaces/IVoter.sol';
 import '../interfaces/IVotingEscrow.sol';
@@ -18,15 +17,6 @@ import '../interfaces/IVotingEscrow.sol';
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "hardhat/console.sol";
-
-interface IHypervisor{
-    function pool() external view returns(address);
-    function getTotalAmounts() external view returns(uint tot0,uint tot1);
-}
-
-interface IAlgebraFactory{
-    function poolByPair(address, address) external view returns(address);
-}
 
 contract PairAPI is Initializable {
 
@@ -93,7 +83,6 @@ contract PairAPI is Initializable {
 
 
     IPairFactory public pairFactory;
-    IAlgebraFactory public algebraFactory;
     IVoter public voter;
 
     address public underlyingToken;
@@ -113,10 +102,8 @@ contract PairAPI is Initializable {
 
         voter = IVoter(_voter);
 
-        pairFactory = IPairFactory(voter.factory());
-        underlyingToken = IVotingEscrow(voter.ve()).token();
-
-        algebraFactory = IAlgebraFactory(address(0x306F06C147f064A010530292A1EB6737c3e378e4));
+        pairFactory = IPairFactory(address(0x1fC46294195aA87F77fAE299A14Bd1728dC1Cca9)); //classic
+        underlyingToken = IVotingEscrow(voter._ve()).token();
         
     }
 
@@ -162,8 +149,8 @@ contract PairAPI is Initializable {
         bool _type = IPairFactory(pairFactory).isPair(_pair);
         
         if(_type == false){
-            // hypervisor totalAmounts = algebra.pool + gamma.unused
-            (r0,r1) = IHypervisor(_pair).getTotalAmounts();
+            r0 = IERC20(token_0).balanceOf(_pair);
+            r1 = IERC20(token_1).balanceOf(_pair);
         } else {
             (r0,r1,) = ipair.getReserves();
         }
@@ -175,7 +162,8 @@ contract PairAPI is Initializable {
         uint emissions = 0;
         
 
-        if(address(_gauge) != address(0)){
+        //gauge info only for legacy pools
+        if(address(_gauge) != address(0) && _type){
             if(_account != address(0)){
                 accountGaugeLPAmount = _gauge.balanceOf(_account);
                 earned = _gauge.earned(_account);
@@ -316,8 +304,8 @@ contract PairAPI is Initializable {
         voter = IVoter(_voter);
         
         // update variable depending on voter
-        pairFactory = IPairFactory(voter.factory());
-        underlyingToken = IVotingEscrow(voter.ve()).token();
+        pairFactory = IPairFactory(address(0x1fC46294195aA87F77fAE299A14Bd1728dC1Cca9));
+        underlyingToken = IVotingEscrow(voter._ve()).token();
 
         emit Voter(_oldVoter, _voter);
     }

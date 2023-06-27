@@ -20,7 +20,7 @@ contract SimpleAirdrop {
     address public owner;
     address public secondOwner;
     address public ve;
-    address public thena;
+    address public retro;
 
     address[] public users;
 
@@ -39,7 +39,7 @@ contract SimpleAirdrop {
     constructor() {
         owner = msg.sender;
         ve = address(0xfBBF371C9B0B994EebFcC977CEf603F7f31c070D);
-        thena = address(0xF4C8E32EaDEC4BFe97E0F595AdD0f4450a863a11);
+        retro = address(0xF4C8E32EaDEC4BFe97E0F595AdD0f4450a863a11);
         amountPerUser = 100 * 1e18;
     }
 
@@ -52,8 +52,8 @@ contract SimpleAirdrop {
         address _user;
         for(i; i < users.length; i++){
             _user = users[i];
-            IERC20(thena).approve(ve, 0);
-            IERC20(thena).approve(ve, amountPerUser);
+            IERC20(retro).approve(ve, 0);
+            IERC20(retro).approve(ve, amountPerUser);
             IVotingEscrow(ve).create_lock_for(amountPerUser, MAX_PERIOD, _user);
         }
     }
@@ -63,8 +63,8 @@ contract SimpleAirdrop {
         address _user;
         for(i; i < __users.length; i++){
             _user = __users[i];
-            IERC20(thena).approve(ve, 0);
-            IERC20(thena).approve(ve, amountPerUser);
+            IERC20(retro).approve(ve, 0);
+            IERC20(retro).approve(ve, amountPerUser);
             IVotingEscrow(ve).create_lock_for(amountPerUser, MAX_PERIOD, _user);
         }
     }

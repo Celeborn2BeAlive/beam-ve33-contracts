@@ -12,18 +12,56 @@ import './interfaces/IPairInfo.sol';
 import './interfaces/IBribe.sol';
 import "./libraries/Math.sol";
 
-interface IRewarder {
-    function onReward(
-        address user,
-        address recipient,
-        uint256 userBalance
-    ) external;
-}
-
 interface IFeeVault {
     function claimFees() external returns(uint256 claimed0, uint256 claimed1);
 }
 
+struct DistributionParameters {
+    // ID of the reward (populated once created)
+    bytes32 rewardId;
+    // Address of the pool that needs to be incentivized
+    address uniV3Pool;
+    // Address of the reward token for the incentives
+    address rewardToken;
+    // Amount of `rewardToken` to distribute across all the epochs
+    // Amount distributed per epoch is `amount/numEpoch`
+    uint256 amount;
+    // List of all UniV3 position wrappers to consider for this contract
+    // (this can include addresses of Arrakis or Gamma smart contracts for instance)
+    address[] positionWrappers;
+    // Type (Arrakis, Gamma, ...) encoded as a `uint32` for each wrapper in the list above. Mapping between wrapper types and their
+    // corresponding `uint32` value can be found in Angle Docs
+    uint32[] wrapperTypes;
+    // In the incentivization formula, how much of the fees should go to holders of token0
+    // in base 10**4
+    uint32 propToken0;
+    // Proportion for holding token1 (in base 10**4)
+    uint32 propToken1;
+    // Proportion for providing a useful liquidity (in base 10**4) that generates fees
+    uint32 propFees;
+    // Timestamp at which the incentivization should start
+    uint32 epochStart;
+    // Amount of epochs for which incentivization should last
+    uint32 numEpoch;
+    // Whether out of range liquidity should still be incentivized or not
+    // This should be equal to 1 if out of range liquidity should still be incentivized
+    // and 0 otherwise
+    uint32 isOutOfRangeIncentivized;
+    // How much more addresses with a maximum boost can get with respect to addresses
+    // which do not have a boost (in base 4). In the case of Curve where addresses get 2.5x more
+    // this would be 25000
+    uint32 boostedReward;
+    // Address of the token which dictates who gets boosted rewards or not. This is optional
+    // and if the zero address is given no boost will be taken into account
+    address boostingAddress;
+    // Additional data passed when distributing rewards. This parameter may be used in case
+    // the reward distribution script needs to look into other parameters beyond the ones above.
+    bytes additionalData;
+}
+interface IMerklDistributionCreator {
+    function createDistribution(DistributionParameters memory params) external returns(uint256);
+    function rewardTokenMinAmounts(address) external view returns(uint256);
+}
 
 contract GaugeV2_CL is ReentrancyGuard, Ownable {
 
@@ -43,36 +81,14 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
     address public external_bribe;
     address public feeVault;
 
-    uint256 public immutable DURATION;
-    uint256 internal _periodFinish;
-    uint256 public rewardRate;
-    uint256 public lastUpdateTime;
-    uint256 public rewardPerTokenStored;
+    DistributionParameters public gaugeParams;
+    IMerklDistributionCreator public merkl;
 
-
-    mapping(address => uint256) public userRewardPerTokenPaid;
-    mapping(address => uint256) public rewards;
-
-    uint256 internal _totalSupply;
-    mapping(address => uint256) internal _balances;
 
     event RewardAdded(uint256 reward);
-    event Deposit(address indexed user, uint256 amount);
-    event Withdraw(address indexed user, uint256 amount);
-    event Harvest(address indexed user, uint256 reward);
     event ClaimFees(address indexed from, uint256 claimed0, uint256 claimed1);
     event EmergencyActivated(address indexed gauge, uint256 timestamp);
     event EmergencyDeactivated(address indexed gauge, uint256 timestamp);
-
-    modifier updateReward(address account) {
-        rewardPerTokenStored = rewardPerToken();
-        lastUpdateTime = lastTimeRewardApplicable();
-        if (account != address(0)) {
-            rewards[account] = earned(account);
-            userRewardPerTokenPaid[account] = rewardPerTokenStored;
-        }
-        _;
-    }
 
     modifier onlyDistribution() {
         require(msg.sender == DISTRIBUTION, "Caller is not RewardsDistribution contract");
@@ -89,7 +105,6 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
         VE = _ve;                               // vested
         TOKEN = IERC20(_token);                 // underlying (LP)
         DISTRIBUTION = _distribution;           // distro address (voter)
-        DURATION = 7 days;                       // distro time
 
         internal_bribe = _internal_bribe;       // lp fees goes here
         external_bribe = _external_bribe;       // bribe fees goes here
@@ -98,6 +113,13 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
 
         emergency = false;                       // emergency flag
 
+	    merkl = IMerklDistributionCreator(0x8BB4C975Ff3c250e0ceEA271728547f3802B36Fd); // merkl address
+        gaugeParams.uniV3Pool = _token;              // address of the pool
+        gaugeParams.rewardToken = _rewardToken;      // reward token to distribute with Merkl
+        gaugeParams.propToken0 = 3000;               // Proportion of the rewards going for token 0 LPs
+        gaugeParams.propToken1 = 3000;               // Proportion of the rewards going for token 1 LPs
+        gaugeParams.propFees = 4000;                 // Proportion of the rewards going for LPs that would have earned fees
+        gaugeParams.numEpoch = 168;                  // Streaming rewards for a week = DURATION / 3600
     }
 
 
@@ -148,179 +170,10 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
         emit EmergencyDeactivated(address(this), block.timestamp);
     }
 
-
-    /* -----------------------------------------------------------------------------
-    --------------------------------------------------------------------------------
-    --------------------------------------------------------------------------------
-                                    VIEW FUNCTIONS
-    --------------------------------------------------------------------------------
-    --------------------------------------------------------------------------------
-    ----------------------------------------------------------------------------- */
-
-    ///@notice total supply held
-    function totalSupply() public view returns (uint256) {
-        return _totalSupply;
+    function setMerklParams(DistributionParameters memory params) external onlyOwner {
+        require(params.rewardToken == address(rewardToken) && params.uniV3Pool == address(TOKEN), "invalid params");
+        gaugeParams = params;
     }
-
-    ///@notice balance of a user
-    function balanceOf(address account) external view returns (uint256) {
-        return _balances[account];
-    }
-
-    ///@notice last time reward
-    function lastTimeRewardApplicable() public view returns (uint256) {
-        return Math.min(block.timestamp, _periodFinish);    }
-
-    ///@notice  reward for a single token
-    function rewardPerToken() public view returns (uint256) {
-        if (_totalSupply == 0) {
-            return rewardPerTokenStored;
-        } else {
-            return rewardPerTokenStored + (lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18 / _totalSupply; 
-        }
-    }
-
-    ///@notice see earned rewards for user
-    function earned(address account) public view returns (uint256) {
-        return rewards[account] + _balances[account] * (rewardPerToken() - userRewardPerTokenPaid[account]) / 1e18;  
-    }
-
-    ///@notice get total reward for the duration
-    function rewardForDuration() external view returns (uint256) {
-        return rewardRate * DURATION;
-    }
-
-    function periodFinish() external view returns (uint256) {
-        return _periodFinish;
-    }
-
-
-
-    /* -----------------------------------------------------------------------------
-    --------------------------------------------------------------------------------
-    --------------------------------------------------------------------------------
-                                    USER INTERACTION
-    --------------------------------------------------------------------------------
-    --------------------------------------------------------------------------------
-    ----------------------------------------------------------------------------- */
-
-
-    ///@notice deposit all TOKEN of msg.sender
-    function depositAll() external {
-        _deposit(TOKEN.balanceOf(msg.sender), msg.sender);
-    }
-
-    ///@notice deposit amount TOKEN
-    function deposit(uint256 amount) external {
-        _deposit(amount, msg.sender);
-    }
-
-    ///@notice deposit internal
-    function _deposit(uint256 amount, address account) internal nonReentrant isNotEmergency updateReward(account) {
-        require(amount > 0, "deposit(Gauge): cannot stake 0");
-
-        _balances[account] = _balances[account] + (amount);
-        _totalSupply = _totalSupply + (amount);
-
-        TOKEN.safeTransferFrom(account, address(this), amount);
-
-        if (address(gaugeRewarder) != address(0)) {
-            IRewarder(gaugeRewarder).onReward( account, account, _balances[account]);
-        }
-
-        emit Deposit(account, amount);
-    }
-
-    ///@notice withdraw all token
-    function withdrawAll() external {
-        _withdraw(_balances[msg.sender]);
-    }
-
-    ///@notice withdraw a certain amount of TOKEN
-    function withdraw(uint256 amount) external {
-        _withdraw(amount);
-    }
-
-    ///@notice withdraw internal
-    function _withdraw(uint256 amount) internal nonReentrant isNotEmergency updateReward(msg.sender) {
-        require(amount > 0, "Cannot withdraw 0");
-        require(_balances[msg.sender] > 0, "no balances");
-
-        _totalSupply = _totalSupply - (amount);
-        _balances[msg.sender] = _balances[msg.sender] - (amount);
-
-        if (address(gaugeRewarder) != address(0)) {
-            IRewarder(gaugeRewarder).onReward(msg.sender, msg.sender, _balances[msg.sender]);
-        }
-
-        TOKEN.safeTransfer(msg.sender, amount);
-
-        emit Withdraw(msg.sender, amount);
-    }
-
-    function emergencyWithdraw() external nonReentrant {
-        require(emergency, "emergency");
-        require(_balances[msg.sender] > 0, "no balances");
-
-        uint256 _amount = _balances[msg.sender];
-        _totalSupply = _totalSupply - (_amount);
-        _balances[msg.sender] = 0;
-
-        TOKEN.safeTransfer(msg.sender, _amount);
-        emit Withdraw(msg.sender, _amount);
-    }
-    
-    function emergencyWithdrawAmount(uint256 _amount) external nonReentrant {
-        require(emergency, "emergency");
-        require(_balances[msg.sender] >= _amount, "no balances");
-
-        _totalSupply = _totalSupply - (_amount);
-        _balances[msg.sender] -= _amount;
-        TOKEN.safeTransfer(msg.sender, _amount);
-        emit Withdraw(msg.sender, _amount);
-    }
-
-    ///@notice withdraw all TOKEN and harvest rewardToken
-    function withdrawAllAndHarvest() external {
-        _withdraw(_balances[msg.sender]);
-        getReward();
-    }
-
- 
-    ///@notice User harvest function called from distribution (voter allows harvest on multiple gauges)
-    function getReward(address _user) public nonReentrant onlyDistribution updateReward(_user) {
-        uint256 reward = rewards[_user];
-        if (reward > 0) {
-            rewards[_user] = 0;
-            rewardToken.safeTransfer(_user, reward);
-            emit Harvest(_user, reward);
-        }
-
-        if (gaugeRewarder != address(0)) {
-            IRewarder(gaugeRewarder).onReward(_user, _user, _balances[_user]);
-        }
-    }
-
-     ///@notice User harvest function
-    function getReward() public nonReentrant updateReward(msg.sender) {
-        uint256 reward = rewards[msg.sender];
-        if (reward > 0) {
-            rewards[msg.sender] = 0;
-            rewardToken.safeTransfer(msg.sender, reward);
-            emit Harvest(msg.sender, reward);
-        }
-
-        if (gaugeRewarder != address(0)) {
-            IRewarder(gaugeRewarder).onReward(msg.sender, msg.sender, _balances[msg.sender]);
-        }
-    }
-
-
-
-
-
-
-
 
     /* -----------------------------------------------------------------------------
     --------------------------------------------------------------------------------
@@ -333,27 +186,18 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
 
     /// @dev Receive rewards from distribution
 
-    function notifyRewardAmount(address token, uint256 reward) external nonReentrant isNotEmergency onlyDistribution updateReward(address(0)) {
-        require(token == address(rewardToken), "not rew token");
+    function notifyRewardAmount(address token, uint256 reward) external nonReentrant isNotEmergency onlyDistribution {
+        require(token == address(rewardToken));
         rewardToken.safeTransferFrom(DISTRIBUTION, address(this), reward);
-
-        if (block.timestamp >= _periodFinish) {
-            rewardRate = reward / (DURATION);
-        } else {
-            uint256 remaining = _periodFinish - (block.timestamp);
-            uint256 leftover = remaining * (rewardRate);
-            rewardRate = (reward + leftover) / DURATION;
+        DistributionParameters memory params = gaugeParams;
+        params.amount = reward;
+        params.epochStart = uint32(block.timestamp);
+        uint256 _minAmount = merkl.rewardTokenMinAmounts(address(rewardToken));
+        if(reward > _minAmount) {
+            rewardToken.approve(address(merkl), reward);
+            merkl.createDistribution(params);
         }
 
-        // Ensure the provided reward amount is not more than the balance in the contract.
-        // This keeps the reward rate in the right range, preventing overflows due to
-        // very high values of rewardRate in the earned and rewardsPerToken functions;
-        // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
-        uint256 balance = rewardToken.balanceOf(address(this));
-        require(rewardRate <= balance / (DURATION), "Provided reward too high");
-
-        lastUpdateTime = block.timestamp;
-        _periodFinish = block.timestamp + (DURATION);
         emit RewardAdded(reward);
     }
 

@@ -72,7 +72,7 @@ contract AirdropClaimTheNFTTest is ReentrancyGuard {
     }
     
 
-    /// @notice claim the given amount and send to _to. Checks are done by merkle tree contract. (eg.: 40% veTHE 60% $THE)
+    /// @notice claim the given amount and send to _to. Checks are done by merkle tree contract. (eg.: 40% veRETRO 60% $RETRO)
     function claim(address _who, uint _amount, address _to) external nonReentrant onlyMerkle returns(bool){
         require(token.balanceOf(address(this)) >= _amount, 'not enough token');
 
