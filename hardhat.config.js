@@ -45,7 +45,7 @@ module.exports = {
       url: "https://polygon-rpc.com",
       chainId: 137,
       accounts: PRIVATEKEY,
-      gasPrice: 500e9
+      gasPrice: 300e9
     },
 
     bscTestnet: {

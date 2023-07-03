@@ -7,12 +7,13 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import '../interfaces/IPermissionsRegistry.sol';
 
 interface IBribe {
-    function addReward(address) external;
+    function addRewardToken(address) external;
     function setVoter(address _Voter) external;
     function setMinter(address _Voter) external;
     function setOwner(address _Voter) external;
     function emergencyRecoverERC20(address tokenAddress, uint256 tokenAmount) external;
     function recoverERC20AndUpdateData(address tokenAddress, uint256 tokenAmount) external;
+    function addRewardTokens(address[] memory) external;
 }
 
 contract BribeFactoryV3 is OwnableUpgradeable {
@@ -122,14 +123,14 @@ contract BribeFactoryV3 is OwnableUpgradeable {
 
     /// @notice Add a reward token to a given bribe
     function addRewardToBribe(address _token, address __bribe) external onlyAllowed {
-        IBribe(__bribe).addReward(_token);
+        IBribe(__bribe).addRewardToken(_token);
     }
 
     /// @notice Add multiple reward token to a given bribe
     function addRewardsToBribe(address[] memory _token, address __bribe) external onlyAllowed {
         uint i = 0;
         for ( i ; i < _token.length; i++){
-            IBribe(__bribe).addReward(_token[i]);
+            IBribe(__bribe).addRewardToken(_token[i]);
         }
     }
 
@@ -137,7 +138,7 @@ contract BribeFactoryV3 is OwnableUpgradeable {
     function addRewardToBribes(address _token, address[] memory __bribes) external onlyAllowed {
         uint i = 0;
         for ( i ; i < __bribes.length; i++){
-            IBribe(__bribes[i]).addReward(_token);
+            IBribe(__bribes[i]).addRewardToken(_token);
         }
 
     }
@@ -149,7 +150,7 @@ contract BribeFactoryV3 is OwnableUpgradeable {
         for ( i ; i < __bribes.length; i++){
             address _br = __bribes[i];
             for(k = 0; k < _token.length; k++){
-                IBribe(_br).addReward(_token[i][k]);
+                IBribe(_br).addRewardToken(_token[i][k]);
             }
         }
 

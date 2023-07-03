@@ -549,7 +549,7 @@ contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
         // create internal and external bribe
         address _owner = IPermissionsRegistry(permissionRegistry).retroTeamMultisig();
-        string memory _type =  string.concat("Retro LP Fees: ", IERC20(tokenA).symbol(), "-", IERC20(tokenB).symbol(), "-", Strings.toString(_fee));
+        string memory _type =  append("Retro LP Fees: ", IERC20(tokenA).symbol(), "-", IERC20(tokenB).symbol(), "-", Strings.toString(_fee));
         _internal_bribe = IBribeFactory(bribefactory).createBribe(_owner, tokenA, tokenB, _type);
 
         _type = append("Retro Bribes: ", IERC20(tokenA).symbol(), "-", IERC20(tokenB).symbol(), "-", Strings.toString(_fee));
