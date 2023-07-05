@@ -17,7 +17,7 @@ async function main () {
     console.log("thena Address: ", thena.address)*/
 
     
-    data = await ethers.getContractFactory("VeArtProxyUpgradeable");
+    /*data = await ethers.getContractFactory("VeArtProxyUpgradeable");
     veArtProxy = await upgrades.deployProxy(data,[], {initializer: 'initialize'});
     txDeployed = await veArtProxy.deployed();
     console.log("veArtProxy Address: ", veArtProxy.address)
@@ -27,9 +27,11 @@ async function main () {
     data = await ethers.getContractFactory("VotingEscrow");
     veThena = await data.deploy(thena, veArtProxy.address);
     txDeployed = await veThena.deployed();
-    console.log("veThena Address: ", veThena.address);
+    console.log("veThena Address: ", veThena.address);*/
 
-    data = await ethers.getContractFactory("RewardsDistributor");
+    const veThena = {"address":"0x83AA7C0074f128434d7c5Dc1AeC36266E36d484E"}
+
+    data = await ethers.getContractFactory("RewardsDistributorV2");
     RewardsDistributor = await data.deploy(veThena.address);
     txDeployed = await RewardsDistributor.deployed();
     console.log("RewardsDistributor Address: ", RewardsDistributor.address)
