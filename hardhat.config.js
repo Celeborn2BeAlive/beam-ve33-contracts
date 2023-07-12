@@ -1,12 +1,14 @@
 require("@nomiclabs/hardhat-waffle");
 
-require('@openzeppelin/hardhat-upgrades');
+require("@openzeppelin/hardhat-upgrades");
 
 require("@nomiclabs/hardhat-etherscan");
 
 require("@nomiclabs/hardhat-web3");
 
-const { PRIVATEKEY, APIKEY } = require("./pvkey.js")
+require("hardhat-tracer");
+
+const { PRIVATEKEY, APIKEY } = require("./pvkey.js");
 
 module.exports = {
   // latest Solidity version
@@ -30,46 +32,42 @@ module.exports = {
           },
         },
       },
-    ]
+    ],
   },
 
   networks: {
-
     bsc: {
       url: "https://bsc-dataseed1.binance.org",
       chainId: 56,
-      accounts: PRIVATEKEY
+      accounts: PRIVATEKEY,
     },
 
     polygon: {
       url: "https://polygon-rpc.com",
       chainId: 137,
       accounts: PRIVATEKEY,
-      gasPrice: 300e9
+      gasPrice: 300e9,
     },
 
     bscTestnet: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
-      accounts: PRIVATEKEY
+      accounts: PRIVATEKEY,
     },
-
 
     op: {
       url: "https://mainnet.optimism.io",
       chainId: 10,
-      accounts: PRIVATEKEY
+      accounts: PRIVATEKEY,
     },
-    
 
     hardhat: {
       forking: {
-          url: "https://polygon-rpc.com",
-          chainId: 137,
+        url: "https://polygon-rpc.com",
+        chainId: 137,
       },
       //accounts: []
-    }
-  
+    },
   },
 
   etherscan: {
@@ -80,14 +78,13 @@ module.exports = {
         chainId: 137,
         urls: {
           apiURL: "https://api.polygonscan.com/api",
-          browserURL: "https://polygonscan.com"
-        }
-      }
-    ]
+          browserURL: "https://polygonscan.com",
+        },
+      },
+    ],
   },
 
   mocha: {
-    timeout: 100000000
-  }
-
-}
+    timeout: 100000000,
+  },
+};
