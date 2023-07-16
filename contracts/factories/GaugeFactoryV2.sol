@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/access/IAccessControl.sol";
 import '../interfaces/IPermissionsRegistry.sol';
 import '../interfaces/IGaugeFactoryV2.sol';
 import '../GaugeV2.sol';
@@ -16,12 +17,15 @@ interface IGauge{
     function setRewarderPid(uint256 pid) external;
     function setGaugeRewarder(address _gr) external;
     function setFeeVault(address _feeVault) external;
+    function setORetro(address) external;
 }
 
 
 contract GaugeFactoryV2 is IGaugeFactory, OwnableUpgradeable {
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address public last_gauge;
     address public permissionsRegistry;
+    address public oRetro;
 
     address[] internal __gauges;
     constructor() {}
@@ -48,6 +52,8 @@ contract GaugeFactoryV2 is IGaugeFactory, OwnableUpgradeable {
     function createGaugeV2(address _rewardToken,address _ve,address _token,address _distribution, address _internal_bribe, address _external_bribe, bool _isPair) external returns (address) {
         last_gauge = address(new GaugeV2(_rewardToken,_ve,_token,_distribution,_internal_bribe,_external_bribe,_isPair) );
         __gauges.push(last_gauge);
+        IAccessControl(oRetro).grantRole(MINTER_ROLE, last_gauge);
+        IGauge(last_gauge).setORetro(oRetro);
         return last_gauge;
     }
 
@@ -109,6 +115,12 @@ contract GaugeFactoryV2 is IGaugeFactory, OwnableUpgradeable {
         }
     }
 
-  
+    function setORetro(address _oRetro) external onlyAllowed {
+        oRetro = _oRetro;
+    }
+
+    function updateoRetroFor(address _gauge) external onlyAllowed {
+        IGauge(_gauge).setORetro(oRetro);
+    }
  
 }

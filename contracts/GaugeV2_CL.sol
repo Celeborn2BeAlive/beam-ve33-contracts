@@ -16,6 +16,10 @@ interface IFeeVault {
     function claimFees() external returns(uint256 claimed0, uint256 claimed1);
 }
 
+interface IOptionToken {
+    function mint(address _to, uint256 _amount) external;
+}
+
 struct DistributionParameters {
     // ID of the reward (populated once created)
     bytes32 rewardId;
@@ -70,10 +74,10 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
     bool public emergency;
 
 
-    IERC20 public immutable rewardToken;
+    IERC20 public immutable retro;
     IERC20 public immutable TOKEN;
+    IERC20 public oRetro;
 
-    
     address public VE;
     address public DISTRIBUTION;
     address public gaugeRewarder;
@@ -101,17 +105,15 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
     }
 
     constructor(address _rewardToken,address _ve,address _token,address _distribution, address _internal_bribe, address _external_bribe, address _feeVault) {
-        rewardToken = IERC20(_rewardToken);     // main reward
+
+        retro = IERC20(_rewardToken);     // main reward
         VE = _ve;                               // vested
         TOKEN = IERC20(_token);                 // underlying (LP)
         DISTRIBUTION = _distribution;           // distro address (voter)
-
         internal_bribe = _internal_bribe;       // lp fees goes here
         external_bribe = _external_bribe;       // bribe fees goes here
-
         feeVault = _feeVault;                   // fee vault concentrated liqudity position
-
-        emergency = false;                       // emergency flag
+        emergency = false;                      // emergency flag
 
 	    merkl = IMerklDistributionCreator(0x8BB4C975Ff3c250e0ceEA271728547f3802B36Fd); // merkl address
         gaugeParams.uniV3Pool = _token;              // address of the pool
@@ -120,8 +122,8 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
         gaugeParams.propToken1 = 3000;               // Proportion of the rewards going for token 1 LPs
         gaugeParams.propFees = 4000;                 // Proportion of the rewards going for LPs that would have earned fees
         gaugeParams.numEpoch = 168;                  // Streaming rewards for a week = DURATION / 3600
-    }
 
+    }
 
     /* -----------------------------------------------------------------------------
     --------------------------------------------------------------------------------
@@ -151,7 +153,6 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
         feeVault = _feeVault;
     }
 
-
     ///@notice set new internal bribe contract (where to send fees)
     function setInternalBribe(address _int) external onlyOwner {
         require(_int >= address(0), "zero");
@@ -171,8 +172,14 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
     }
 
     function setMerklParams(DistributionParameters memory params) external onlyOwner {
-        require(params.rewardToken == address(rewardToken) && params.uniV3Pool == address(TOKEN), "invalid params");
+        require(params.rewardToken == address(oRetro) && params.uniV3Pool == address(TOKEN), "invalid params");
         gaugeParams = params;
+    }
+
+    function setORetro(address _oRetro) external onlyOwner {
+        oRetro = IERC20(_oRetro);
+        retro.approve(_oRetro, type(uint256).max);
+        gaugeParams.rewardToken = _oRetro;
     }
 
     /* -----------------------------------------------------------------------------
@@ -187,14 +194,18 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
     /// @dev Receive rewards from distribution
 
     function notifyRewardAmount(address token, uint256 reward) external nonReentrant isNotEmergency onlyDistribution {
-        require(token == address(rewardToken));
-        rewardToken.safeTransferFrom(DISTRIBUTION, address(this), reward);
+        require(token == address(retro));
+        retro.safeTransferFrom(DISTRIBUTION, address(this), reward);
         DistributionParameters memory params = gaugeParams;
-        params.amount = reward;
+        params.amount = retro.balanceOf(address(this));
         params.epochStart = uint32(block.timestamp);
-        uint256 _minAmount = merkl.rewardTokenMinAmounts(address(rewardToken));
-        if(reward > _minAmount) {
-            rewardToken.approve(address(merkl), reward);
+
+        //get oRETRO from RETRO
+        IOptionToken(address(oRetro)).mint(address(this), params.amount);
+        uint256 _minAmount = merkl.rewardTokenMinAmounts(params.rewardToken);
+
+        if(params.amount > _minAmount) {
+            oRetro.approve(address(merkl), params.amount);
             merkl.createDistribution(params);
         }
 
