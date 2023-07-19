@@ -1091,7 +1091,7 @@
             "label": "pairFactory",
             "offset": 2,
             "slot": "0",
-            "type": "t_contract(IPairFactory)4000",
+            "type": "t_contract(IPairFactory)21664",
             "contract": "PairAPI",
             "src": "contracts/APIHelper/PairAPI.sol:85"
           },
@@ -1099,7 +1099,7 @@
             "label": "voter",
             "offset": 0,
             "slot": "1",
-            "type": "t_contract(IVoter)4134",
+            "type": "t_contract(IVoter)21995",
             "contract": "PairAPI",
             "src": "contracts/APIHelper/PairAPI.sol:86"
           },
@@ -1129,11 +1129,11 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IPairFactory)4000": {
+          "t_contract(IPairFactory)21664": {
             "label": "contract IPairFactory",
             "numberOfBytes": "20"
           },
-          "t_contract(IVoter)4134": {
+          "t_contract(IVoter)21995": {
             "label": "contract IVoter",
             "numberOfBytes": "20"
           },
@@ -3340,6 +3340,86 @@
           "t_uint256": {
             "label": "uint256",
             "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "384b305037ed84405834e1f817a36f734ee54166cd4eef2bce88b041e46f305f": {
+      "address": "0x0eBBa186F4E4f8bb4D6F1509d20a34C86E1448f5",
+      "txHash": "0x95176ec20cf5acb247112b6d6bdc3bd39f20a52b59716acb2272b955db021253",
+      "layout": {
+        "solcVersion": "0.8.13",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "pairFactory",
+            "offset": 2,
+            "slot": "0",
+            "type": "t_contract(IPairFactory)15093",
+            "contract": "PairAPI",
+            "src": "contracts/APIHelper/PairAPI.sol:83"
+          },
+          {
+            "label": "voter",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_contract(IVoter)15439",
+            "contract": "PairAPI",
+            "src": "contracts/APIHelper/PairAPI.sol:84"
+          },
+          {
+            "label": "underlyingToken",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "PairAPI",
+            "src": "contracts/APIHelper/PairAPI.sol:86"
+          },
+          {
+            "label": "owner",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_address",
+            "contract": "PairAPI",
+            "src": "contracts/APIHelper/PairAPI.sol:88"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IPairFactory)15093": {
+            "label": "contract IPairFactory",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IVoter)15439": {
+            "label": "contract IVoter",
+            "numberOfBytes": "20"
           },
           "t_uint8": {
             "label": "uint8",

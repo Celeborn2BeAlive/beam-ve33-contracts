@@ -12,11 +12,9 @@ import '../interfaces/IPair.sol';
 import '../interfaces/IPairFactory.sol';
 import '../interfaces/IVoter.sol';
 import '../interfaces/IVotingEscrow.sol';
-
+import '../interfaces/IHypervisor.sol';
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-
-import "hardhat/console.sol";
 
 contract PairAPI is Initializable {
 
@@ -148,14 +146,16 @@ contract PairAPI is Initializable {
         // checkout is v2 or v3? if v3 then load algebra pool 
         bool _type = IPairFactory(pairFactory).isPair(_pair);
         
+        address underlyingPool = _type == false ? IHypervisor(_pair).pool() : _pair;
+
         if(_type == false){
-            r0 = IERC20(token_0).balanceOf(_pair);
-            r1 = IERC20(token_1).balanceOf(_pair);
+            r0 = IERC20(token_0).balanceOf(underlyingPool);
+            r1 = IERC20(token_1).balanceOf(underlyingPool);
         } else {
             (r0,r1,) = ipair.getReserves();
         }
 
-        IGaugeAPI _gauge = IGaugeAPI(voter.gauges(_pair));
+        IGaugeAPI _gauge = IGaugeAPI(voter.gauges(underlyingPool));
         uint accountGaugeLPAmount = 0;
         uint earned = 0;
         uint gaugeTotalSupply = 0;
@@ -174,15 +174,14 @@ contract PairAPI is Initializable {
             gaugeTotalSupply = _gauge.totalSupply();
             emissions = _gauge.rewardRate();
         }
-        
 
         // Pair General Info
-        _pairInfo.pair_address = _pair;
+        _pairInfo.pair_address = underlyingPool;
         _pairInfo.symbol = ipair.symbol();
         _pairInfo.name = ipair.name();
         _pairInfo.decimals = ipair.decimals();
         _pairInfo.stable = _type == false ? false : ipair.isStable();
-        _pairInfo.total_supply = ipair.totalSupply();        
+        _pairInfo.total_supply = ipair.totalSupply();
         
         // Token0 Info
         _pairInfo.token0 = token_0;

@@ -6,7 +6,7 @@ const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants.js");
 
 async function main () {
 
-    accounts = await ethers.getSigners();
+    /*accounts = await ethers.getSigners();
     owner = accounts[0]
 
     const voter = ethers.utils.getAddress("0x8388556C586F08DDdd9e4b113b4A4c9360746C48")
@@ -32,12 +32,12 @@ async function main () {
    input = [voter, rewDistro, PairAPI.address]
    veNFTAPI = await upgrades.deployProxy(data,input, {initializer: 'initialize'});
    txDeployed = await veNFTAPI.deployed();
-   console.log("veNFTAPI: ", veNFTAPI.address)
+   console.log("veNFTAPI: ", veNFTAPI.address)*/
 
-   /*const data = await ethers.getContractFactory('PairAPI');
+   const data = await ethers.getContractFactory('PairAPI');
    console.log('PairAPI...');
-   await upgrades.upgradeProxy('0xE89080cEb6CAEb9Eba5a0d4Aa13686eFcB78A32E', data);
-   console.log('PairAPI upgraded');*/
+   await upgrades.upgradeProxy('0xD0665559d51c88098540EcE8D068B4C3B339c259', data);
+   console.log('PairAPI upgraded');
     
 
 }
