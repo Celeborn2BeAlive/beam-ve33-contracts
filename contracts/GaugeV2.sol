@@ -10,6 +10,10 @@ import './interfaces/IPair.sol';
 import './interfaces/IBribe.sol';
 import "./libraries/Math.sol";
 
+interface IOptionToken {
+    function mint(address _to, uint256 _amount) external;
+}
+
 interface IRewarder {
     function onReward(
         address user,
@@ -35,6 +39,7 @@ contract GaugeV2 is ReentrancyGuard, Ownable {
     address public gaugeRewarder;
     address public internal_bribe;
     address public external_bribe;
+    address public oRetro;
 
     uint256 public immutable DURATION;
     uint256 internal _periodFinish;
@@ -91,7 +96,6 @@ contract GaugeV2 is ReentrancyGuard, Ownable {
         isForPair = _isForPair;                 // pair boolean, if false no claim_fees
 
         emergency = false;                      // emergency flag
-
     }
 
 
@@ -137,6 +141,10 @@ contract GaugeV2 is ReentrancyGuard, Ownable {
         emit EmergencyDeactivated(address(this), block.timestamp);
     }
 
+    function setORetro(address _oRetro) external onlyOwner {
+        oRetro = _oRetro;
+        rewardToken.approve(oRetro, type(uint256).max);
+    }
 
     /* -----------------------------------------------------------------------------
     --------------------------------------------------------------------------------
@@ -273,13 +281,18 @@ contract GaugeV2 is ReentrancyGuard, Ownable {
         getReward();
     }
 
+    function rewardOptions(address _user, uint256 _reward) internal {
+        try IOptionToken(oRetro).mint(_user, _reward){} catch {
+            rewardToken.safeTransfer(_user, _reward);
+        }
+    }
  
     ///@notice User harvest function called from distribution (voter allows harvest on multiple gauges)
     function getReward(address _user) public nonReentrant onlyDistribution updateReward(_user) {
         uint256 reward = rewards[_user];
         if (reward > 0) {
             rewards[_user] = 0;
-            rewardToken.safeTransfer(_user, reward);
+            rewardOptions(_user, reward);
             emit Harvest(_user, reward);
         }
 
@@ -293,7 +306,7 @@ contract GaugeV2 is ReentrancyGuard, Ownable {
         uint256 reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
-            rewardToken.safeTransfer(msg.sender, reward);
+            rewardOptions(msg.sender, reward);
             emit Harvest(msg.sender, reward);
         }
 
