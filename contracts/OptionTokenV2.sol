@@ -281,6 +281,7 @@ contract OptionTokenV2 is ERC20, AccessControl {
                     _twapOracle.token1() == _paymentToken))
         ) revert OptionToken_IncorrectPairToken();
         twapOracle = _twapOracle;
+        paymentToken = ERC20(_paymentToken);
         emit SetTwapOracleAndPaymentToken(_twapOracle, _paymentToken);
     }
 
