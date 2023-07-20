@@ -1,5 +1,7 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
+
+const vitalik = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"; // For impersonation
 
 // NOTE: Deployer account must have enough paymentToken to pay for the option
 
@@ -8,7 +10,7 @@ describe("OptionTokenV2", function () {
   let retro;
   let paymentToken;
   let underlyingToken;
-  let treasury;
+  let feeDistributor;
 
   before(async function () {
     const [deployer] = await ethers.getSigners();
@@ -17,9 +19,20 @@ describe("OptionTokenV2", function () {
     const Retro = await ethers.getContractFactory("Retro");
     const UniswapV3Twap = await ethers.getContractFactory("UniswapV3Twap");
     const OptionTokenV2 = await ethers.getContractFactory("OptionTokenV2");
+    const VeArtProxyUpgradeable = await ethers.getContractFactory(
+      "VeArtProxyUpgradeable"
+    );
+    const OptionFeeDistributor = await ethers.getContractFactory(
+      "OptionFeeDistributor"
+    );
 
-    const votingEscrow = await VotingEscrow.deploy();
+    const optionFeeDistributor = await OptionFeeDistributor.deploy();
     const retro = await Retro.deploy();
+    const veArtProxyUpgradeable = await VeArtProxyUpgradeable.deploy();
+    const votingEscrow = await VotingEscrow.deploy(
+      retro.address,
+      veArtProxyUpgradeable.address
+    );
     const wmatic = await ethers.getContractAt(
       "contracts/interfaces/IWETH.sol:IWETH",
       "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
@@ -31,8 +44,7 @@ describe("OptionTokenV2", function () {
     const paymentToken = wmatic.address; // WMATIC
     const underlyingToken = retro.address; // RETRO
     const gaugeFactory = "0x92ba53Fb2801cC1918916d62a6243eC47e278AFD";
-    // TODO: change this to the treasury address
-    const treasury = "0x35dCEaD4670161a3D123b007922d61378D3A9d18";
+    const feeDistributor = optionFeeDistributor.address;
     // The discount given when exercising. 30 = user pays 30%
     const discount = 30;
     // The discount given when exercising for veRETRO. 30 = user pays 30%
@@ -62,7 +74,7 @@ describe("OptionTokenV2", function () {
       underlyingToken,
       uniswapV3Twap.address,
       gaugeFactory,
-      treasury,
+      feeDistributor,
       discount,
       veDiscount,
       votingEscrow.address
@@ -70,7 +82,7 @@ describe("OptionTokenV2", function () {
 
     await optionTokenV2.deployed();
 
-    this.treasury = treasury;
+    this.feeDistributor = feeDistributor;
     this.oRetro = optionTokenV2;
     this.retro = retro;
     this.paymentToken = await ethers.getContractAt(
@@ -105,7 +117,6 @@ describe("OptionTokenV2", function () {
     it("Should be able to exercise with discount", async function () {
       const [deployer] = await ethers.getSigners();
 
-      const treasuryBalance0 = await this.paymentToken.balanceOf(this.treasury);
       const retroBalance0 = await this.retro.balanceOf(deployer.address);
       const oRetroBalance0 = await this.oRetro.balanceOf(deployer.address);
       const paymentTokenBalance0 = await this.paymentToken.balanceOf(
@@ -126,7 +137,6 @@ describe("OptionTokenV2", function () {
         deployer.address
       );
 
-      const treasuryBalance1 = await this.paymentToken.balanceOf(this.treasury);
       const retroBalance1 = await this.retro.balanceOf(deployer.address);
       const oRetroBalance1 = await this.oRetro.balanceOf(deployer.address);
       const paymentTokenBalance1 = await this.paymentToken.balanceOf(
@@ -144,12 +154,6 @@ describe("OptionTokenV2", function () {
 
       expect(oRetroBalance0.sub(oRetroBalance1)).to.equal(amount);
       expect(paymentTokenBalance0.sub(paymentTokenBalance1)).to.equal(toPay);
-
-      expect(treasuryBalance1.sub(treasuryBalance0)).to.equal(toPay);
-
-      expect(oRetroBalance0.sub(oRetroBalance1)).to.equal(amount);
-      expect(paymentTokenBalance0.sub(paymentTokenBalance1)).to.equal(toPay);
-      expect(treasuryBalance1.sub(treasuryBalance0)).to.equal(toPay);
     });
 
     it("Should be able to exercise with veDiscount", async function () {
@@ -157,5 +161,43 @@ describe("OptionTokenV2", function () {
     });
 
     // it("Should send tokens to treasury", async function () {});
+  });
+
+  describe("Updating", function () {
+    let deployer;
+    let impersonatedSigner;
+
+    before(async function () {
+      [deployer] = await ethers.getSigners();
+    });
+
+    beforeEach(async function () {
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [vitalik],
+      });
+
+      impersonatedSigner = await ethers.getSigner(vitalik);
+    });
+
+    it("Admin should be able to update feeDistributor", async function () {
+      const newFeeDistributor = ethers.constants.AddressZero;
+      const feeDistributorBefore = await this.oRetro.feeDistributor();
+
+      expect(
+        this.oRetro
+          .connect(impersonatedSigner)
+          .setFeeDistributor(newFeeDistributor)
+      ).to.be.reverted;
+
+      await this.oRetro.setFeeDistributor(newFeeDistributor);
+      const feeDistributorAfter = await this.oRetro.feeDistributor();
+
+      expect(feeDistributorBefore).equals(this.feeDistributor);
+      expect(feeDistributorAfter).equals(newFeeDistributor);
+
+      // Cleanup
+      this.oRetro.setFeeDistributor(this.feeDistributor);
+    });
   });
 });
