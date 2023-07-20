@@ -13,8 +13,9 @@ import '../interfaces/IPairFactory.sol';
 import '../interfaces/IVoter.sol';
 import '../interfaces/IVotingEscrow.sol';
 import '../interfaces/IHypervisor.sol';
+import '../interfaces/IPairInfo.sol';
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol"; 
 
 contract PairAPI is Initializable {
 
@@ -56,6 +57,9 @@ contract PairAPI is Initializable {
         uint account_token1_balance; 	// account 2nd token balance
         uint account_gauge_balance;     // account pair staked in gauge balance
         uint account_gauge_earned; 		// account earned emissions for this pair
+
+        //fee data
+        uint24 fee_level;
     }
 
 
@@ -176,7 +180,7 @@ contract PairAPI is Initializable {
         }
 
         // Pair General Info
-        _pairInfo.pair_address = underlyingPool;
+        _pairInfo.pair_address = _pair;
         _pairInfo.symbol = ipair.symbol();
         _pairInfo.name = ipair.name();
         _pairInfo.decimals = ipair.decimals();
@@ -215,6 +219,7 @@ contract PairAPI is Initializable {
         _pairInfo.account_token1_balance = IERC20(token_1).balanceOf(_account);
         _pairInfo.account_gauge_balance = accountGaugeLPAmount;
         _pairInfo.account_gauge_earned = earned;
+        _pairInfo.fee_level = _type == false ? IPairInfo(underlyingPool).fee() : 0;
         
     }
 
