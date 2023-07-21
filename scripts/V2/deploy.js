@@ -29,7 +29,7 @@ async function main () {
     txDeployed = await BribeFactoryV3.deployed();
     console.log("BribeFactoryV3: ", BribeFactoryV3.address)*/
 
-    const oRetro = {"address": ""};
+    const oRetro = {"address": "0xE8386A9D2B59e755F41020Fc408B0D828Fd7ea7c"};
 
     // GAUGE FACTORY
     data = await ethers.getContractFactory("GaugeFactoryV2");

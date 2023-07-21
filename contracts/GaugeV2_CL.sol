@@ -176,6 +176,10 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
         gaugeParams = params;
     }
 
+    function setMerkl(address _merkl) external onlyOwner {
+        merkl = IMerklDistributionCreator(_merkl); // merkl address
+    }
+
     function setORetro(address _oRetro) external onlyOwner {
         oRetro = IERC20(_oRetro);
         retro.approve(_oRetro, type(uint256).max);
