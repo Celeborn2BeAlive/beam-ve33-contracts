@@ -155,16 +155,9 @@ describe("OptionTokenV2", function () {
       expect(oRetroBalance0.sub(oRetroBalance1)).to.equal(amount);
       expect(paymentTokenBalance0.sub(paymentTokenBalance1)).to.equal(toPay);
     });
-
-    it("Should be able to exercise with veDiscount", async function () {
-      const [deployer] = await ethers.getSigners();
-    });
-
-    // it("Should send tokens to treasury", async function () {});
   });
 
   describe("Updating", function () {
-    let deployer;
     let impersonatedSigner;
 
     before(async function () {
@@ -180,7 +173,7 @@ describe("OptionTokenV2", function () {
       impersonatedSigner = await ethers.getSigner(vitalik);
     });
 
-    it("Admin should be able to update feeDistributor", async function () {
+    it("Only admin should be able to update feeDistributor", async function () {
       const newFeeDistributor = ethers.constants.AddressZero;
       const feeDistributorBefore = await this.oRetro.feeDistributor();
 
@@ -198,6 +191,79 @@ describe("OptionTokenV2", function () {
 
       // Cleanup
       this.oRetro.setFeeDistributor(this.feeDistributor);
+    });
+
+    it("Only admin should be able to update discount", async function () {
+      const newDiscount = 50;
+      const discountBefore = await this.oRetro.discount();
+
+      expect(this.oRetro.connect(impersonatedSigner).setDiscount(newDiscount))
+        .to.be.reverted;
+
+      await this.oRetro.setDiscount(newDiscount);
+      const discountAfter = await this.oRetro.discount();
+
+      expect(discountBefore).equals(30);
+      expect(discountAfter).equals(newDiscount);
+
+      // Cleanup
+      this.oRetro.setDiscount(discountBefore);
+    });
+
+    it("Only admin should be able to update veDiscount", async function () {
+      const newVeDiscount = 50;
+      const veDiscountBefore = await this.oRetro.veDiscount();
+
+      expect(
+        this.oRetro.connect(impersonatedSigner).setVeDiscount(newVeDiscount)
+      ).to.be.reverted;
+
+      await this.oRetro.setVeDiscount(newVeDiscount);
+      const veDiscountAfter = await this.oRetro.veDiscount();
+
+      expect(veDiscountBefore).equals(100);
+      expect(veDiscountAfter).equals(newVeDiscount);
+
+      // Cleanup
+      this.oRetro.setVeDiscount(veDiscountBefore);
+    });
+
+    it("Only admin should be able to update feeDistributor", async function () {
+      const newFeeDistributor = ethers.constants.AddressZero;
+      const feeDistributorBefore = await this.oRetro.feeDistributor();
+
+      expect(
+        this.oRetro
+          .connect(impersonatedSigner)
+          .setFeeDistributor(newFeeDistributor)
+      ).to.be.reverted;
+
+      await this.oRetro.setFeeDistributor(newFeeDistributor);
+      const feeDistributorAfter = await this.oRetro.feeDistributor();
+
+      expect(feeDistributorBefore).equals(this.feeDistributor);
+      expect(feeDistributorAfter).equals(newFeeDistributor);
+
+      // Cleanup
+      this.oRetro.setFeeDistributor(this.feeDistributor);
+    });
+
+    it("Only admin should be able to setTwapSeconds", async function () {
+      const newTwapSeconds = 100;
+      const twapSecondsBefore = await this.oRetro.twapSeconds();
+
+      expect(
+        this.oRetro.connect(impersonatedSigner).setTwapSeconds(newTwapSeconds)
+      ).to.be.reverted;
+
+      await this.oRetro.setTwapSeconds(newTwapSeconds);
+      const twapSecondsAfter = await this.oRetro.twapSeconds();
+
+      expect(twapSecondsBefore).equals(60);
+      expect(twapSecondsAfter).equals(newTwapSeconds);
+
+      // Cleanup
+      this.oRetro.setTwapSeconds(twapSecondsBefore);
     });
   });
 });
