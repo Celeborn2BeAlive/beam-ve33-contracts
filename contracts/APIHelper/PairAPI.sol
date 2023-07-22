@@ -60,6 +60,7 @@ contract PairAPI is Initializable {
 
         //fee data
         uint24 fee_level;
+        address underlyingPool;
     }
 
 
@@ -220,6 +221,7 @@ contract PairAPI is Initializable {
         _pairInfo.account_gauge_balance = accountGaugeLPAmount;
         _pairInfo.account_gauge_earned = earned;
         _pairInfo.fee_level = _type == false ? IPairInfo(underlyingPool).fee() : 0;
+        _pairInfo.underlyingPool = _type == false ? underlyingPool : _pair;
         
     }
 

@@ -3587,6 +3587,86 @@
           }
         }
       }
+    },
+    "eef89d5c00ccf1a2f8feddc8f138134d30e2fefc05cf8e029e70687f3b62c6d6": {
+      "address": "0x1d751EBF46d0A5387eD7E75d2e87f6F8EEc6A94C",
+      "txHash": "0x0f7105bf55a9812499d8f25b3790a8044b684663e0723073bd43a10bba477f85",
+      "layout": {
+        "solcVersion": "0.8.13",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "pairFactory",
+            "offset": 2,
+            "slot": "0",
+            "type": "t_contract(IPairFactory)5767",
+            "contract": "PairAPI",
+            "src": "contracts/APIHelper/PairAPI.sol:88"
+          },
+          {
+            "label": "voter",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_contract(IVoter)5920",
+            "contract": "PairAPI",
+            "src": "contracts/APIHelper/PairAPI.sol:89"
+          },
+          {
+            "label": "underlyingToken",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "PairAPI",
+            "src": "contracts/APIHelper/PairAPI.sol:91"
+          },
+          {
+            "label": "owner",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_address",
+            "contract": "PairAPI",
+            "src": "contracts/APIHelper/PairAPI.sol:93"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IPairFactory)5767": {
+            "label": "contract IPairFactory",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IVoter)5920": {
+            "label": "contract IVoter",
+            "numberOfBytes": "20"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
     }
   }
 }
