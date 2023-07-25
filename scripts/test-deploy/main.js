@@ -64,10 +64,16 @@ async function main () {
     // TODO: deploy oRETRO
     const oRetro = {"address": "0xE8386A9D2B59e755F41020Fc408B0D828Fd7ea7c"};
 
+    data = await ethers.getContractFactory("ProtocolFeeHandler");
+    FeeHandler = await data.deploy();
+    txDeployed = await FeeHandler.deployed();
+    console.log("FeeHandler: ", FeeHandler.address)
+
     data = await ethers.getContractFactory("GaugeFactoryV2");
     input = [PermissionsRegistry.address]
     GaugeFactoryV2 = await upgrades.deployProxy(data,input, {initializer: 'initialize'});
     txDeployed = await GaugeFactoryV2.deployed();
+
     if(oRetro != undefined && oRetro.address != ZERO_ADDRESS){
         await GaugeFactoryV2.setORetro(oRetro.address);
         console.log('Have set oRETRO for GaugeFactoryV2')
@@ -80,6 +86,8 @@ async function main () {
     input = [PermissionsRegistry.address, owner.address]
     GaugeFactoryV2_CL = await upgrades.deployProxy(data,input, {initializer: 'initialize'});
     txDeployed = await GaugeFactoryV2_CL.deployed();
+    await GaugeFactoryV2_CL.setFeeHandler(FeeHandler.address);
+
     if(oRetro != undefined && oRetro.address != ZERO_ADDRESS){
         await GaugeFactoryV2_CL.setORetro(oRetro.address);
         console.log('Have set oRETRO for GaugeFactoryV2_CL')

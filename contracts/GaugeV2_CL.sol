@@ -66,6 +66,9 @@ interface IMerklDistributionCreator {
     function createDistribution(DistributionParameters memory params) external returns(uint256);
     function rewardTokenMinAmounts(address) external view returns(uint256);
 }
+interface IFeeHandler {
+    function collectFee(address) external;
+}
 
 contract GaugeV2_CL is ReentrancyGuard, Ownable {
 
@@ -84,6 +87,7 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
     address public internal_bribe;
     address public external_bribe;
     address public feeVault;
+    address public feeHandler;
 
     DistributionParameters public gaugeParams;
     IMerklDistributionCreator public merkl;
@@ -186,6 +190,10 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
         gaugeParams.rewardToken = _oRetro;
     }
 
+    function setFeeHandler(address _feeHandler) external onlyOwner {
+        feeHandler = _feeHandler;
+    }
+
     /* -----------------------------------------------------------------------------
     --------------------------------------------------------------------------------
     --------------------------------------------------------------------------------
@@ -224,6 +232,7 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
      function _claimFees() internal returns (uint256 claimed0, uint256 claimed1) {
 
         address _token = address(TOKEN);
+        IFeeHandler(feeHandler).collectFee(_token);
         (claimed0, claimed1) = IFeeVault(feeVault).claimFees();
 
         if (claimed0 > 0 || claimed1 > 0) {

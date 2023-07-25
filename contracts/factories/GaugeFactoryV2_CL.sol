@@ -19,6 +19,7 @@ interface IGauge{
     function setGaugeRewarder(address _gr) external;
     function setFeeVault(address _feeVault) external;
     function setORetro(address) external;
+    function setFeeHandler(address) external;
 }
 
 
@@ -29,6 +30,7 @@ contract GaugeFactoryV2_CL is IGaugeFactory, OwnableUpgradeable {
     address public permissionsRegistry;
     address public gammaFeeRecipient;
     address public oRetro;
+    address public feeHandler;
 
     address[] internal __gauges;
     constructor() {}
@@ -56,6 +58,7 @@ contract GaugeFactoryV2_CL is IGaugeFactory, OwnableUpgradeable {
         __gauges.push(last_gauge);
         IAccessControl(oRetro).grantRole(MINTER_ROLE, last_gauge);
         IGauge(last_gauge).setORetro(oRetro);
+        IGauge(last_gauge).setFeeHandler(feeHandler);
         return last_gauge;
     }
 
@@ -145,6 +148,14 @@ contract GaugeFactoryV2_CL is IGaugeFactory, OwnableUpgradeable {
 
     function updateoRetroFor(address _gauge) external onlyAllowed {
         IGauge(_gauge).setORetro(oRetro);
+    }
+
+    function setFeeHandler(address _feeHandler) external onlyAllowed {
+        feeHandler = _feeHandler;
+    }
+
+    function updateFeeHandlerFor(address _gauge) external onlyAllowed {
+        IGauge(_gauge).setFeeHandler(feeHandler);
     }
 
 }
