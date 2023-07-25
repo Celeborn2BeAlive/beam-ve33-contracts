@@ -3,6 +3,7 @@ const { ethers } = require("hardhat");
 async function main() {
   const [deployer] = await ethers.getSigners();
 
+  const OptionFeeDistributor = await ethers.getContractFactory("OptionFeeDistributor");
   const UniswapV3Twap = await ethers.getContractFactory("UniswapV3Twap");
   const OptionTokenV2 = await ethers.getContractFactory("OptionTokenV2");
 
@@ -10,23 +11,23 @@ async function main() {
   const symbol = "oRETRO";
   const admin = deployer.address;
   const paymentToken = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"; // WMATIC
-  const underlyingToken = "0x85A2638E652d4265ca7567Dd2935464FF74740c2"; // RETRO 0x85A2638E652d4265ca7567Dd2935464FF74740c2
+  const underlyingToken = "0x519b31f22eb35ef086d19e90b2cbd9f1db1193ea"; // RETRO 0x85A2638E652d4265ca7567Dd2935464FF74740c2
   const gaugeFactory = "0x92ba53Fb2801cC1918916d62a6243eC47e278AFD";
-  // TODO: change this to the treasury address
-  const treasury = deployer.address;
   const votingEscrow = "0x83AA7C0074f128434d7c5Dc1AeC36266E36d484E"; // veRETRO
   // The discount given when exercising. 30 = user pays 30%
-  const discount = 2;
+  const discount = 50;
   // The discount given when exercising for veRETRO. 30 = user pays 30%
   const veDiscount = 0;
 
   // Using WMATIC/USDC pool TWAP temporarily for testing
   // TODO: change this to the RETRO/<paymentToken> pool
-  const factory = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
-  const token0 = "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270";
-  const token1 = "0x2791bca1f2de4661ed88a30c99a7a9449aa84174";
-  const fee = 500;
 
+    const [factory, token0, token1, fee] = [
+      "0x1f98431c8ad98523631ae4a59f267346ea31f984",
+      "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+      "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
+      100,
+    ];
   const uniswapV3Twap = await UniswapV3Twap.deploy(
     factory,
     token0,
@@ -36,6 +37,10 @@ async function main() {
 
   await uniswapV3Twap.deployed();
 
+  const feeDistributor = await OptionFeeDistributor.deploy();
+
+  await feeDistributor.deployed();
+
   const optionTokenV2 = await OptionTokenV2.deploy(
     name,
     symbol,
@@ -44,27 +49,16 @@ async function main() {
     underlyingToken,
     uniswapV3Twap.address,
     gaugeFactory,
-    treasury,
+    feeDistributor.address,
     discount,
     veDiscount,
     votingEscrow
   );
 
   await optionTokenV2.deployed();
-
+  
   console.log("UniswapV3Twap deployed to:", uniswapV3Twap.address);
   console.log("OptionTokenV2 deployed to:", optionTokenV2.address);
-
-  const twap = await optionTokenV2.getTimeWeightedAveragePrice(
-    "1000000000000000000"
-  );
-
-  const discountedPrice = await optionTokenV2.getDiscountedPrice(
-    "1000000000000000000"
-  );
-
-  console.log("TWAP:", twap.toString());
-  console.log("Discounted price:", discountedPrice.toString());
 }
 
 main()
