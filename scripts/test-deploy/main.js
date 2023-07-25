@@ -88,6 +88,10 @@ async function main () {
     }
     console.log("GaugeFactoryV2_CL: ", GaugeFactoryV2_CL.address)
 
+
+    // TODO
+    // oRetro.addGaugeFactory(GaugeFactoryV2_CL.address)
+
     data = await ethers.getContractFactory("VoterV3");
     input = [veRETRO.address, pairFactory.address, GaugeFactoryV2.address, BribeFactoryV3.address]
     VoterV3 = await upgrades.deployProxy(data,input, {initializer: 'initialize'});
@@ -126,7 +130,6 @@ async function main () {
     // already done
 
     // 8. Make sure _dibs and referral fees are set to 0. I would set your multisig as stakingNFT and dibs contract just in case
-
 
     data = await ethers.getContractFactory("PairAPI");
     input = [VoterV3.address]

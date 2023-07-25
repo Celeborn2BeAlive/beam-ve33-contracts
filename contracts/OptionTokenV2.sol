@@ -152,8 +152,6 @@ contract OptionTokenV2 is ERC20, AccessControl {
         ERC20 _paymentToken,
         ERC20 _underlyingToken,
         IUniswapV3Twap _twapOracle,
-        address _gaugeFactory,
-        address _gaugeFactoryCL,
         IOptionFeeDistributor _feeDistributor,
         uint256 _discount,
         uint256 _veDiscount,
@@ -161,8 +159,6 @@ contract OptionTokenV2 is ERC20, AccessControl {
     ) ERC20(_name, _symbol) {
         _grantRole(ADMIN_ROLE, _admin);
         _grantRole(PAUSER_ROLE, _admin);
-        _grantRole(ADMIN_ROLE, _gaugeFactory);
-        _grantRole(ADMIN_ROLE, _gaugeFactoryCL);
         _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
         _setRoleAdmin(MINTER_ROLE, ADMIN_ROLE);
         _setRoleAdmin(PAUSER_ROLE, ADMIN_ROLE);
@@ -272,6 +268,11 @@ contract OptionTokenV2 is ERC20, AccessControl {
     /// -----------------------------------------------------------------------
     /// Admin functions
     /// -----------------------------------------------------------------------
+
+
+    function addGaugeFactory(address _gaugeFactory) public onlyAdmin {
+        _grantRole(ADMIN_ROLE, _gaugeFactory);
+    }
 
     /// @notice Sets the twap oracle contract address.
     /// @param _twapOracle The new twap oracle contract address
