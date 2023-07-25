@@ -51,7 +51,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
         _initializer = msg.sender;
         team = msg.sender;
 
-        teamRate = 250; // 300 bps = 3%
+        teamRate = 25; // 25 bps = 2.5%
 
         EMISSION = 990;
         TAIL_EMISSION = 2;

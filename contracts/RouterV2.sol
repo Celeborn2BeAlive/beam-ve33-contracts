@@ -1,7 +1,3 @@
-/**
- *Submitted for verification at FtmScan.com on 2022-02-20
-*/
-
 // SPDX-License-Identifier: MIT
 // ftm.guru's extension of Solidly's periphery (Router)
 // https://github.com/andrecronje/solidly/blob/master/contracts/BaseV1-periphery.sol
