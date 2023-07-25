@@ -10,15 +10,15 @@ async function main() {
   const symbol = "oRETRO";
   const admin = deployer.address;
   const paymentToken = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"; // WMATIC
-  const underlyingToken = "0x85A2638E652d4265ca7567Dd2935464FF74740c2"; // RETRO
+  const underlyingToken = "0x85A2638E652d4265ca7567Dd2935464FF74740c2"; // RETRO 0x85A2638E652d4265ca7567Dd2935464FF74740c2
   const gaugeFactory = "0x92ba53Fb2801cC1918916d62a6243eC47e278AFD";
   // TODO: change this to the treasury address
   const treasury = deployer.address;
   const votingEscrow = "0x83AA7C0074f128434d7c5Dc1AeC36266E36d484E"; // veRETRO
   // The discount given when exercising. 30 = user pays 30%
-  const discount = 30;
+  const discount = 2;
   // The discount given when exercising for veRETRO. 30 = user pays 30%
-  const veDiscount = 100;
+  const veDiscount = 0;
 
   // Using WMATIC/USDC pool TWAP temporarily for testing
   // TODO: change this to the RETRO/<paymentToken> pool

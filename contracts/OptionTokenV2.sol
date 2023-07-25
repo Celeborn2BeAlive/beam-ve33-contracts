@@ -8,6 +8,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IRetro} from "./interfaces/IRetro.sol";
 import {IVotingEscrow} from "./interfaces/IVotingEscrow.sol";
 import {IUniswapV3Twap} from "./interfaces/IUniswapV3Twap.sol";
+import {IOptionFeeDistributor} from "./interfaces/IOptionFeeDistributor.sol";
 
 /// @title Option Token
 /// @notice Option token representing the right to purchase the underlying token
@@ -22,8 +23,8 @@ contract OptionTokenV2 is ERC20, AccessControl {
     /// -----------------------------------------------------------------------
     uint256 public constant MAX_DISCOUNT = 100; // 100%
     uint256 public constant MIN_DISCOUNT = 0; // 0%
-    uint256 public constant MAX_TWAP_SECONDS = 86400; // 25 hours
-    uint256 public constant FULL_LOCK = 26 * 7 * 86400; //26 weeks
+    uint256 public constant MAX_TWAP_SECONDS = 86400; // 2 days
+    uint256 public constant FULL_LOCK = 2 * 365 * 86400; // 2 years
 
     /// -----------------------------------------------------------------------
     /// Roles
@@ -72,7 +73,7 @@ contract OptionTokenV2 is ERC20, AccessControl {
         IUniswapV3Twap indexed _twapOracle,
         address indexed _paymentToken
     );
-    event SetTreasury(address indexed newTreasury);
+    event SetFeeDistributor(IOptionFeeDistributor indexed newFeeDistributor);
     event SetDiscount(uint256 discount);
     event SetVeDiscount(uint256 veDiscount);
     event PauseStateChanged(bool isPaused);
@@ -99,8 +100,8 @@ contract OptionTokenV2 is ERC20, AccessControl {
     /// the underlying token while exercising options (the strike price)
     IUniswapV3Twap public twapOracle;
 
-    /// @notice The treasury address which receives tokens paid during redemption
-    address public treasury;
+    /// @notice The contract that receives the payment tokens when options are exercised
+    IOptionFeeDistributor public feeDistributor;
 
     /// @notice the discount given during exercising. 30 = user pays 30%
     uint256 public discount;
@@ -152,7 +153,7 @@ contract OptionTokenV2 is ERC20, AccessControl {
         ERC20 _underlyingToken,
         IUniswapV3Twap _twapOracle,
         address _gaugeFactory,
-        address _treasury,
+        IOptionFeeDistributor _feeDistributor,
         uint256 _discount,
         uint256 _veDiscount,
         address _votingEscrow
@@ -167,13 +168,15 @@ contract OptionTokenV2 is ERC20, AccessControl {
         paymentToken = _paymentToken;
         underlyingToken = _underlyingToken;
         twapOracle = _twapOracle;
-        treasury = _treasury;
+        feeDistributor = _feeDistributor;
         discount = _discount;
         veDiscount = _veDiscount;
         votingEscrow = _votingEscrow;
 
+        paymentToken.approve(address(_feeDistributor), type(uint256).max);
+
         emit SetTwapOracleAndPaymentToken(_twapOracle, address(_paymentToken));
-        emit SetTreasury(_treasury);
+        emit SetFeeDistributor(_feeDistributor);
         emit SetDiscount(_discount);
         emit SetVeDiscount(_veDiscount);
     }
@@ -187,7 +190,7 @@ contract OptionTokenV2 is ERC20, AccessControl {
     /// @param _amount The amount of options tokens to exercise
     /// @param _maxPaymentAmount The maximum acceptable amount to pay. Used for slippage protection.
     /// @param _recipient The recipient of the purchased underlying tokens
-    /// @return The amount paid to the treasury to purchase the underlying tokens
+    /// @return The amount paid to the fee distributor to purchase the underlying tokens
     function exercise(
         uint256 _amount,
         uint256 _maxPaymentAmount,
@@ -202,7 +205,7 @@ contract OptionTokenV2 is ERC20, AccessControl {
     /// @param _maxPaymentAmount The maximum acceptable amount to pay. Used for slippage protection.
     /// @param _recipient The recipient of the purchased underlying tokens
     /// @param _deadline The Unix timestamp (in seconds) after which the call will revert
-    /// @return The amount paid to the treasury to purchase the underlying tokens
+    /// @return The amount paid to the fee distributor to purchase the underlying tokens
     function exercise(
         uint256 _amount,
         uint256 _maxPaymentAmount,
@@ -219,7 +222,7 @@ contract OptionTokenV2 is ERC20, AccessControl {
     /// @param _maxPaymentAmount The maximum acceptable amount to pay. Used for slippage protection.
     /// @param _recipient The recipient of the purchased underlying tokens
     /// @param _deadline The Unix timestamp (in seconds) after which the call will revert
-    /// @return The amount paid to the treasury to purchase the underlying tokens
+    /// @return The amount paid to the fee distributor to purchase the underlying tokens
     function exerciseVe(
         uint256 _amount,
         uint256 _maxPaymentAmount,
@@ -281,14 +284,19 @@ contract OptionTokenV2 is ERC20, AccessControl {
                     _twapOracle.token1() == _paymentToken))
         ) revert OptionToken_IncorrectPairToken();
         twapOracle = _twapOracle;
+        paymentToken = ERC20(_paymentToken);
+        paymentToken.approve(address(feeDistributor), type(uint256).max);
         emit SetTwapOracleAndPaymentToken(_twapOracle, _paymentToken);
     }
 
-    /// @notice Sets the treasury address. Only callable by the admin.
-    /// @param _treasury The new treasury address
-    function setTreasury(address _treasury) external onlyAdmin {
-        treasury = _treasury;
-        emit SetTreasury(_treasury);
+    /// @notice Sets the fee distributor. Only callable by the admin.
+    /// @param _feeDistributor The new fee distributor.
+    function setFeeDistributor(
+        IOptionFeeDistributor _feeDistributor
+    ) external onlyAdmin {
+        feeDistributor = _feeDistributor;
+        paymentToken.approve(address(_feeDistributor), type(uint256).max);
+        emit SetFeeDistributor(_feeDistributor);
     }
 
     /// @notice Sets the discount amount. Only callable by the admin.
@@ -370,8 +378,9 @@ contract OptionTokenV2 is ERC20, AccessControl {
         if (paymentAmount > _maxPaymentAmount)
             revert OptionToken_SlippageTooHigh();
 
-        // transfer payment tokens from msg.sender to the treasury
-        paymentToken.transferFrom(msg.sender, treasury, paymentAmount); // sCANTO reverts on failure
+        // transfer payment tokens from msg.sender to the fee distributor
+        paymentToken.transferFrom(msg.sender, address(this), paymentAmount);
+        feeDistributor.distribute(address(paymentToken), paymentAmount);
 
         // send underlying tokens to recipient
         underlyingToken.transfer(_recipient, _amount); // will revert on failure
@@ -392,8 +401,9 @@ contract OptionTokenV2 is ERC20, AccessControl {
         if (paymentAmount > _maxPaymentAmount)
             revert OptionToken_SlippageTooHigh();
 
-        // transfer payment tokens from msg.sender to the treasury
-        paymentToken.transferFrom(msg.sender, treasury, paymentAmount); // sCANTO reverts on failure
+        // transfer payment tokens from msg.sender to the fee distributor
+        paymentToken.transferFrom(msg.sender, address(this), paymentAmount);
+        feeDistributor.distribute(address(paymentToken), paymentAmount);
 
         // lock underlying tokens to veFLOW
         underlyingToken.approve(votingEscrow, _amount);

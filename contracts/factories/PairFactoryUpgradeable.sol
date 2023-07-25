@@ -13,7 +13,7 @@ contract PairFactoryUpgradeable is IPairFactory, OwnableUpgradeable {
     uint256 public stableFee;
     uint256 public volatileFee;
     uint256 public stakingNFTFee;
-    uint256 public MAX_REFERRAL_FEE; // 12%
+    uint256 public MAX_REFERRAL_FEE; // 0%
     uint256 public constant MAX_FEE = 100; // 1%
 
     address public feeManager;
@@ -43,8 +43,8 @@ contract PairFactoryUpgradeable is IPairFactory, OwnableUpgradeable {
         feeManager = msg.sender;
         stableFee = 4; // 0.04%
         volatileFee = 18; // 0.18%
-        stakingNFTFee = 3000; // 30% of stable/volatileFee
-        MAX_REFERRAL_FEE = 1200; // 12%
+        stakingNFTFee = 0; // 0% of stable/volatileFee
+        MAX_REFERRAL_FEE = 0; // 12%
     }
 
 

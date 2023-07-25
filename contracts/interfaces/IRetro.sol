@@ -9,4 +9,5 @@ interface IRetro {
     function transferFrom(address,address,uint) external returns (bool);
     function mint(address, uint) external returns (bool);
     function minter() external returns (address);
+    function setMinter(address) external;
 }
