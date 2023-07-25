@@ -153,6 +153,7 @@ contract OptionTokenV2 is ERC20, AccessControl {
         ERC20 _underlyingToken,
         IUniswapV3Twap _twapOracle,
         address _gaugeFactory,
+        address _gaugeFactoryCL,
         IOptionFeeDistributor _feeDistributor,
         uint256 _discount,
         uint256 _veDiscount,
@@ -161,6 +162,7 @@ contract OptionTokenV2 is ERC20, AccessControl {
         _grantRole(ADMIN_ROLE, _admin);
         _grantRole(PAUSER_ROLE, _admin);
         _grantRole(ADMIN_ROLE, _gaugeFactory);
+        _grantRole(ADMIN_ROLE, _gaugeFactoryCL);
         _setRoleAdmin(ADMIN_ROLE, ADMIN_ROLE);
         _setRoleAdmin(MINTER_ROLE, ADMIN_ROLE);
         _setRoleAdmin(PAUSER_ROLE, ADMIN_ROLE);
