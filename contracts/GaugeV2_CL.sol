@@ -126,7 +126,7 @@ contract GaugeV2_CL is ReentrancyGuard, Ownable {
         gaugeParams.propToken1 = 3000;               // Proportion of the rewards going for token 1 LPs
         gaugeParams.propFees = 4000;                 // Proportion of the rewards going for LPs that would have earned fees
         gaugeParams.numEpoch = 168;                  // Streaming rewards for a week = DURATION / 3600
-
+        
     }
 
     /* -----------------------------------------------------------------------------

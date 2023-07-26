@@ -24,7 +24,7 @@ interface IGauge{
 
 
 contract GaugeFactoryV2_CL is IGaugeFactory, OwnableUpgradeable {
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER");
     address public last_gauge;
     address public last_feeVault;
     address public permissionsRegistry;

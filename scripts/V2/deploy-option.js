@@ -3,8 +3,8 @@ const { ethers } = require("hardhat");
 async function main() {
   const [deployer] = await ethers.getSigners();
 
-  const OptionFeeDistributor = await ethers.getContractFactory("OptionFeeDistributor");
-  const UniswapV3Twap = await ethers.getContractFactory("UniswapV3Twap");
+  // const OptionFeeDistributor = await ethers.getContractFactory("OptionFeeDistributor");
+  // const UniswapV3Twap = await ethers.getContractFactory("UniswapV3Twap");
   const OptionTokenV2 = await ethers.getContractFactory("OptionTokenV2");
 
   const name = "Option to buy RETRO";
@@ -28,18 +28,18 @@ async function main() {
       "0x3a58a54c066fdc0f2d55fc9c89f0415c92ebf3c4",
       100,
     ];
-  const uniswapV3Twap = await UniswapV3Twap.deploy(
-    factory,
-    token0,
-    token1,
-    fee
-  );
+  // const uniswapV3Twap = await UniswapV3Twap.deploy(
+  //   factory,
+  //   token0,
+  //   token1,
+  //   fee
+  // );
 
-  await uniswapV3Twap.deployed();
+  // await uniswapV3Twap.deployed();
 
-  const feeDistributor = await OptionFeeDistributor.deploy();
+  // const feeDistributor = await OptionFeeDistributor.deploy();
 
-  await feeDistributor.deployed();
+  // await feeDistributor.deployed();
 
   const optionTokenV2 = await OptionTokenV2.deploy(
     name,

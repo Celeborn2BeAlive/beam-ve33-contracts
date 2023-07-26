@@ -2,10 +2,14 @@
 const { ethers  } = require('hardhat');
 const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants.js");
 
+const { erc20Abi, gammaProxyAbi, hypervisorAbi, CLRouterAbi, algebraRouterAbi, nonFungiblePositionAbi } = require("../V2/Abi.js")
+
 //chain
 const wmatic = {"address":"0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"}
 const cash = {"address": "0x5D066D022EDE10eFa2717eD3D79f22F949F8C175"}
 let whitelisted_tokens = ["0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270","0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619","0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174","0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6","0xc2132D05D31c914a87C6611C10748AEb04B58e8F","0x5D066D022EDE10eFa2717eD3D79f22F949F8C175","0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063","0x45c32fA6DF82ead1e2EF74d17b76547EDdFaFF89","0xa3Fa99A148fA48D14Ed51d610c367C61876997F1","0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4","0xbC2b48BC930Ddc4E5cFb2e87a45c379Aab3aac5C","0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6","0xEe327F889d5947c1dc1934Bb208a1E792F953E96","0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4","0xFbdd194376de19a88118e84E279b977f165d01b8","0x4028cba3965e8Aea7320e9eA50914861A14dc724","0x6749441Fdc8650b5b5a854ed255C82EF361f1596","0x434e7BBBc9ae9F4fFade0B3175FEf6e8A4A1C505"]
+const uniPool = {"address": "0xacf66f558f66e436518fd7ba63a0d85478fc00c6"}
+const feeLevel = 10000; //TODO to 1%
 
 //PAIRFACTORY CLASSIC
 const pairFactory = {"address": "0x1fC46294195aA87F77fAE299A14Bd1728dC1Cca9"}
@@ -17,16 +21,9 @@ async function main () {
     accounts = await ethers.getSigners();
     owner = accounts[0]
 
+    //const impersonateMyself = await ethers.getImpersonatedSigner("0xc8949dbaf261365083a4b46ab683BaE1C9273203");
+    const retro = await ethers.getContractAt("Retro", "0x65cd22173c15ae29c0d133a1eb30daa361953b95"); //, impersonateMyself);
     console.log('Deploying Contracts... Owner is: ' + owner.address);
-    
-    data = await ethers.getContractFactory("Retro");
-    retro = await data.deploy();
-    txDeployed = await retro.deployed();
-    console.log("retro Address: ", retro.address)
-
-    // initial mint
-    await retro.initialMint(owner.address)
-    console.log('initial mint of 50M RETRO to ' + owner.address)
     
     data = await ethers.getContractFactory("VeArtProxyUpgradeable");
     veArtProxy = await upgrades.deployProxy(data,[], {initializer: 'initialize'});
@@ -51,7 +48,8 @@ async function main () {
     // 3. PermissionRegistry: set the various multisig/emergency council and add any wallet you need to _roles
     const roles = ["VOTER_ADMIN", "GOVERNANCE", "GAUGE_ADMIN", "BRIBE_ADMIN", "FEE_MANAGER", "CL_FEES_VAULT_ADMIN"]
     for(let role of roles){
-        await PermissionsRegistry.setRoleFor(owner.address, role);
+        tx = await PermissionsRegistry.setRoleFor(owner.address, role);
+        await tx.wait()
         console.log('set role ' + role + ' for ' + owner.address);
     }
 
@@ -61,44 +59,60 @@ async function main () {
     txDeployed = await BribeFactoryV3.deployed();
     console.log("BribeFactoryV3: ", BribeFactoryV3.address)
 
-    // TODO: deploy oRETRO
-    const oRetro = {"address": "0xE8386A9D2B59e755F41020Fc408B0D828Fd7ea7c"};
+    UniswapV3Twap = await ethers.getContractFactory("UniswapV3Twap");
+    uniswapV3Twap = await UniswapV3Twap.deploy(
+      univ3_factory.address,
+      retro.address,
+      cash.address,
+      feeLevel
+    );
+  
+    await uniswapV3Twap.deployed();
 
-    data = await ethers.getContractFactory("ProtocolFeeHandler");
-    FeeHandler = await data.deploy();
-    txDeployed = await FeeHandler.deployed();
-    console.log("FeeHandler: ", FeeHandler.address)
+    OptionFeeDistributor = await ethers.getContractFactory("OptionFeeDistributor");
+    feeDistributor = await OptionFeeDistributor.deploy();
+    await feeDistributor.deployed();
 
     data = await ethers.getContractFactory("GaugeFactoryV2");
     input = [PermissionsRegistry.address]
     GaugeFactoryV2 = await upgrades.deployProxy(data,input, {initializer: 'initialize'});
     txDeployed = await GaugeFactoryV2.deployed();
-
-    if(oRetro != undefined && oRetro.address != ZERO_ADDRESS){
-        await GaugeFactoryV2.setORetro(oRetro.address);
-        console.log('Have set oRETRO for GaugeFactoryV2')
-    }else{
-        console.log("No oRetro address to set for GaugeFactoryV2")
-    }
     console.log("GaugeFactoryV2: ", GaugeFactoryV2.address)
 
     data = await ethers.getContractFactory("GaugeFactoryV2_CL");
     input = [PermissionsRegistry.address, owner.address]
     GaugeFactoryV2_CL = await upgrades.deployProxy(data,input, {initializer: 'initialize'});
     txDeployed = await GaugeFactoryV2_CL.deployed();
-    await GaugeFactoryV2_CL.setFeeHandler(FeeHandler.address);
-
-    if(oRetro != undefined && oRetro.address != ZERO_ADDRESS){
-        await GaugeFactoryV2_CL.setORetro(oRetro.address);
-        console.log('Have set oRETRO for GaugeFactoryV2_CL')
-    }else{
-        console.log("No oRetro address to set for GaugeFactoryV2_CL")
-    }
     console.log("GaugeFactoryV2_CL: ", GaugeFactoryV2_CL.address)
 
+    const discount = 50;
+    const veDiscount = 0;
+    OptionTokenV2 = await ethers.getContractFactory("OptionTokenV2");
+    optionTokenV2 = await OptionTokenV2.deploy(
+        "Option to buy RETRO",
+        "oRETRO",
+        owner.address,
+        cash.address,
+        retro.address,
+        uniswapV3Twap.address,
+        feeDistributor.address,
+        discount,
+        veDiscount,
+        veRETRO.address
+    );
+    
+    await optionTokenV2.deployed();
+    console.log('oRETRO deployed to: ' + optionTokenV2.address)
 
-    // TODO
-    // oRetro.addGaugeFactory(GaugeFactoryV2_CL.address)
+    tx = await optionTokenV2.addGaugeFactory(GaugeFactoryV2.address)
+    await tx.wait();
+    tx = await optionTokenV2.addGaugeFactory(GaugeFactoryV2_CL.address)
+    await tx.wait();
+
+    tx = await GaugeFactoryV2_CL.setORetro(optionTokenV2.address);
+    await tx.wait()
+    tx = await GaugeFactoryV2.setORetro(optionTokenV2.address);
+    await tx.wait()
 
     data = await ethers.getContractFactory("VoterV3");
     input = [veRETRO.address, pairFactory.address, GaugeFactoryV2.address, BribeFactoryV3.address]
@@ -106,7 +120,16 @@ async function main () {
     txDeployed = await VoterV3.deployed();
     console.log("VoterV3: ", VoterV3.address)
 
-    await BribeFactoryV3.setVoter(VoterV3.address)
+    data = await ethers.getContractFactory("ProtocolFeeHandler");
+    FeeHandler = await data.deploy(PermissionsRegistry.address, univ3_factory.address, VoterV3.address);
+    txDeployed = await FeeHandler.deployed();
+    console.log("FeeHandler: ", FeeHandler.address)
+
+    tx = await GaugeFactoryV2_CL.setFeeHandler(FeeHandler.address);
+    await tx.wait()
+
+    tx = await BribeFactoryV3.setVoter(VoterV3.address)
+    await tx.wait()
     console.log('set Voter for Bribe Factory')
 
     data = await ethers.getContractFactory("MinterUpgradeable");
@@ -116,23 +139,28 @@ async function main () {
     console.log("Minter: ", minter.address)
 
     // 0. set minter role in retro
-    await retro.setMinter(minter.address)
+    tx = await retro.setMinter(minter.address)
+    await tx.wait()
     console.log('set MinterUpgradeable as minter for Retro')
 
     // 1. _init() Voter with whitelisted tokens (u can do it later), permission reg and minter
     whitelisted_tokens.push(retro.address)
-    await VoterV3._init(whitelisted_tokens, PermissionsRegistry.address, minter.address)
+    tx = await VoterV3._init(whitelisted_tokens, PermissionsRegistry.address, minter.address)
+    await tx.wait()
     console.log('finished init of VoterV3')
 
     // 2. Add GaugeFactoryV2_CL + AlgebraFactory in Voter if CL is used (can be added later if Algebra is not ready)
-    await VoterV3.addFactory(univ3_factory.address, GaugeFactoryV2_CL.address);
+    tx = await VoterV3.addFactory(univ3_factory.address, GaugeFactoryV2_CL.address);
+    await tx.wait()
     console.log('added GaugeFactoryV2_CL as factory for VoterV3')
 
     // 4. Make sure rewardDistro 'depositor' is the minter
-    await RewardsDistributor.setDepositor(minter.address)
+    tx = await RewardsDistributor.setDepositor(minter.address)
+    await tx.wait()
 
     // 5. Make sure VOTER is set in veRETRO (setVoter())
-    await veRETRO.setVoter(VoterV3.address)
+    tx = await veRETRO.setVoter(VoterV3.address)
+    await tx.wait()
 
     // 6. Set TEAM wallet in veRETRO (this wallet can change few params)
     // already done
@@ -167,9 +195,7 @@ async function main () {
     console.log('check up')
     console.log('/////////////////////////')
     
-    console.log('RETRO owner balance (should be 50000000000000000000000000): ' + await retro.balanceOf(owner.address))
     console.log('RETRO minter role owner (should be ' + minter.address + '): ' + await retro.minter())
-    console.log('RETRO initial minted (should be true): ' + await retro.initialMinted())
 
     console.log('veRETRO artProxy (should be '+ veArtProxy.address +'): ' + await veRETRO.artProxy())
     console.log('veRETRO team (should be '+ owner.address +'): ' + await veRETRO.team())
@@ -177,7 +203,7 @@ async function main () {
 
     console.log('RewardsDistributorV2 depositor (should be '+ minter.address +'): ' + await RewardsDistributor.depositor())
     console.log('RewardsDistributorV2 token (should be '+ retro.address +'): ' + await RewardsDistributor.token())
-    console.log('RewardsDistributorV2 depositor (should be '+ veRETRO.address +'): ' + await RewardsDistributor.voting_escrow())
+    console.log('RewardsDistributorV2 veRETRO (should be '+ veRETRO.address +'): ' + await RewardsDistributor.voting_escrow())
 
     console.log('BribeFactoryV3 voter (should be '+ VoterV3.address +'): ' + await BribeFactoryV3.voter())
 

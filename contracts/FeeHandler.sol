@@ -17,7 +17,6 @@ interface IGauge{
 }
 
 contract ProtocolFeeHandler {
-    using SafeERC20 for IERC20;
 
     IPermissionsRegistry public permissionRegistry;
     IUniV3Factory public uniFactory;
@@ -30,7 +29,7 @@ contract ProtocolFeeHandler {
     }    
 
     modifier onlyGaugeOrAdmin {
-        require(voter.isGauge(msg.sender) || permissionRegistry.hasRole("CL_FEES_VAULT_ADMIN",msg.sender), "ERR: NOT_GAUGE");
+        require(voter.isGauge(msg.sender) || permissionRegistry.hasRole("CL_FEES_VAULT_ADMIN",msg.sender), "ERR: NOT_CL_FEES_ADMIN");
         _;
     }
 
@@ -59,18 +58,7 @@ contract ProtocolFeeHandler {
 
     function collectFee(address _pool) external onlyGaugeOrAdmin {
         IUniswapV3Pool pool = IUniswapV3Pool(_pool);
-        address _token0 = pool.token0();
-        address _token1 = pool.token1();
         address _feeVault = IGauge(voter.gauges(_pool)).feeVault();
-        (uint128 fee0, uint128 fee1) = pool.protocolFees();
-        pool.collectProtocol(address(this), type(uint128).max, type(uint128).max);
-        if(fee0 > 0){
-            IERC20(_token0).safeTransfer(_feeVault, fee0);
-        }
-        if(fee1 > 0){
-            IERC20(_token1).safeTransfer(_feeVault, fee1);
-        }
+        pool.collectProtocol(_feeVault, type(uint128).max, type(uint128).max);
     }
-
-
 }

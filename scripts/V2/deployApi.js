@@ -34,9 +34,9 @@ async function main () {
    txDeployed = await veNFTAPI.deployed();
    console.log("veNFTAPI: ", veNFTAPI.address)*/
 
-   const data = await ethers.getContractFactory('PairAPI');
+   const data = await ethers.getContractFactory('PairAPIPlain');
    console.log('PairAPI...');
-   await upgrades.upgradeProxy('0xD0665559d51c88098540EcE8D068B4C3B339c259', data);
+   await upgrades.upgradeProxy('0x893235e8eC4394fCa01c0d7F3e5eD6cb0B58b13F', data);
    console.log('PairAPI upgraded');
     
 
