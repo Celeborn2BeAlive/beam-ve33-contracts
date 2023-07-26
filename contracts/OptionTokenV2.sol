@@ -259,7 +259,7 @@ contract OptionTokenV2 is ERC20, AccessControl {
     ) public view returns (uint256) {
         return
             twapOracle.estimateAmountOut(
-                address(paymentToken),
+                address(underlyingToken),
                 uint128(_amount),
                 twapSeconds
             );
