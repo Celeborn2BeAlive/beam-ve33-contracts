@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat");
 
-const OPTION_ADDRESS = "0xbd9de110d1fb8ae7e47732c755a3cab4e43f321a";
+const OPTION_ADDRESS = "0x9945EE94083B8e2203e5Ebd5b5A80D2f374dCCF8";
 
 async function getOptionContract() {
   const optionTokenV2 = await ethers.getContractAt("OptionTokenV2", OPTION_ADDRESS);
