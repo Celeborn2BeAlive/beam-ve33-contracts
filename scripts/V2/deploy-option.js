@@ -10,8 +10,8 @@ async function main() {
   const name = "Option to buy RETRO";
   const symbol = "oRETRO";
   const admin = deployer.address;
-  const paymentToken = "0x5D066D022EDE10eFa2717eD3D79f22F949F8C175"; // WMATIC
-  const underlyingToken = "0x65Cd22173c15Ae29c0d133A1EB30Daa361953b95"; // RETRO 0x85A2638E652d4265ca7567Dd2935464FF74740c2
+  const paymentToken = "0x5D066D022EDE10eFa2717eD3D79f22F949F8C175"; // CASH
+  const underlyingToken = "0xBFA35599c7AEbb0dAcE9b5aa3ca5f2a79624D8Eb"; // RETRO 0xBFA35599c7AEbb0dAcE9b5aa3ca5f2a79624D8Eb
   
   const gaugeFactory = "0xA7315EB57b3C9EA0B279B770DFf0f10F3AEEaa8D";
   const gaugeFactoryCL = "0xB428a795495527FEe790c9811EcF4f8baE437F65";

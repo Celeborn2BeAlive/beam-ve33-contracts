@@ -20,6 +20,7 @@ interface IGauge{
     function setFeeVault(address _feeVault) external;
     function setORetro(address) external;
     function setFeeHandler(address) external;
+    function setMerkl(address) external;
 }
 
 

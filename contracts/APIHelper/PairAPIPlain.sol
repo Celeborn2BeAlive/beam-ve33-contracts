@@ -16,7 +16,7 @@ import '../interfaces/IPairInfo.sol';
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol"; 
 
-contract PairAPITest is Initializable {
+contract PairAPIPlain is Initializable {
 
 
     struct pairInfo {
