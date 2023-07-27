@@ -1,5 +1,6 @@
 const { ethers, network } = require("hardhat");
 const data = require("./satin-ido-airdrop.json")
+// const data = require("./fake-airdrop.json")
 
 // Ratio of SATIN to RETRO
 const ratio = 3662114334138721;
@@ -11,7 +12,7 @@ const veAirdropAddress = "0x0F3DF5d51754A0F390dB482cB45977EAC33a815B";
 const chunkSize = 10;
 
 // Specify the chunk to start at
-const startAtChunk = 4;
+const startAtChunk = 0;
 
 async function chunkArray(array, chunkSize) {
   const chunks = []
@@ -22,22 +23,26 @@ async function chunkArray(array, chunkSize) {
 }
 
 async function main() {
-  const addressToImpersonate = "0x38cc8e2bfe87ba71a0b4c893d5a94fbdcbd5e5ec"
+  // const addressToImpersonate = "0x38cc8e2bfe87ba71a0b4c893d5a94fbdcbd5e5ec"
 
-  // impersonate the deployer
-  await network.provider.request({
-    method: "hardhat_impersonateAccount",
-    params: [addressToImpersonate],
-  });
+  // // impersonate the deployer
+  // await network.provider.request({
+    // method: "hardhat_impersonateAccount",
+    // params: [addressToImpersonate],
+  // });
 
+  // const signer = ethers.provider.getSigner(addressToImpersonate);
 
-  const signer = ethers.provider.getSigner(addressToImpersonate);
+  const signer = ethers.provider.getSigner();
+
+  console.log("Signer: ", await signer.getAddress())
 
   const veAirdrop = await ethers.getContractAt("VeAirdrop", veAirdropAddress, signer);
   const underlyingToken = await ethers.getContractAt("ERC20", await veAirdrop.underlyingToken(), signer);
 
   // approve the airdrop contract to spend the underlying token
-  await underlyingToken.approve(veAirdrop.address, ethers.constants.MaxUint256)
+  const tx = await underlyingToken.approve(veAirdrop.address, ethers.constants.MaxUint256)
+  await tx.wait()
 
   // Split the addresses into chunks
   const chunks = await chunkArray(data, chunkSize)
@@ -62,10 +67,16 @@ async function main() {
       airdropped = airdropped.add(retroAmount)
       nonRatioAirdropped = nonRatioAirdropped.add(satinAmount)
     }
+
+    console.log("Addresses: ", addresses)
+    console.log("Amounts: ", amounts)
     
-    console.log(`Airdropping (index: ${i})...`)
+    console.log(`Airdropping (index: ${i})`)
     // Airdrop the chunk
-    await veAirdrop.airdrop(addresses, amounts, 5260000);
+    const tx = await veAirdrop.airdrop(addresses, amounts, 5260000);
+    const receipt = await tx.wait()
+    const gasUsed = BigInt(receipt.cumulativeGasUsed) * BigInt(receipt.effectiveGasPrice);
+    console.log("Gas used: ", ethers.utils.formatUnits(gasUsed.toString(), "gwei"))
     console.log("Amount airdropped: ", ethers.utils.formatUnits(airdropped))
     console.log("Amount airdropped (non-ratio): ", ethers.utils.formatUnits(nonRatioAirdropped))
     console.log(`Airdropped  ${addresses.length * (i+1)} / ${data.length} addresses`)
