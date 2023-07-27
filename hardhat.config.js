@@ -63,7 +63,7 @@ module.exports = {
 
     hardhat: {
       forking: {
-        url: "https://polygon-rpc.com",
+        url: "https://rpc.ankr.com/polygon",
         chainId: 137,
       },
       //accounts: []
