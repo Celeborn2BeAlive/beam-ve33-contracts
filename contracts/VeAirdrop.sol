@@ -8,12 +8,10 @@ import {IVotingEscrow} from "./interfaces/IVotingEscrow.sol";
 contract VeAirdrop {
   IVotingEscrow public immutable votingEscrow;
   IERC20 public immutable underlyingToken;
-  uint256 public immutable lockDuration;
 
-  constructor(IVotingEscrow _votingEscrow, IERC20 _underlyingToken, uint256 _lockDuration) {
+  constructor(IVotingEscrow _votingEscrow, IERC20 _underlyingToken) {
     votingEscrow = _votingEscrow;
     underlyingToken = _underlyingToken;
-    lockDuration = _lockDuration;
 
     underlyingToken.approve(address(votingEscrow), type(uint256).max);
 
@@ -21,7 +19,7 @@ contract VeAirdrop {
     require(votingEscrow.token() == address(underlyingToken), "VeAirdrop: voting escrow token mismatch");
   }
 
-  function airdrop(address[] memory recipients, uint256[] memory values) public returns (bool) {
+  function airdrop(address[] memory recipients, uint256[] memory values, uint256 lockDuration) public returns (bool) {
     require(recipients.length == values.length, "VeAirdrop: recipients and values length mismatch");
     for (uint256 i = 0; i < recipients.length; i++) {
       underlyingToken.transferFrom(msg.sender, address(this), values[i]);

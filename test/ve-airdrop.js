@@ -26,16 +26,14 @@ describe("VE Airdrop", () => {
     veAirdrop = await VeAirdrop.deploy(
       votingEscrowAddress,
       underlyingTokenAddress,
-      lockDuration
     );
     await veAirdrop.deployed();
     
     expect(await veAirdrop.votingEscrow()).to.equal(votingEscrowAddress);
     expect(await veAirdrop.underlyingToken()).to.equal(underlyingTokenAddress);
-    expect(await veAirdrop.lockDuration()).to.equal(lockDuration);
 
     veAirdrop = veAirdrop;
-    
+   
   });
   
   it("should airdrop the correct amount of tokens", async () => {
@@ -63,7 +61,7 @@ describe("VE Airdrop", () => {
 
     console.log("balancesBefore", balancesBefore);
     
-    await veAirdrop.connect(signer).airdrop(recipients, values);
+    await veAirdrop.connect(signer).airdrop(recipients, values, lockDuration);
 
     const balancesAfter = [];
     for (let i = 0; i < recipients.length; i++) {
