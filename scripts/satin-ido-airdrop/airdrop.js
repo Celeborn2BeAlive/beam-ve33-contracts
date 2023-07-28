@@ -6,10 +6,8 @@ const data = require("./satin-ido-airdrop.json")
 const ratio = 3662114334138721;
 const ratioDecimals = 13;
 
-const veAirdropAddress = "0x0F3DF5d51754A0F390dB482cB45977EAC33a815B";
-
 // Chunk size for airdrop
-const chunkSize = 10;
+const chunkSize = 15;
 
 // Specify the chunk to start at
 const startAtChunk = 0;
@@ -23,12 +21,16 @@ async function chunkArray(array, chunkSize) {
 }
 
 async function main() {
-  // const addressToImpersonate = "0x38cc8e2bfe87ba71a0b4c893d5a94fbdcbd5e5ec"
 
-  // // impersonate the deployer
+
+  //const underlyingTokenAddr = "0xBFA35599c7AEbb0dAcE9b5aa3ca5f2a79624D8Eb";
+
+  //const addressToImpersonate = "0xc8949dbaf261365083a4b46ab683BaE1C9273203"
+
+  // impersonate the deployer
   // await network.provider.request({
-    // method: "hardhat_impersonateAccount",
-    // params: [addressToImpersonate],
+  //   method: "hardhat_impersonateAccount",
+  //   params: [addressToImpersonate],
   // });
 
   // const signer = ethers.provider.getSigner(addressToImpersonate);
@@ -37,12 +39,18 @@ async function main() {
 
   console.log("Signer: ", await signer.getAddress())
 
-  const veAirdrop = await ethers.getContractAt("VeAirdrop", veAirdropAddress, signer);
-  const underlyingToken = await ethers.getContractAt("ERC20", await veAirdrop.underlyingToken(), signer);
+  const veAirdrop = await ethers.getContractAt("VeAirdrop", "0x61abd1f2e06343690990e9ed45ced079973e31df", signer);
+
+  //const underlyingToken = await ethers.getContractAt("Retro", underlyingTokenAddr, signer);
 
   // approve the airdrop contract to spend the underlying token
-  const tx = await underlyingToken.approve(veAirdrop.address, ethers.constants.MaxUint256)
-  await tx.wait()
+  //const tx = await underlyingToken.approve(veAirdrop.address, ethers.constants.MaxUint256)
+  //await tx.wait()
+
+  //tx = await underlyingToken.transfer(veAirdrop.address, "5000000000000000000000000");
+  //await tx.wait();
+
+  //console.log('sent 5M retro to veAirdrop');
 
   // Split the addresses into chunks
   const chunks = await chunkArray(data, chunkSize)

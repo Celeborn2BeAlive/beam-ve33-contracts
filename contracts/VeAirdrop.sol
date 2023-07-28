@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 
 import {IERC20} from "./interfaces/IERC20.sol";
 import {IVotingEscrow} from "./interfaces/IVotingEscrow.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract VeAirdrop {
+contract VeAirdrop is Ownable {
   IVotingEscrow public immutable votingEscrow;
   IERC20 public immutable underlyingToken;
 
@@ -19,12 +20,17 @@ contract VeAirdrop {
     require(votingEscrow.token() == address(underlyingToken), "VeAirdrop: voting escrow token mismatch");
   }
 
-  function airdrop(address[] memory recipients, uint256[] memory values, uint256 lockDuration) public returns (bool) {
+  function airdrop(address[] memory recipients, uint256[] memory values, uint256 lockDuration) public onlyOwner returns (bool) {
     require(recipients.length == values.length, "VeAirdrop: recipients and values length mismatch");
-    for (uint256 i = 0; i < recipients.length; i++) {
-      underlyingToken.transferFrom(msg.sender, address(this), values[i]);
-      votingEscrow.create_lock_for(values[i], lockDuration, recipients[i]);
+    unchecked {
+      for (uint256 i = 0; i < recipients.length; i++) {
+        votingEscrow.create_lock_for(values[i], lockDuration, recipients[i]);
+      }
     }
     return true;
+  }
+
+  function claimBack(uint256 _amount) public onlyOwner {
+    underlyingToken.transfer(owner(), _amount);
   }
 }
