@@ -10,7 +10,7 @@ const ratioDecimals = 13;
 const chunkSize = 15;
 
 // Specify the chunk to start at
-const startAtChunk = 0;
+const startAtChunk = 3;
 
 async function chunkArray(array, chunkSize) {
   const chunks = []
@@ -81,7 +81,7 @@ async function main() {
     
     console.log(`Airdropping (index: ${i})`)
     // Airdrop the chunk
-    const tx = await veAirdrop.airdrop(addresses, amounts, 5260000);
+    const tx = await veAirdrop.airdrop(addresses, amounts, 5260000, { gasLimit: 10000000 });
     const receipt = await tx.wait()
     const gasUsed = BigInt(receipt.cumulativeGasUsed) * BigInt(receipt.effectiveGasPrice);
     console.log("Gas used: ", ethers.utils.formatUnits(gasUsed.toString(), "gwei"))
