@@ -101,7 +101,6 @@ contract SatinMigration is Ownable, ReentrancyGuard {
     uint256 public startTime;
     uint256 public endTime;
     uint256 public retroPerSatin;
-    uint256 public two_months = 62 * 86400;
 
     constructor() public {
 

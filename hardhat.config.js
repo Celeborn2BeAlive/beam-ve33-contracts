@@ -46,7 +46,7 @@ module.exports = {
       url: "https://polygon-mainnet.infura.io/v3/4a67f93cb54e431b8ede149e62f97323",
       chainId: 137,
       accounts: PRIVATEKEY,
-      gasPrice: 200e9,
+      gasPrice: 400e9,
     },
 
     bscTestnet: {

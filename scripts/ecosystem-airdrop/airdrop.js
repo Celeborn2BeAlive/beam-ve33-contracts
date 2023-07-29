@@ -11,34 +11,34 @@ async function chunkArray(array, chunkSize) {
 async function main(airdrop, options) {
 
 
-  const underlyingTokenAddr = "0xBFA35599c7AEbb0dAcE9b5aa3ca5f2a79624D8Eb";
+  //const underlyingTokenAddr = "0xBFA35599c7AEbb0dAcE9b5aa3ca5f2a79624D8Eb";
 
-  const addressToImpersonate = "0xc8949dbaf261365083a4b46ab683BaE1C9273203"
+//   const addressToImpersonate = "0xc8949dbaf261365083a4b46ab683BaE1C9273203"
 
- //  impersonate the deployer
-   await network.provider.request({
-     method: "hardhat_impersonateAccount",
-     params: [addressToImpersonate],
-   });
+//  //  impersonate the deployer
+//    await network.provider.request({
+//      method: "hardhat_impersonateAccount",
+//      params: [addressToImpersonate],
+//    });
 
-   const signer = ethers.provider.getSigner(addressToImpersonate);
+//    const signer = ethers.provider.getSigner(addressToImpersonate);
 
-  // const signer = ethers.provider.getSigner();
+  const signer = ethers.provider.getSigner();
 
   console.log("Signer: ", await signer.getAddress())
 
   const veAirdrop = await ethers.getContractAt("VeAirdrop", "0x61abd1f2e06343690990e9ed45ced079973e31df", signer);
 
- const underlyingToken = await ethers.getContractAt("Retro", underlyingTokenAddr, signer);
+ //const underlyingToken = await ethers.getContractAt("Retro", underlyingTokenAddr, signer);
 
   // approve the airdrop contract to spend the underlying token
   //const tx = await underlyingToken.approve(veAirdrop.address, ethers.constants.MaxUint256)
   //await tx.wait()
 
-  tx = await underlyingToken.transfer(veAirdrop.address, "5000000000000000000000000");
-  await tx.wait();
+  // tx = await underlyingToken.transfer(veAirdrop.address, "2500000000000000000000000");
+  // await tx.wait();
 
-  //console.log('sent 5M retro to veAirdrop');
+  // console.log('sent 2.5M retro to veAirdrop');
 
   // Split the addresses into chunks
   const chunks = await chunkArray(airdrop.addresses, options.chunkSize)
@@ -63,7 +63,7 @@ async function main(airdrop, options) {
     console.log(`Airdropping (index: ${i})`)
     // Airdrop the chunk
     const tx = await veAirdrop.airdrop(addresses, amounts, airdrop.lockTime, {
-      gasLimit: 10000000,
+      gasLimit: 7500000,
     });
     const receipt = await tx.wait()
     const gasUsed = BigInt(receipt.cumulativeGasUsed) * BigInt(receipt.effectiveGasPrice);
@@ -75,22 +75,22 @@ async function main(airdrop, options) {
 
 const airdrops = {
   thena: {
-    amount: ethers.BigNumber.from("1000000000000000000"), 
+    amount: ethers.BigNumber.from("547880000000000000000"), 
     addresses: require("./addresses/thena.json"),
     lockTime: 63072000
   },
   ramses: {
-    amount: ethers.BigNumber.from("1000000000000000000"),
+    amount: ethers.BigNumber.from("273980000000000000000"),
     addresses: require("./addresses/ramses.json"),
     lockTime: 63072000
   },
   chronos: {
-    amount: ethers.BigNumber.from("1000000000000000000"),
+    amount: ethers.BigNumber.from("273940000000000000000"),
     addresses: require("./addresses/chronos.json"),
     lockTime: 63072000
   },
   velodrome: {
-    amount: ethers.BigNumber.from("1000000000000000000"),
+    amount: ethers.BigNumber.from("273940000000000000000"),
     addresses: require("./addresses/velodrome.json"),
     lockTime: 63072000
   }
