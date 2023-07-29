@@ -25,9 +25,9 @@ async function main () {
     accounts = await ethers.getSigners();
     owner = accounts[0]
 
-    const voterContract = await ethers.getContractFactory("VoterV3Test")
-    await upgrades.upgradeProxy('0x1419fcFB00Bbf339801AfE07dddA87Afba33A4A9', voterContract);
-    console.log('GaugeFactoryCL upgraded');
+    const veartContract = await ethers.getContractFactory("VeArtProxyUpgradeable")
+    await upgrades.upgradeProxy('0x2f37885505cB4CcabBD587b1f56821A08685CD0C', veartContract);
+    console.log('VeArtProxy upgraded');
 
 }
 
