@@ -11,7 +11,7 @@ contract OptionFeeDistributor {
     function distribute(IERC20 token, uint256 amount) external {
         require(token.transferFrom(msg.sender, address(this), amount));
 
-        uint256 half = amount / 2;
+        uint256 half = amount / 4;
         uint256 otherHalf = amount - half;
 
         require(token.transfer(address1, half));
