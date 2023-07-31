@@ -154,8 +154,7 @@ contract PairAPI is Initializable {
         address underlyingPool = _type == false ? IHypervisor(_pair).pool() : _pair;
 
         if(_type == false){
-            r0 = IERC20(token_0).balanceOf(underlyingPool);
-            r1 = IERC20(token_1).balanceOf(underlyingPool);
+            (r0,r1) = IHypervisor(_pair).getTotalAmounts();
         } else {
             (r0,r1,) = ipair.getReserves();
         }

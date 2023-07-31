@@ -4,13 +4,21 @@ const { ethers  } = require('hardhat');
 const pools = []
 
 async function main () {
-    accounts = await ethers.getSigners();
-    owner = accounts[0]
 
-    console.log('Deploying Contracts... Owner is: ' + owner.address);
+  // const addressToImpersonate = "0xc8949dbaf261365083a4b46ab683BaE1C9273203"
+
+  // await network.provider.request({
+  //   method: "hardhat_impersonateAccount",
+  //   params: [addressToImpersonate],
+  // });
+
+  // const signer = ethers.provider.getSigner(addressToImpersonate);
+
+  const signer = ethers.provider.getSigner();
+
     
-    feeHandler = await ethers.getContractAt("ProtocolFeeHandler", "0x5A39D3fF53844a148d0040738F5D57c7eC0398db");
-    voter = await ethers.getContractAt("VoterV3", "0xAcCbA5e852AB85E5E3a84bc8E36795bD8cEC5C73");
+    feeHandler = await ethers.getContractAt("ProtocolFeeHandler", "0x5A39D3fF53844a148d0040738F5D57c7eC0398db", signer);
+    voter = await ethers.getContractAt("VoterV3", "0xAcCbA5e852AB85E5E3a84bc8E36795bD8cEC5C73", signer);
 
     for(let pool of pools){
         tx = await voter.createGauge(pool, 1);
