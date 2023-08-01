@@ -215,8 +215,8 @@ contract PairAPI is Initializable {
 
         // Account Info
         _pairInfo.account_lp_balance = IERC20(_pair).balanceOf(_account);
-        _pairInfo.account_token0_balance = IERC20(token_0).balanceOf(_account);
-        _pairInfo.account_token1_balance = IERC20(token_1).balanceOf(_account);
+        _pairInfo.account_token0_balance = IERC20(token_0).balanceOf(underlyingPool);
+        _pairInfo.account_token1_balance = IERC20(token_1).balanceOf(underlyingPool);
         _pairInfo.account_gauge_balance = accountGaugeLPAmount;
         _pairInfo.account_gauge_earned = earned;
         _pairInfo.fee_level = _type == false ? IPairInfo(underlyingPool).fee() : 0;
