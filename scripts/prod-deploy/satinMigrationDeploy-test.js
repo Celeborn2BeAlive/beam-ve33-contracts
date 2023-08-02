@@ -21,10 +21,9 @@ async function main () {
 
     const impersonateMyself = await ethers.getImpersonatedSigner("0xc8949dbaf261365083a4b46ab683BaE1C9273203");
     const satin = await ethers.getContractAt("SatinV2Receipt", "0x48DB082Dbf85615820809e0BD4CEDb19229f0B91", impersonateMyself);
-    const retro = await ethers.getContractAt("Retro", "0xBFA35599c7AEbb0dAcE9b5aa3ca5f2a79624D8Eb", impersonateMyself);
-    const veRetro = await ethers.getContractAt("VotingEscrow", "0xB419cE2ea99f356BaE0caC47282B9409E38200fa", impersonateMyself);
+    const oretro = await ethers.getContractAt("OptionTokenV2", "0x3A29CAb2E124919d14a6F735b6033a3AaD2B260F", impersonateMyself);
 
-    const impersonateHolder = await ethers.getImpersonatedSigner("0xe5153e6fe519820a1169c2eee627d7d6c2e7f7e3");
+    const impersonateHolder = await ethers.getImpersonatedSigner("0x1d8a6b7941ef1349c1b5E378783Cd56B001EcfBc");
     //console.log('Deploying Contracts... Owner is: ' + owner.address);
 
     data = await ethers.getContractFactory("SatinMigration");
@@ -37,20 +36,18 @@ async function main () {
 
     console.log('hasRole', await satin.hasRole(minter, migration.address))
 
-    tx = await retro.transfer(migration.address, "10000000000000000000000000")
+    tx = await oretro.transfer(migration.address, "1000000000000000000000")
     await tx.wait()
 
     const migrationContract = await ethers.getContractAt("SatinMigration", migration.address, impersonateHolder);
 
-    console.log('3 to release', await migrationContract.getRetroToRelease("0xe5153e6fe519820a1169c2eee627d7d6c2e7f7e3"));
-    console.log('3 balance satin before', await satin.balanceOf("0xe5153e6fe519820a1169c2eee627d7d6c2e7f7e3"))
-    console.log('3 balance retro before', await retro.balanceOf("0xe5153e6fe519820a1169c2eee627d7d6c2e7f7e3"))
-    console.log('3 balance votes before', await veRetro.getVotes("0xe5153e6fe519820a1169c2eee627d7d6c2e7f7e3"))
-    tx = await migrationContract.claimRetro();
+    console.log('3 to release', await migrationContract.getORetroToRelease("0x1d8a6b7941ef1349c1b5E378783Cd56B001EcfBc"));
+    console.log('3 balance satin before', await satin.balanceOf("0x1d8a6b7941ef1349c1b5E378783Cd56B001EcfBc"))
+    console.log('3 balance oretro before', await oretro.balanceOf("0x1d8a6b7941ef1349c1b5E378783Cd56B001EcfBc"))
+    tx = await migrationContract.claimORetro();
     await tx.wait()
-    console.log('3 balance satin after', await satin.balanceOf("0xe5153e6fe519820a1169c2eee627d7d6c2e7f7e3"))
-    console.log('3 balance retro after', await retro.balanceOf("0xe5153e6fe519820a1169c2eee627d7d6c2e7f7e3"))
-    console.log('3 balance votes after', await veRetro.getVotes("0xe5153e6fe519820a1169c2eee627d7d6c2e7f7e3"))
+    console.log('3 balance satin after', await satin.balanceOf("0x1d8a6b7941ef1349c1b5E378783Cd56B001EcfBc"))
+    console.log('3 balance oretro after', await oretro.balanceOf("0x1d8a6b7941ef1349c1b5E378783Cd56B001EcfBc"))
 }
 
 main()

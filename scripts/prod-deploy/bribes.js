@@ -1,18 +1,16 @@
 //const ether = require('@openzeppelin/test-helpers/src/ether');
 const { ethers  } = require('hardhat');
 
-const pools = ["0x8ceD58A2dE3C2ea5D3cED3eb4331158c8cf985Fb"]
+const tokenToBribe = ""
+const gauges = ["0x8ceD58A2dE3C2ea5D3cED3eb4331158c8cf985Fb"]
 
 async function main () {
 
     const signer = ethers.provider.getSigner();
     
-    feeHandler = await ethers.getContractAt("ProtocolFeeHandler", "0x5A39D3fF53844a148d0040738F5D57c7eC0398db", signer);
     voter = await ethers.getContractAt("VoterV3", "0xAcCbA5e852AB85E5E3a84bc8E36795bD8cEC5C73", signer);
 
-    
-
-    for(let pool of pools){
+    for(let gauge of gauges){
         tx = await voter.createGauge(pool, 1);
         await tx.wait();
         console.log('deployed gauge for pool ' + pool);

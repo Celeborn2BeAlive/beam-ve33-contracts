@@ -89,34 +89,22 @@ interface IERC20 {
 contract SatinMigration is Ownable, ReentrancyGuard {
 
     IERC20 public satinReceipt = IERC20(0x48DB082Dbf85615820809e0BD4CEDb19229f0B91);
-    IRetro public retro = IRetro(0xBFA35599c7AEbb0dAcE9b5aa3ca5f2a79624D8Eb);
-    IVotingEscrow public veRetro = IVotingEscrow(0xB419cE2ea99f356BaE0caC47282B9409E38200fa);
+    IERC20 public oretro = IERC20(0x3A29CAb2E124919d14a6F735b6033a3AaD2B260F);
     IPermissionsRegistry public permissionsRegistry = IPermissionsRegistry(0xE14261E4c0347f6dfc74D515cA48BAA6A818EDfA);
 
-    uint256 public constant boost_denominator = 10000;
-
-    mapping(uint256 => uint256) public level_to_boost;
     mapping(address => bool) public blacklisted;
 
     uint256 public startTime;
     uint256 public endTime;
-    uint256 public retroPerSatin;
+    uint256 public oretroPerSatin;
 
     constructor() public {
 
         startTime = block.timestamp;
         endTime = block.timestamp + 60 * 86400; // 60 days
-        uint256 three_months = 93 * 86400;
-        uint256 six_months = three_months * 2;
-        uint256 one_year = six_months * 2;
-        uint256 two_years = 365 * 2 * 86400; //2 years
 
-        retroPerSatin = 1365500000000000; //0.0013655 RETRO per single SATIN
+        oretroPerSatin = 1365500000000000; //0.0013655 RETRO per single SATIN
 
-        level_to_boost[three_months] = 10500; //5%
-        level_to_boost[six_months] = 11000; //10%
-        level_to_boost[one_year] = 11500; //15%
-        level_to_boost[two_years] = 12500; //25%
         blacklisted[0x13477168151aD9E8269C57C969F59C9ed0855b97] = true;
         blacklisted[0xEC93A4A53be1b7E2A49fB0F076b79743D0B7C168] = true;
         blacklisted[0x6158163FACE033046dC3773df300972f489d42f7] = true;
@@ -159,54 +147,36 @@ contract SatinMigration is Ownable, ReentrancyGuard {
         blacklisted[0x94DC0b13E66ABa9450b3Cc44c2643BBb4C264BC7] = true;
         blacklisted[0x928e8f55c7C5695f5E0Dc621551cF53964593406] = true;
 
-        retro.approve(address(veRetro), type(uint256).max);
     }
 
-    function claimRetro() public nonReentrant {
+    function claimORetro() public nonReentrant {
         require(!blacklisted[msg.sender], "blacklisted");
         require(block.timestamp <= endTime, "ended");
 
         uint256 satinBalance = satinReceipt.balanceOf(msg.sender);
         satinReceipt.burn(msg.sender, satinBalance);
         
-        uint256 retroToRelease = satinBalance * retroPerSatin / 1e18;
-        retro.transfer(msg.sender, retroToRelease);
+        uint256 oretroToRelease = satinBalance * oretroPerSatin / 1e18;
+        oretro.transfer(msg.sender, oretroToRelease);
     }
 
-    function claimRetroAndLock(uint256 _level) public nonReentrant {
-        require(level_to_boost[_level] > 0, "level doesnt exist");
-        require(!blacklisted[msg.sender], "blacklisted");
-        require(block.timestamp <= endTime, "ended");
-
-        uint256 satinBalance = satinReceipt.balanceOf(msg.sender);
-        satinReceipt.burn(msg.sender, satinBalance);
-
-        uint256 retroToRelease = satinBalance * retroPerSatin / 1e18;
-        veRetro.create_lock_for(retroToRelease * level_to_boost[_level] / boost_denominator, _level, msg.sender);
-    }
-
-    function getRetroToRelease(address _addr) public view returns(uint256) {
+    function getORetroToRelease(address _addr) public view returns(uint256) {
         uint256 satinBalance = satinReceipt.balanceOf(_addr);
-        uint256 retroToRelease = satinBalance * retroPerSatin / 1e18;
-        return retroToRelease;
+        uint256 oretroToRelease = satinBalance * oretroPerSatin / 1e18;
+        return oretroToRelease;
     }
 
-    function setLevelToBoost(uint256 _level, uint256 _boost) public onlyOwner {
-        level_to_boost[_level] = _boost;
-    } 
-
-    function setRetroPerSatin(uint256 _retroPerSatin) public onlyOwner {
-        retroPerSatin = _retroPerSatin;
+    function setORetroPerSatin(uint256 _oretroPerSatin) public onlyOwner {
+        oretroPerSatin = _oretroPerSatin;
     } 
 
     function closeContract() public onlyOwner {
         require(block.timestamp >= endTime, "not ended yet");
-        uint256 remainingBalance = retro.balanceOf(address(this));
-        retro.transfer(owner(), remainingBalance);
+        uint256 remainingBalance = oretro.balanceOf(address(this));
+        oretro.transfer(owner(), remainingBalance);
     }
 
     function recoverTokens(address _token, uint256 amount, address _who) public onlyOwner {
-        require(_token != address(retro), "retro");
         IERC20(_token).transfer(_who, amount);
     }
 

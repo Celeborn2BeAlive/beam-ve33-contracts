@@ -19,7 +19,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "hardhat/console.sol";
 
-contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+//for scripts only
+contract VoterV3NoOverloadingFunction is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
     
@@ -683,17 +684,6 @@ contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 x = 0;
         uint256 stop = pools.length;
         for (x; x < stop; x++) {
-            _distribute(gauges[pools[x]]);
-        }
-    }
-
-    /// @notice distribute the emission for N gauges
-    /// @param  start   start index point of the pools array
-    /// @param  finish  finish index point of the pools array
-    /// @dev    this function is used in case we have too many pools and gasLimit is reached
-    function distribute(uint256 start, uint256 finish) public nonReentrant {
-        IMinter(minter).update_period();
-        for (uint256 x = start; x < finish; x++) {
             _distribute(gauges[pools[x]]);
         }
     }

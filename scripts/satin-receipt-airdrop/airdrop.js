@@ -3,14 +3,14 @@ const data = require("./filtered-addresses.json")
 // const data = require("./fake-airdrop.json")
 
 // Ratio of SATIN to RETRO
-const ratio = 7324228668277442;
+const ratio = "24414093119515252";
 const ratioDecimals = 13;
 
 // Chunk size for airdrop
 const chunkSize = 15;
 
 // Specify the chunk to start at
-const startAtChunk = 35;
+const startAtChunk = 23;
 
 async function chunkArray(array, chunkSize) {
   const chunks = []
@@ -25,15 +25,9 @@ async function main() {
 
   const underlyingTokenAddr = "0xBFA35599c7AEbb0dAcE9b5aa3ca5f2a79624D8Eb";
 
-  // const addressToImpersonate = "0xc8949dbaf261365083a4b46ab683BaE1C9273203"
+  //const addressToImpersonate = "0xc8949dbaf261365083a4b46ab683BaE1C9273203"
 
-  // //impersonate the deployer
-  // await network.provider.request({
-  //   method: "hardhat_impersonateAccount",
-  //   params: [addressToImpersonate],
-  // });
-
-  // const signer = ethers.provider.getSigner(addressToImpersonate);
+  //const signer = await ethers.getImpersonatedSigner(addressToImpersonate);
 
   const signer = ethers.provider.getSigner();
 
@@ -41,16 +35,11 @@ async function main() {
 
   const veAirdrop = await ethers.getContractAt("VeAirdrop", "0x61abd1f2e06343690990e9ed45ced079973e31df", signer);
 
-  //const underlyingToken = await ethers.getContractAt("Retro", underlyingTokenAddr, signer);
+  // const underlyingToken = await ethers.getContractAt("Retro", underlyingTokenAddr, signer);
 
-  // approve the airdrop contract to spend the underlying token
-  //const tx = await underlyingToken.approve(veAirdrop.address, ethers.constants.MaxUint256)
-  //await tx.wait()
-
-  //tx = await underlyingToken.transfer(veAirdrop.address, "4500000000000000000000000");
-  //await tx.wait();
-
-  //console.log('sent 4.5M retro to veAirdrop');
+  // tx = await underlyingToken.transfer(veAirdrop.address, "1500000000000000000000000");
+  // await tx.wait();
+  // console.log('sent 1.5M retro to veAirdrop');
 
   // Split the addresses into chunks
   const chunks = await chunkArray(data, chunkSize)
@@ -81,7 +70,7 @@ async function main() {
     
     console.log(`Airdropping (index: ${i})`)
     // Airdrop the chunk
-    const tx = await veAirdrop.airdrop(addresses, amounts, 5260000, { gasLimit: 7500000 });
+    const tx = await veAirdrop.airdrop(addresses, amounts, 63072000, { gasLimit: 7500000 });
     const receipt = await tx.wait()
     const gasUsed = BigInt(receipt.cumulativeGasUsed) * BigInt(receipt.effectiveGasPrice);
     console.log("Gas used: ", ethers.utils.formatUnits(gasUsed.toString(), "gwei"))

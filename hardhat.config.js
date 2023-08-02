@@ -43,7 +43,7 @@ module.exports = {
     },
 
     polygon: {
-      url: "https://polygon-mainnet.infura.io/v3/4a67f93cb54e431b8ede149e62f97323",
+      url: "https://polygon-rpc.com",
       chainId: 137,
       accounts: PRIVATEKEY,
       gasPrice: 400e9,
@@ -63,7 +63,7 @@ module.exports = {
 
     hardhat: {
       forking: {
-        url: "https://polygon-mainnet.infura.io/v3/4a67f93cb54e431b8ede149e62f97323",
+        url: "https://polygon-rpc.com",
         chainId: 137,
       },
       //accounts: []
