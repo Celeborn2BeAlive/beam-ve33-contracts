@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract SimpleTeamVesting  {
 
-    
     using SafeERC20 for IERC20;
 
     struct User {
@@ -21,9 +20,7 @@ contract SimpleTeamVesting  {
     address public token;
     address[] public usersList;
     
-    uint256 public totalSupply;
-    uint256 public CLIFF_PERIOD = 86400 * 365;
-    uint256 public LINEAR = 86400 * 365;
+    uint256 public LINEAR = 86400 * 730; // 2 years
     uint256 public PRECISION = 1e6;
     uint256 public startTimestamp;
 
@@ -38,12 +35,9 @@ contract SimpleTeamVesting  {
 
     constructor() {
         owner = msg.sender;
-        token = address(0xF4C8E32EaDEC4BFe97E0F595AdD0f4450a863a11);
-        totalSupply =  0;
-        startTimestamp = 1672876800; //	Thu Jan 05 2023 00:00:00 GMT+0000
+        token = address(0xBFA35599c7AEbb0dAcE9b5aa3ca5f2a79624D8Eb);
+        startTimestamp = 1690470000; //	July 27 2023 15:00:00 GMT+0000
     }
-
-   
 
     // init distribution
     function _init(address[] memory who, uint[] memory amounts) external onlyOwner {
@@ -65,8 +59,8 @@ contract SimpleTeamVesting  {
             users[wallet] = User({
                 to:             wallet,
                 totalAmount:    amount,
-                linearTokenPerSeconds: (amount / 2) * PRECISION / LINEAR,
-                timestamp:      0
+                linearTokenPerSeconds: amount * PRECISION / LINEAR,
+                timestamp:      1690470000
             });
 
             isUser[wallet] = true;
@@ -74,33 +68,12 @@ contract SimpleTeamVesting  {
         }
     }
 
-
-    function claimCliff() external returns(uint){
-        require(isUser[msg.sender], 'not allowed');
-
-        uint256 dt = block.timestamp - startTimestamp;
-        require(dt >= CLIFF_PERIOD, 'wait');
-
-        User memory _user = users[msg.sender];
-        require(_user.timestamp <= startTimestamp + CLIFF_PERIOD, 'claimed');
-                
-        uint256 toDistribute = _user.totalAmount / 2;
-
-        _user.timestamp = startTimestamp + CLIFF_PERIOD;
-        users[msg.sender] = _user;
-
-        
-        IERC20(token).safeTransfer(msg.sender, toDistribute);
-        return toDistribute;
-    }
-
     function claimDistribution() external returns(uint) {
         require(isUser[msg.sender], 'not allowed');
 
         User memory _user = users[msg.sender];
         uint256 _timestamp = _user.timestamp;
-        require(_timestamp >= startTimestamp + CLIFF_PERIOD, 'claimCliff before');
-        require(_timestamp <= startTimestamp + CLIFF_PERIOD + LINEAR, 'claimed');
+        require(_timestamp <= startTimestamp + LINEAR, 'claimed');
         
         uint256 dt = block.timestamp - _timestamp;
         require(dt > 0);
@@ -119,17 +92,10 @@ contract SimpleTeamVesting  {
         if(isUser[_who] == false){
             return 0;
         }
-        if(block.timestamp < startTimestamp + CLIFF_PERIOD){
-            return 0;
-        }
-        
+
         User memory _user = users[_who];
-        if(_user.timestamp <= startTimestamp + CLIFF_PERIOD){
-            return _user.totalAmount / 2;
-        } else {
-            uint256 dt = block.timestamp - _user.timestamp;
-            return _user.linearTokenPerSeconds * dt / PRECISION;
-        }
+        uint256 dt = block.timestamp - _user.timestamp;
+        return _user.linearTokenPerSeconds * dt / PRECISION;
     }
 
     function usersLength() external view returns(uint){
