@@ -1240,7 +1240,7 @@
             "label": "voter",
             "offset": 2,
             "slot": "0",
-            "type": "t_contract(IVoter)59316",
+            "type": "t_contract(IVoter)2132",
             "contract": "veNFTAPI",
             "src": "contracts/APIHelper/veNFTAPI.sol:109"
           },
@@ -1256,7 +1256,7 @@
             "label": "ve",
             "offset": 0,
             "slot": "2",
-            "type": "t_contract(IVotingEscrow)59508",
+            "type": "t_contract(IVotingEscrow)2324",
             "contract": "veNFTAPI",
             "src": "contracts/APIHelper/veNFTAPI.sol:113"
           },
@@ -1264,7 +1264,7 @@
             "label": "rewardDisitributor",
             "offset": 0,
             "slot": "3",
-            "type": "t_contract(IRewardsDistributor)58751",
+            "type": "t_contract(IRewardsDistributor)2019",
             "contract": "veNFTAPI",
             "src": "contracts/APIHelper/veNFTAPI.sol:114"
           },
@@ -1280,7 +1280,7 @@
             "label": "pairFactory",
             "offset": 0,
             "slot": "5",
-            "type": "t_contract(IPairFactory)58627",
+            "type": "t_contract(IPairFactory)1998",
             "contract": "veNFTAPI",
             "src": "contracts/APIHelper/veNFTAPI.sol:117"
           },
@@ -1302,19 +1302,19 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_contract(IPairFactory)58627": {
+          "t_contract(IPairFactory)1998": {
             "label": "contract IPairFactory",
             "numberOfBytes": "20"
           },
-          "t_contract(IRewardsDistributor)58751": {
+          "t_contract(IRewardsDistributor)2019": {
             "label": "contract IRewardsDistributor",
             "numberOfBytes": "20"
           },
-          "t_contract(IVoter)59316": {
+          "t_contract(IVoter)2132": {
             "label": "contract IVoter",
             "numberOfBytes": "20"
           },
-          "t_contract(IVotingEscrow)59508": {
+          "t_contract(IVotingEscrow)2324": {
             "label": "contract IVotingEscrow",
             "numberOfBytes": "20"
           },
@@ -1772,6 +1772,118 @@
           },
           "t_contract(IVoter)2461": {
             "label": "contract IVoter",
+            "numberOfBytes": "20"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "050768c9f07bc02feed59942f8b6136bbab28af4fdbf2ec0941ed5ed9567f398": {
+      "address": "0x76B29fBd12051106AA2ddB41632D7A3D9A385430",
+      "txHash": "0xfac0634bce49dfc200f688d79b974a8e16aaae9c2bbc45cd172ea4986aea8140",
+      "layout": {
+        "solcVersion": "0.8.13",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "voter",
+            "offset": 2,
+            "slot": "0",
+            "type": "t_contract(IVoter)2156",
+            "contract": "veNFTAPI",
+            "src": "contracts/APIHelper/veNFTAPI.sol:114"
+          },
+          {
+            "label": "underlyingToken",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "veNFTAPI",
+            "src": "contracts/APIHelper/veNFTAPI.sol:115"
+          },
+          {
+            "label": "ve",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_contract(IVotingEscrow)2348",
+            "contract": "veNFTAPI",
+            "src": "contracts/APIHelper/veNFTAPI.sol:118"
+          },
+          {
+            "label": "rewardDisitributor",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_contract(IRewardsDistributor)2043",
+            "contract": "veNFTAPI",
+            "src": "contracts/APIHelper/veNFTAPI.sol:119"
+          },
+          {
+            "label": "pairAPI",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_address",
+            "contract": "veNFTAPI",
+            "src": "contracts/APIHelper/veNFTAPI.sol:121"
+          },
+          {
+            "label": "pairFactory",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_contract(IPairFactory)2022",
+            "contract": "veNFTAPI",
+            "src": "contracts/APIHelper/veNFTAPI.sol:122"
+          },
+          {
+            "label": "owner",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_address",
+            "contract": "veNFTAPI",
+            "src": "contracts/APIHelper/veNFTAPI.sol:125"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IPairFactory)2022": {
+            "label": "contract IPairFactory",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IRewardsDistributor)2043": {
+            "label": "contract IRewardsDistributor",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IVoter)2156": {
+            "label": "contract IVoter",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IVotingEscrow)2348": {
+            "label": "contract IVotingEscrow",
             "numberOfBytes": "20"
           },
           "t_uint8": {

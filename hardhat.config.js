@@ -8,7 +8,7 @@ require("@nomiclabs/hardhat-web3");
 
 require("hardhat-tracer");
 
-const { PRIVATEKEY, APIKEY } = require("./pvkey.js");
+const { PRIVATEKEY, APIKEY, APIKEY_ZK } = require("./pvkey.js");
 
 module.exports = {
   // latest Solidity version
@@ -49,6 +49,11 @@ module.exports = {
       gasPrice: 400e9,
     },
 
+    "polygon-zkevm": {
+      url: "https://zkevm-rpc.com",
+      accounts: PRIVATEKEY,
+    },
+
     bscTestnet: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
@@ -71,7 +76,7 @@ module.exports = {
   },
 
   etherscan: {
-    apiKey: APIKEY,
+    apiKey: { polygon: APIKEY, "polygon-zkevm": APIKEY_ZK },
     customChains: [
       {
         network: "polygon",
@@ -79,6 +84,14 @@ module.exports = {
         urls: {
           apiURL: "https://api.polygonscan.com/api",
           browserURL: "https://polygonscan.com",
+        },
+      },
+      {
+        network: "polygon-zkevm",
+        chainId: 1101,
+        urls: {
+          apiURL: "https://api-zkevm.polygonscan.com/api",
+          browserURL: "https://zkevm.polygonscan.com",
         },
       },
     ],

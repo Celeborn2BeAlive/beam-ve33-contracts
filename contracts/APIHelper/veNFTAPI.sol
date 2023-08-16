@@ -11,6 +11,7 @@ import '../interfaces/IPairFactory.sol';
 import '../interfaces/IVoter.sol';
 import '../interfaces/IVotingEscrow.sol';
 import '../interfaces/IRewardsDistributor.sol';
+import '../interfaces/IHypervisor.sol';
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
@@ -54,6 +55,10 @@ interface IPairAPI {
         uint account_token1_balance; 	// account 2nd token balance
         uint account_gauge_balance;     // account pair staked in gauge balance
         uint account_gauge_earned; 		// account earned emissions for this pair
+
+        //fee data
+        uint24 fee_level;
+        address underlyingPool;
     }
 
     function getPair(address _pair, address _account) external view returns(pairInfo memory _pairInfo);
@@ -265,7 +270,7 @@ contract veNFTAPI is Initializable {
 
         _reward = new Reward[](2 + totBribeTokens);
 
-        address _gauge = (voter.gauges(_pair));
+        address _gauge = (voter.gauges(IHypervisor(_pair).pool()));
         
         if(_gauge == address(0)){
             return _reward; 

@@ -53,7 +53,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
 
         teamRate = 25; // 25 bps = 2.5%
 
-        EMISSION = 990;
+        EMISSION = 980; //2% decay
         TAIL_EMISSION = 2;
         REBASEMAX = 300;
 
