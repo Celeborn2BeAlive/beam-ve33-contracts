@@ -2,7 +2,7 @@
 const ether = require('@openzeppelin/test-helpers/src/ether');
 const { ethers  } = require('hardhat');
 
-const pools = []
+const pools = ["0x9A97dDd0A4CF27E955127E7111a1054cB02A21ca","0x2C8F7d92Dc7A414D343CbFB687E31a11F525d29e","0xB5cB765e44Eca4bc5a434fFaf6Bf7De235Bc60a5"]
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -23,6 +23,7 @@ async function main () {
         tx = await voter.createGauge(pool, 1);
         await tx.wait();
         console.log('deployed gauge for pool ' + pool);
+        console.log('gauge address: ' + await voter.gauges(pool))
         await sleep(2500);
         tx = await feeHandler.changeProtocolFees(pool, 13, 13);
         await tx.wait()
