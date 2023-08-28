@@ -20,7 +20,7 @@ async function main () {
     
 
     for(let pool of pools){
-        tx = await voter.createGauge(pool, 1);
+        tx = await voter.createGauge(pool, 1); //CL
         await tx.wait();
         console.log('deployed gauge for pool ' + pool);
         console.log('gauge address: ' + await voter.gauges(pool))

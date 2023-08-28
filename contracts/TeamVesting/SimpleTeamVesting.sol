@@ -5,6 +5,18 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+interface ISimpleTeamVestingV1 {
+    
+    struct User {
+        address to;                     //  receiver
+        uint256 totalAmount;            //  total amount to receive
+        uint256 linearTokenPerSeconds;  //  token per second at distribution  
+        uint256 timestamp;              //  last time claim was called
+    }
+
+    function users(address) external view returns(User memory);
+}
+
 contract SimpleTeamVesting  {
 
     using SafeERC20 for IERC20;
@@ -20,13 +32,15 @@ contract SimpleTeamVesting  {
     address public token;
     address[] public usersList;
     
-    uint256 public LINEAR = 86400 * 730; // 2 years
+    uint256 public LINEAR = 86400 * 365; // 1 year
     uint256 public PRECISION = 1e6;
     uint256 public startTimestamp;
+    uint256 public startTimestampV1;
+    ISimpleTeamVestingV1 public oldVesting;
 
     mapping(address => User) public users;
     mapping(address => bool) public isUser;
-
+    mapping(address => uint256) public debts;
 
     modifier onlyOwner {
         require(msg.sender == owner);
@@ -36,7 +50,9 @@ contract SimpleTeamVesting  {
     constructor() {
         owner = msg.sender;
         token = address(0xBFA35599c7AEbb0dAcE9b5aa3ca5f2a79624D8Eb);
-        startTimestamp = 1690470000; //	July 27 2023 15:00:00 GMT+0000
+        startTimestampV1 = 1690470000; //	July 27 2023 15:00:00 GMT+0000
+        startTimestamp = block.timestamp; //deploy of migration
+        oldVesting = ISimpleTeamVestingV1(0x5FFF368af188664a214a15CA742e8E58279f1867);
     }
 
     // init distribution
@@ -51,6 +67,7 @@ contract SimpleTeamVesting  {
         for(i; i < len; i++){
             wallet = who[i];
             amount = amounts[i];
+            uint256 lastClaim = oldVesting.users(wallet).timestamp;
 
             require(wallet != address(0));
             require(isUser[wallet] == false);
@@ -60,12 +77,24 @@ contract SimpleTeamVesting  {
                 to:             wallet,
                 totalAmount:    amount,
                 linearTokenPerSeconds: amount * PRECISION / LINEAR,
-                timestamp:      1690470000
+                timestamp:      lastClaim
             });
+
+            //debt calculation
+            uint256 dt = lastClaim - startTimestampV1;
+            debts[wallet] = users[wallet].linearTokenPerSeconds * dt / PRECISION / 2; //half was claimed already
 
             isUser[wallet] = true;
             usersList.push(wallet);  
         }
+    }
+
+    function claimDebt() external returns(uint){
+        require(isUser[msg.sender], 'not allowed');
+        uint256 toDistribute = debts[msg.sender];
+        debts[msg.sender] = 0;
+        IERC20(token).safeTransfer(msg.sender, toDistribute);
+        return toDistribute;
     }
 
     function claimDistribution() external returns(uint) {

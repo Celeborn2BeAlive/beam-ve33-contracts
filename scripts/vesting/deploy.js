@@ -37,7 +37,10 @@ const vestings = {
 
 //chain
 async function main() {
+
+  const vestingV1Address = "0x5FFF368af188664a214a15CA742e8E58279f1867"
   const signer = ethers.provider.getSigner();
+  const vestingV1 = await ethers.getContractAt("SimpleTeamVesting", vestingV1Address, signer);
 
   var accounts = Object.keys(vestings);
   var values = Object.values(vestings);
@@ -52,9 +55,12 @@ async function main() {
 
   const underlyingToken = await ethers.getContractAt("Retro", "0xBFA35599c7AEbb0dAcE9b5aa3ca5f2a79624D8Eb", signer);
 
-  tx = await underlyingToken.transfer(vesting.address, "200000000000000000000000");
+  const balance = await underlyingToken.balanceOf(vestingV1.address)
+  tx = await vestingV1.withdrawAll(underlyingToken.address)
   await tx.wait();
-  
+
+  tx = await underlyingToken.transfer(vesting.address, balance);
+  await tx.wait();
 }
 
 main()
