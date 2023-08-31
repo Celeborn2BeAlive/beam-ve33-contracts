@@ -16,7 +16,7 @@ contract zkZERO is ERC721Enumerable, Ownable {
 
     uint256 public MAX_SUPPLY;
     uint256 public NFT_PRICE;
-    uint256 public MAX_MINT = 3;
+    uint256 public MAX_MINT = 1200;
     uint256 public SALE_START_TIMESTAMP;
     address public cashReceiver;
     bool public ended;
