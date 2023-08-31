@@ -1,8 +1,8 @@
 //const ether = require('@openzeppelin/test-helpers/src/ether');
 const { ethers  } = require('hardhat');
 
-const tokenToBribe = "0x86b634eac93e463fcc303e632ddf05cfaadfdad1"
-const gauges = ["0x4A7B85b9B0FE3801Ca666ce9f1EDDCD8c33e5eE5","0xA495A2399432a3698C74f5c48C534833056ed937","0xDAe249C5446a794be6DFD80094F09ab8405Dca97"]
+const tokenToBribe = "0x7c603c3c0c97a565cf202c94ab5298bf8510f7dc"
+const gauges = ["0xfb0d002aBd1CBbEB33286caCdb0d468a588E1a4E","0xa3a2444dD03a8e6Ba210C3ccFb33c7bB6d1795cA","0x4CE02eE7feFcaF51db86b1284Ec78778CF8D0c22"]
 
 function sleep(ms) {
     return new Promise((resolve) => {
