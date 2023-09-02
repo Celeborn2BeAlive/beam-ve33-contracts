@@ -29,7 +29,7 @@ contract zkZERO is ERC721Enumerable, Ownable {
         address multisig
     ) ERC721("zkZERO", "zkZERO") {
         MAX_SUPPLY = _maxSupply;
-        NFT_PRICE = 5e16; //change to 500e18
+        NFT_PRICE = 500e18; //change to 500e18
         SALE_START_TIMESTAMP = _startTimestamp;
         cashReceiver = multisig;
     }
