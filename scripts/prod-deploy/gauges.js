@@ -2,7 +2,7 @@
 const ether = require('@openzeppelin/test-helpers/src/ether');
 const { ethers  } = require('hardhat');
 
-const pools = ["0x53C49b9308c3DB176d351d7914Cec0Fb5D7f1129","0x99583057951987beD85CE6934473160bFD4921b9"]
+const pools = ["0x217aEb0667b79584FBf6265B74a8cD22E1245fdC","0x4b4B895a0dD744B4893aA4370A8F7eDbde5Fd90e"]
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -16,9 +16,8 @@ async function main () {
     
     feeHandler = await ethers.getContractAt("ProtocolFeeHandler", "0x5A39D3fF53844a148d0040738F5D57c7eC0398db", signer);
     voter = await ethers.getContractAt("VoterV3", "0xAcCbA5e852AB85E5E3a84bc8E36795bD8cEC5C73", signer);
-    gaugeFactoryV2CL = await ethers.getContractAt("GaugeFactoryV2_CL", "0x9AE721D3Bae22FA42AA11eD7E4AB0b9b7263DE52", signer)
+    gaugeFactoryV2CL = await ethers.getContractAt("GaugeFactoryV2_CL", "0x9AE721D3Bae22FA42AA11eD7E4AB0b9b7263DE52", signer);
     
-
     for(let pool of pools){
         tx = await voter.createGauge(pool, 1); //CL
         await tx.wait();

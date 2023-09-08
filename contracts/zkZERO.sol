@@ -46,6 +46,10 @@ contract zkZERO is ERC721Enumerable, Ownable {
         NFT_PRICE = _nftPrice;
     }
 
+    function setCashReceiver(address _cashReceiver) external onlyOwner {
+        cashReceiver = _cashReceiver;
+    }
+
     /**
      * Get the array of token for owner.
      */

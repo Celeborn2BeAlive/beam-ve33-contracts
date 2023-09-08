@@ -53,6 +53,7 @@ contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
     
     mapping(uint => uint) public time_cursor_of;
     mapping(address => bool) public lockAddress;       // remove permissionless claim for an address owner
+    mapping(uint => uint) internal time_to_block;
 
   
 
@@ -66,7 +67,7 @@ contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
 
         voting_escrow = _voting_escrow;
 
-        depositor = address(0xaa25d99d03FECa8802172322538b78F36cbbAE23);
+        depositor = address(0x003D505Aff54FB7856aA6Bcb56a8397F5aF89479); //0x86069FEb223EE303085a1A505892c9D4BdBEE996 bsc
         start_time = _t;
 
         owner = msg.sender;
@@ -135,6 +136,7 @@ contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
     function _checkpoint_token() internal {
 
         last_week = block.timestamp / WEEK * WEEK;
+        time_to_block[last_week] = block.number;
         last_token_time = block.timestamp;
         
         uint token_balance = IERC20(token).balanceOf(address(this));
@@ -213,7 +215,8 @@ contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
         if(tokens_per_week[t] == 0) return 0;
         if(userData.ts > t) return 0;
 
-        uint id_bal = IVotingEscrow(voting_escrow).balanceOfNFTAt(id, t);
+        //uint id_bal = IVotingEscrow(voting_escrow).balanceOfNFTAt(id, t);
+        uint id_bal = IVotingEscrow(voting_escrow).balanceOfAtNFT(id, time_to_block[t]);
         uint share =  id_bal * 1e18 / ve_supply[t];
         
         to_claim = share * tokens_per_week[t] / 1e18;

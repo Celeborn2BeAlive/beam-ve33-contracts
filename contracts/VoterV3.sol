@@ -467,7 +467,10 @@ contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   
     /// @notice check if user can vote
     function _voteDelay(uint256 _tokenId) internal view {
-        require(block.timestamp > lastVoted[_tokenId] + VOTE_DELAY, "d");
+        if(lastVoted[_tokenId] > _epochTimestamp()){
+            // revote
+            require(block.timestamp > lastVoted[_tokenId] + VOTE_DELAY, "d");
+        }
     }
 
 
