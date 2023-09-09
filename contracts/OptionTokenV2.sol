@@ -377,13 +377,17 @@ contract OptionTokenV2 is ERC20, AccessControl {
 
         // burn callers tokens
         _burn(msg.sender, _amount);
-        paymentAmount = getDiscountedPrice(_amount);
-        if (paymentAmount > _maxPaymentAmount)
-            revert OptionToken_SlippageTooHigh();
 
-        // transfer payment tokens from msg.sender to the fee distributor
-        paymentToken.transferFrom(msg.sender, address(this), paymentAmount);
-        feeDistributor.distribute(address(paymentToken), paymentAmount);
+        if(discount > 0){
+
+            paymentAmount = getDiscountedPrice(_amount);
+            if (paymentAmount > _maxPaymentAmount)
+                revert OptionToken_SlippageTooHigh();
+
+            // transfer payment tokens from msg.sender to the fee distributor
+            paymentToken.transferFrom(msg.sender, address(this), paymentAmount);
+            feeDistributor.distribute(address(paymentToken), paymentAmount);
+        }
 
         // send underlying tokens to recipient
         underlyingToken.transfer(_recipient, _amount); // will revert on failure
@@ -400,13 +404,15 @@ contract OptionTokenV2 is ERC20, AccessControl {
 
         // burn callers tokens
         _burn(msg.sender, _amount);
-        paymentAmount = getVeDiscountedPrice(_amount);
-        if (paymentAmount > _maxPaymentAmount)
-            revert OptionToken_SlippageTooHigh();
-
-        // transfer payment tokens from msg.sender to the fee distributor
-        paymentToken.transferFrom(msg.sender, address(this), paymentAmount);
-        feeDistributor.distribute(address(paymentToken), paymentAmount);
+        
+        if(veDiscount > 0){
+            paymentAmount = getVeDiscountedPrice(_amount);
+            if (paymentAmount > _maxPaymentAmount)
+                revert OptionToken_SlippageTooHigh();
+            // transfer payment tokens from msg.sender to the fee distributor
+            paymentToken.transferFrom(msg.sender, address(this), paymentAmount);
+            feeDistributor.distribute(address(paymentToken), paymentAmount);
+        }
 
         // lock underlying tokens to veFLOW
         underlyingToken.approve(votingEscrow, _amount);
