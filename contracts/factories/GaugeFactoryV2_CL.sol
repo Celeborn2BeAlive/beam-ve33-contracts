@@ -21,6 +21,7 @@ interface IGauge{
     function setORetro(address) external;
     function setFeeHandler(address) external;
     function setMerkl(address) external;
+    function setMerklParams(DistributionParameters memory params) external;
 }
 
 
@@ -73,44 +74,11 @@ contract GaugeFactoryV2_CL is IGaugeFactory, OwnableUpgradeable {
         require( msg.sender == IPermissionsRegistry(permissionsRegistry).emergencyCouncil() );
         _;
     }
-   
-
-
-    function activateEmergencyMode( address[] memory _gauges) external EmergencyCouncil {
-        uint i = 0;
-        for ( i ; i < _gauges.length; i++){
-            IGauge(_gauges[i]).activateEmergencyMode();
-        }
-    }
-
-    function stopEmergencyMode( address[] memory _gauges) external EmergencyCouncil {
-        uint i = 0;
-        for ( i ; i < _gauges.length; i++){
-            IGauge(_gauges[i]).stopEmergencyMode();
-        }
-    }
     
 
     function setRegistry(address _registry) external onlyAllowed {
         require(_registry != address(0));
         permissionsRegistry = _registry;
-    }
-
-
-    function setRewarderPid( address[] memory _gauges, uint[] memory _pids) external onlyAllowed {
-        require(_gauges.length == _pids.length);
-        uint i = 0;
-        for ( i ; i < _gauges.length; i++){
-            IGauge(_gauges[i]).setRewarderPid(_pids[i]);
-        }
-    }
-
-    function setGaugeRewarder( address[] memory _gauges, address[] memory _rewarder) external onlyAllowed {
-        require(_gauges.length == _rewarder.length);
-        uint i = 0;
-        for ( i ; i < _gauges.length; i++){
-            IGauge(_gauges[i]).setGaugeRewarder(_rewarder[i]);
-        }
     }
 
     function setDistribution(address[] memory _gauges,  address distro) external onlyAllowed {
@@ -119,7 +87,6 @@ contract GaugeFactoryV2_CL is IGaugeFactory, OwnableUpgradeable {
             IGauge(_gauges[i]).setDistribution(distro);
         }
     }
-
 
     function setInternalBribe(address[] memory _gauges,  address[] memory int_bribe) external onlyAllowed {
         require(_gauges.length == int_bribe.length);
@@ -157,6 +124,10 @@ contract GaugeFactoryV2_CL is IGaugeFactory, OwnableUpgradeable {
 
     function updateFeeHandlerFor(address _gauge) external onlyAllowed {
         IGauge(_gauge).setFeeHandler(feeHandler);
+    }
+
+    function setMerklParamsFor(address _gauge, DistributionParameters memory params) external onlyAllowed {
+        IGauge(_gauge).setMerklParams(params);
     }
 
 }

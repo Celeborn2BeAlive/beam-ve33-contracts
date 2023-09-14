@@ -270,7 +270,13 @@ contract veNFTAPI is Initializable {
 
         _reward = new Reward[](2 + totBribeTokens);
 
-        address _gauge = (voter.gauges(IHypervisor(_pair).pool()));
+        address _gauge;
+
+        try IHypervisor(_pair).pool(){
+            _gauge = (voter.gauges(IHypervisor(_pair).pool()));
+        } catch {
+            _gauge = (voter.gauges(_pair));
+        }
         
         if(_gauge == address(0)){
             return _reward; 

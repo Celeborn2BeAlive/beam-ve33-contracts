@@ -7,8 +7,8 @@ async function main () {
     owner = accounts[0]
 
     const veartContract = await ethers.getContractFactory("PairAPI")
-    await upgrades.upgradeProxy('0xDF5ed9869721A37981359fA5a617D53Ef1B7e8b5', veartContract);
-    console.log('VeArtProxy upgraded');
+    tx = await upgrades.prepareUpgrade('0xDF5ed9869721A37981359fA5a617D53Ef1B7e8b5', veartContract);
+    console.log('PairAPIProxy upgraded', tx);
 
 }
 

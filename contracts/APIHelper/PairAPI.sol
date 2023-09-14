@@ -2,7 +2,6 @@
 pragma solidity 0.8.13;
 
 
-import '../libraries/Math.sol';
 import '../interfaces/IBribeAPI.sol';
 import '../interfaces/IGaugeAPI.sol';
 import '../interfaces/IGaugeFactory.sol';
@@ -14,7 +13,7 @@ import '../interfaces/IVoter.sol';
 import '../interfaces/IVotingEscrow.sol';
 import '../interfaces/IHypervisor.sol';
 import '../interfaces/IPairInfo.sol';
-
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol"; 
 
 contract PairAPI is Initializable {
@@ -135,6 +134,12 @@ contract PairAPI is Initializable {
 
     }
 
+    function append(string memory a, string memory b, string memory c, string memory d, string memory e) internal pure returns (string memory) {
+
+        return string(abi.encodePacked(a, b, c, d, e));
+
+    }
+
     function getPair(address _pair, address _account) external view returns(pairInfo memory _pairInfo){
         return _pairAddressToInfo(_pair, _account);
     }
@@ -150,11 +155,21 @@ contract PairAPI is Initializable {
 
         // checkout is v2 or v3? if v3 then load algebra pool 
         bool _type = IPairFactory(pairFactory).isPair(_pair);
+
+        address underlyingPool;
         
-        address underlyingPool = _type == false ? IHypervisor(_pair).pool() : _pair;
+        try IHypervisor(_pair).pool(){
+            underlyingPool = IHypervisor(_pair).pool();
+        } catch {
+            underlyingPool = _pair;
+        }
 
         if(_type == false){
-            (r0,r1) = IHypervisor(_pair).getTotalAmounts();
+            try IHypervisor(_pair).getTotalAmounts(){
+                (r0,r1) = IHypervisor(_pair).getTotalAmounts();
+            } catch {
+                (r0,r1) = (0, 0);
+            }
         } else {
             (r0,r1,) = ipair.getReserves();
         }
@@ -181,11 +196,27 @@ contract PairAPI is Initializable {
 
         // Pair General Info
         _pairInfo.pair_address = _pair;
-        _pairInfo.symbol = ipair.symbol();
-        _pairInfo.name = ipair.name();
-        _pairInfo.decimals = ipair.decimals();
-        _pairInfo.stable = _type == false ? false : ipair.isStable();
-        _pairInfo.total_supply = ipair.totalSupply();
+        if(!_type){
+            try IHypervisor(_pair).pool(){
+                _pairInfo.symbol = ipair.symbol();
+                _pairInfo.name = ipair.name();
+                _pairInfo.decimals = ipair.decimals();
+                _pairInfo.stable = _type == false ? false : ipair.isStable();
+                _pairInfo.total_supply = ipair.totalSupply();
+            } catch {
+                _pairInfo.symbol = append(IERC20(token_0).symbol(), "-", IERC20(token_1).symbol(), "-", Strings.toString(IPairInfo(underlyingPool).fee()));
+                _pairInfo.name = append(IERC20(token_0).symbol(), "-", IERC20(token_1).symbol(), "-", Strings.toString(IPairInfo(underlyingPool).fee()));
+                _pairInfo.decimals = 0;
+                _pairInfo.stable = false;
+                _pairInfo.total_supply = 0;
+            }
+        }else{
+                _pairInfo.symbol = ipair.symbol();
+                _pairInfo.name = ipair.name();
+                _pairInfo.decimals = ipair.decimals();
+                _pairInfo.stable = _type == false ? false : ipair.isStable();
+                _pairInfo.total_supply = ipair.totalSupply();
+        }
         
         // Token0 Info
         _pairInfo.token0 = token_0;
@@ -214,7 +245,16 @@ contract PairAPI is Initializable {
         _pairInfo.bribe = voter.external_bribes(address(_gauge)); 				    
 
         // Account Info
-        _pairInfo.account_lp_balance = IERC20(_pair).balanceOf(_account);
+        if(!_type){
+            try IHypervisor(_pair).pool(){
+                _pairInfo.account_lp_balance = IERC20(_pair).balanceOf(_account);
+            } catch {
+                _pairInfo.account_lp_balance = 0;
+            }
+        }else{
+            _pairInfo.account_lp_balance = IERC20(_pair).balanceOf(_account);
+        }
+
         _pairInfo.account_token0_balance = IERC20(token_0).balanceOf(underlyingPool);
         _pairInfo.account_token1_balance = IERC20(token_1).balanceOf(underlyingPool);
         _pairInfo.account_gauge_balance = accountGaugeLPAmount;

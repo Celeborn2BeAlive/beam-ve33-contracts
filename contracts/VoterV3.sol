@@ -17,7 +17,6 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "hardhat/console.sol";
 
 contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
@@ -469,7 +468,7 @@ contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     function _voteDelay(uint256 _tokenId) internal view {
         if(lastVoted[_tokenId] > _epochTimestamp()){
             // revote
-            require(block.timestamp > lastVoted[_tokenId] + VOTE_DELAY, "d");
+            require(block.timestamp - _epochTimestamp() <= 590400, "d");
         }
     }
 
@@ -680,7 +679,6 @@ contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     
     /// @notice Distribute the emission for ALL gauges 
     function distributeAll() external nonReentrant {
-        console.log('called distribute all');
         IMinter(minter).update_period();
 
         uint256 x = 0;
@@ -722,7 +720,6 @@ contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
             // distribute only if claimable is > 0, currentEpoch != lastepoch and gauge is alive
             if (_claimable > 0 && isAlive[_gauge]) {
-                console.log('all fine for gauge', _gauge);
                 claimable[_gauge] = 0;
                 gaugesDistributionTimestmap[_gauge] = currentTimestamp;
                 IGauge(_gauge).notifyRewardAmount(base, _claimable);

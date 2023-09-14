@@ -2,7 +2,7 @@
 const ether = require('@openzeppelin/test-helpers/src/ether');
 const { ethers  } = require('hardhat');
 
-const pools = ["0x217aEb0667b79584FBf6265B74a8cD22E1245fdC","0x4b4B895a0dD744B4893aA4370A8F7eDbde5Fd90e"]
+const pools = ["0x6333BB8b6f1DDa6f929d70eDEB9e31c8148dC9ef","0xCC72276de3BCc1b159F1B60A86B0211116022B42"]
 
 function sleep(ms) {
   return new Promise((resolve) => {
