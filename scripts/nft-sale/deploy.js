@@ -17,12 +17,17 @@ async function increaseTime(provider, seconds) {
 //chain
 async function main () {
 
-    const receiver = ;
+    const receiver = "0x35dCEaD4670161a3D123b007922d61378D3A9d18";
 
     data = await ethers.getContractFactory("zkZERO");
-    zkZERO = await data.deploy((new Date().getTime() / 1000).toFixed(0), receiver);
+    zkZERO = await data.deploy(1695859200, receiver);
     txDeployed = await zkZERO.deployed();
-    console.log('zkZERO deployed to', zkZERO.address)
+    console.log('zkZERO deployed to', zkZERO.address);
+
+    await run("verify:verify", {
+        address: zkZERO.address,
+        constructorArguments: [1695859200, receiver],
+      });
 
 }
 
