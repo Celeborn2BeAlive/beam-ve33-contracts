@@ -5,11 +5,11 @@ const { ethers  } = require('hardhat');
 async function main () {
     
     const impersonateMyself = await ethers.getImpersonatedSigner("0xc8949dbaf261365083a4b46ab683BaE1C9273203");
-    const gauge = "0x903cdd4f4490D27414A24FDB7D3020170F89e244"
+    const gauge = "0x16ab4d14eb7A998443Eda477EdaAb9202ae4957b"
     const gaugeFactory = "0x9AE721D3Bae22FA42AA11eD7E4AB0b9b7263DE52"
 
     const desiredParams = [ '0x0000000000000000000000000000000000000000000000000000000000000000',
-    '0xC26E1a0cDab4Bf5141530C49F3360f162C5Db5Db',
+    '0x13d5e61838D93F7962C52dc921FD7C0Ccc092E35',
     '0x3A29CAb2E124919d14a6F735b6033a3AaD2B260F',
     0,
     [],

@@ -25,7 +25,7 @@ async function main () {
     const cash = await ethers.getContractAt("Retro", "0x5D066D022EDE10eFa2717eD3D79f22F949F8C175", signer)
     
     data = await ethers.getContractFactory("zkZERO", signer);
-    zkZERO = await data.deploy(1200, (new Date().getTime() / 1000).toFixed(0), receiver);
+    zkZERO = await data.deploy((new Date().getTime() / 1000).toFixed(0), receiver);
     txDeployed = await zkZERO.deployed();
     console.log('zkZERO deployed to', zkZERO.address)
 
@@ -54,6 +54,21 @@ async function main () {
 
     console.log('minting')
     tx = await zkZERO.mint();
+    await tx.wait();
+    await print()
+
+    console.log('minting')
+    tx = await zkZERO.mint();
+    await tx.wait();
+    await print()
+
+    console.log('transfering')
+    tx = await zkZERO.setOperator(signer.address);
+    await tx.wait();
+    await print()
+
+    console.log('transfering')
+    tx = await zkZERO.transferFrom(signer.address, receiver, 0);
     await tx.wait();
     await print()
 }
