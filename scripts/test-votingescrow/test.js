@@ -17,17 +17,11 @@ async function increaseTime(provider, seconds) {
 //chain
 async function main () {
 
-    const receiver = "0x35dCEaD4670161a3D123b007922d61378D3A9d18";
+    var specimen = "0x026F9a7B3664a16c01c29F86092a6348adbf6638";
+    
+    data = await ethers.getContractAt("VotingEscrow", "0xB419cE2ea99f356BaE0caC47282B9409E38200fa");
 
-    data = await ethers.getContractFactory("zkZERO");
-    zkZERO = await data.deploy(receiver);
-    txDeployed = await zkZERO.deployed();
-    console.log('zkZERO deployed to', zkZERO.address);
-
-    await run("verify:verify", {
-        address: zkZERO.address,
-        constructorArguments: [receiver],
-      });
+    console.log(await data.checkpoints(specimen, 16))
 
 }
 

@@ -754,6 +754,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         require(_value > 0); // dev: need non-zero value
         require(_locked.amount > 0, 'No existing lock found');
         require(_locked.end > block.timestamp, 'Cannot add to expired lock. Withdraw');
+        // todo: increase lock time (0 3rd param) if msg sender is rewardsdistributorv2
         _deposit_for(_tokenId, _value, 0, _locked, DepositType.DEPOSIT_FOR_TYPE);
     }
 
@@ -840,6 +841,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         // Both can have >= 0 amount
         _checkpoint(_tokenId, _locked, LockedBalance(0,0));
 
+        // todo: send exit fee % to rewardsdistributorv2 
         assert(IERC20(token).transfer(msg.sender, value));
 
         // Burn the NFT

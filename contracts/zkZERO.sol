@@ -18,22 +18,24 @@ contract zkZERO is ERC721Enumerable, Ownable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
-    uint256 public MAX_SUPPLY = 1000;
-    uint256 public NFT_PRICE = 450e18;
+    uint256 public MAX_SUPPLY = 929;
     uint256 public MAX_MINT = 3;
-    uint256 public MIN_VERETRO = 2500e18;
     uint256 public SALE_START_TIMESTAMP;
     address public cashReceiver;
     bool public ended;
-    IERC20 public cash = IERC20(0x5D066D022EDE10eFa2717eD3D79f22F949F8C175);
-    veretro public ve = veretro(0xB419cE2ea99f356BaE0caC47282B9409E38200fa);
+
+    mapping(address => uint256) public prices;
+
     address public operator;
 
     constructor(
-        uint256 _startTimestamp,
         address multisig
     ) ERC721("zkZERO", "zkZERO") {
-        SALE_START_TIMESTAMP = _startTimestamp;
+        prices[0x5D066D022EDE10eFa2717eD3D79f22F949F8C175] = 450e18;
+        prices[0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174] = 450e6;
+        prices[0xc2132D05D31c914a87C6611C10748AEb04B58e8F] = 450e6;
+        prices[0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063] = 450e18;
+        SALE_START_TIMESTAMP = block.timestamp;
         cashReceiver = multisig;
     }
 
@@ -45,12 +47,16 @@ contract zkZERO is ERC721Enumerable, Ownable {
         operator = _operator;
     }
 
-    function setNftPrice(uint256 _nftPrice) external onlyOwner {
-        NFT_PRICE = _nftPrice;
+    function setAllowed(address token, uint256 value) external onlyOwner {
+        prices[token] = value;
     }
 
-    function setMinVeretro(uint256 _newVeRetroMinRequirement) external onlyOwner {
-        MIN_VERETRO = _newVeRetroMinRequirement;
+    function setMaxSupply(uint256 _maxSupply) external onlyOwner {
+        MAX_SUPPLY = _maxSupply;
+    }
+
+    function setMaxMint(uint256 _maxMint) external onlyOwner {
+        MAX_MINT = _maxMint;
     }
 
     function setCashReceiver(address _cashReceiver) external onlyOwner {
@@ -73,13 +79,13 @@ contract zkZERO is ERC721Enumerable, Ownable {
         }
     }
 
-    function mint() public {
+    function mint(address payToken) public {
+        require(prices[payToken] > 0, "token is not whitelisted for presale");
         require(balanceOf(msg.sender) < MAX_MINT, "Exceeded max allowed amount per wallet");
         require(block.timestamp >= SALE_START_TIMESTAMP, "Sale has not started yet.");
         require(!ended, "Sale has ended.");
-        require(ve.getVotes(msg.sender) >= MIN_VERETRO, "Not enough veRETRO to participate.");
 
-        cash.safeTransferFrom(msg.sender, cashReceiver, NFT_PRICE);
+        IERC20(payToken).safeTransferFrom(msg.sender, cashReceiver, prices[payToken]);
 
         _mintTo(msg.sender);
     }

@@ -37,7 +37,7 @@ contract PairFactory is IPairFactory {
         feeManager = msg.sender;
         stableFee = 4; // 0.04%
         volatileFee = 18; // 0.18%
-        stakingNFTFee = 3000; // 30% of stable/volatileFee
+        stakingNFTFee = 0; // 30% of stable/volatileFee
     }
 
     function allPairsLength() external view returns (uint) {
