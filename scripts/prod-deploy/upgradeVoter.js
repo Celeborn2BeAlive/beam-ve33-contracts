@@ -25,11 +25,11 @@ function sleep(ms) {
 async function main() {
 
   const proxy = "0xAcCbA5e852AB85E5E3a84bc8E36795bD8cEC5C73"
-  const addressNewImpl = "0x5Cd2fD124A4581cf314dBCAb240c36b0F52A60f5"
+  // const addressNewImpl = "0x5Cd2fD124A4581cf314dBCAb240c36b0F52A60f5"
   
-  // const veartContract = await ethers.getContractFactory("VoterV3")
-  // addressNewImpl = await upgrades.prepareUpgrade(proxy, veartContract);
-  // console.log('new implementation address is', addressNewImpl)
+  const veartContract = await ethers.getContractFactory("VoterV3")
+  addressNewImpl = await upgrades.prepareUpgrade(proxy, veartContract);
+  console.log('new implementation address is', addressNewImpl)
 
   await run("verify:verify", {
     address: addressNewImpl,

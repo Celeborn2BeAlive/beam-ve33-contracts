@@ -26,7 +26,7 @@ async function main () {
     const impersonateTeam = await ethers.getImpersonatedSigner("0x35dCEaD4670161a3D123b007922d61378D3A9d18");
     const proxyAdmin = "0xcF3A3f7C77c2573829A973559352495BA89eA7E2"
     const proxy = "0xAcCbA5e852AB85E5E3a84bc8E36795bD8cEC5C73"
-    const newImpl = "0x5Cd2fD124A4581cf314dBCAb240c36b0F52A60f5"
+    const newImpl = "0x71F6CAc5C79A9AF50f47Df0568c075A6055ba830"
     
     await impersonateMyself.sendTransaction({
         to: impersonateTeam.address,

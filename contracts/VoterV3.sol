@@ -324,6 +324,7 @@ contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         uint256 _poolVoteCnt = _poolVote.length;
         uint256 _totalWeight = 0;
         uint256 _time = _epochTimestamp();
+        uint256 lastVoteTimestamp = lastVoted[_tokenId];
 
         for (uint256 i = 0; i < _poolVoteCnt; i ++) {
             address _pool = _poolVote[i];
@@ -331,16 +332,18 @@ contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
             if (_votes != 0) {
 
-                // if user last vote is < than epochTimestamp then votes are 0! IF not underflow occur
-                if(lastVoted[_tokenId] > _time) weightsPerEpoch[_time][_pool] -= _votes;
-
                 votes[_tokenId][_pool] -= _votes;
-                
-                IBribe(internal_bribes[gauges[_pool]]).withdraw(uint256(_votes), _tokenId);
-                IBribe(external_bribes[gauges[_pool]]).withdraw(uint256(_votes), _tokenId);
 
-                // if is alive remove _votes, else don't because we already done it in killGauge()
-                if(isAlive[gauges[_pool]]) _totalWeight += _votes;
+                // if user last vote is < than epochTimestamp then votes are 0! IF not underflow occur
+                if (lastVoteTimestamp > _time) {
+                    weightsPerEpoch[_time][_pool] -= _votes;
+
+                    IBribe(internal_bribes[gauges[_pool]]).withdraw(uint256(_votes), _tokenId);
+                    IBribe(external_bribes[gauges[_pool]]).withdraw(uint256(_votes), _tokenId);
+
+                    // if is alive remove _votes, else don't because we already done it in killGauge()
+                    if(isAlive[gauges[_pool]]) _totalWeight += _votes;
+                }
                 
                 emit Abstained(_tokenId, _votes);
             }
@@ -348,7 +351,7 @@ contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
         
         // if user last vote is < than epochTimestamp then _totalWeight is 0! IF not underflow occur
-        if(lastVoted[_tokenId] < _time) _totalWeight = 0;
+        if(lastVoteTimestamp < _time) _totalWeight = 0;
         
         totalWeightsPerEpoch[_time] -= _totalWeight;
         delete poolVote[_tokenId];
