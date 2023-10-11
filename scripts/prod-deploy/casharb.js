@@ -23,7 +23,7 @@ async function main () {
   
   const CashArb = await ethers.getContractFactory("ArbBurn", impersonateMyself)
   let cashArb = await CashArb.deploy(
-    "0x619259f699839dd1498ffc22297044462483bd27",
+    "0x45dda9cb7c25131df268515131f647d726f50608",
     "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
     "0x5d066d022ede10efa2717ed3d79f22f949f8c175",
     "0x8f3cf7ad23cd3cadbd9735aff958023239c6a063",
@@ -52,8 +52,13 @@ async function main () {
     tx = await timelock.setFeeExempt(cashArbAddress, true)
     await tx.wait()
 
+    console.log("Doing work")
+
     
     tx = await cashArb.work("10000000000"); //10k
+    await tx.wait()
+
+    tx = await cashArb.work("1000000000000"); //1m
     await tx.wait()
 
 }

@@ -16,13 +16,13 @@ contract ArbBurn is IUniswapV3FlashCallback, Ownable {
 
     ISwapRouter retroRouter;
     ISwapRouter uniswapRouter;
-    IUniswapV3Pool pool;
+    IUniswapV3Pool loanPool;
     address USDC;
     address CASH;
     address DAI;
     address USDT;
     IVault CASHVault;
-    bool USDCIsToken0;
+    bool USDCIsToken0; // USDC number in loanPool
     address addressDripper;
     address addressA;
     address addressB;
@@ -30,14 +30,16 @@ contract ArbBurn is IUniswapV3FlashCallback, Ownable {
     event Earned(uint256 amount);
     event Distributed(uint256 amountDripper, uint256 amountAB);
 
-    constructor(IUniswapV3Pool _pool, address _USDC, address _CASH, address _DAI, address _USDT, ISwapRouter _retroRouter, ISwapRouter _uniswapRouter, address _addressDripper, address _addressA, address _addressB) {
-        pool = _pool;
+    constructor(IUniswapV3Pool _loanPool, address _USDC, address _CASH, address _DAI, address _USDT, ISwapRouter _retroRouter, ISwapRouter _uniswapRouter, address _addressDripper, address _addressA, address _addressB) {
+        loanPool = _loanPool;
         USDC = _USDC;
         CASH = _CASH;
-        if (USDC < CASH) {
+        if (USDC == loanPool.token0()) {
             USDCIsToken0 = true;
-        } else {
+        } else if (USDC == loanPool.token1()) {
             USDCIsToken0 = false;
+        } else {
+            revert("No USDC in loanPool");
         }
         DAI = _DAI;
         USDT = _USDT;
@@ -56,7 +58,7 @@ contract ArbBurn is IUniswapV3FlashCallback, Ownable {
     function work(uint256 amountIn) public onlyOwner returns(uint256 profit) {
         uint256 balanceBefore = IERC20(USDC).balanceOf(address(this));
         console.log("making flash loan");
-        pool.flash(
+        loanPool.flash(
             address(this),
             USDCIsToken0 ? amountIn : 0,
             USDCIsToken0 ? 0 : amountIn,
@@ -70,6 +72,7 @@ contract ArbBurn is IUniswapV3FlashCallback, Ownable {
 
         require(balanceAfter > balanceBefore, "No profit");
         profit = balanceAfter - balanceBefore;
+        console.log("profit is: ", profit);
         emit Earned(profit);
     }
 
@@ -108,18 +111,17 @@ contract ArbBurn is IUniswapV3FlashCallback, Ownable {
         uint256 fee1,
         bytes calldata data
     ) external override {
-        require(msg.sender == address(pool), "Only pool can call callback");
+        require(msg.sender == address(loanPool), "Only pool can call callback");
         FlashCallbackData memory decoded = abi.decode(
             data,
             (FlashCallbackData)
         );
 
         uint256 remainingDebt = decoded.borrowedAmount + (USDCIsToken0 ? fee0 : fee1);
-
+        
         // Swap borrowed USDC to CASH
         uint256 amountCASH = v3Swap(retroRouter, USDC, CASH, decoded.borrowedAmount);
 
-        console.log("redeeming cash");
         // Burn Cash
         CASHVault.redeem(amountCASH, 0);        
 
@@ -127,17 +129,16 @@ contract ArbBurn is IUniswapV3FlashCallback, Ownable {
         uint256 balanceDAI = IERC20(DAI).balanceOf(address(this));
         uint256 balanceUSDT = IERC20(USDT).balanceOf(address(this));
 
-        console.log("doing v3swap");
         v3Swap(uniswapRouter, DAI, USDC, balanceDAI);
         v3Swap(uniswapRouter, USDT, USDC, balanceUSDT);
 
         uint256 balanceUSDC = IERC20(USDC).balanceOf(address(this));
-
+        
         if (remainingDebt > balanceUSDC) {
             revert("Not enough to repay");
         }
-        console.log("doing safeTransfer of USDC to pool to repay debt");
-        IERC20(USDC).safeTransfer(address(pool), remainingDebt);
+        IERC20(USDC).safeTransfer(address(loanPool), remainingDebt);
+        console.log("Repaid");
     }
 
 
