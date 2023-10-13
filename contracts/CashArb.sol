@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "./interfaces/IVault.sol";
 import "./interfaces/ICash.sol";
-import "hardhat/console.sol";
 
 contract ArbBurn is IUniswapV3FlashCallback, Ownable {
     using SafeERC20 for IERC20;
@@ -57,7 +56,6 @@ contract ArbBurn is IUniswapV3FlashCallback, Ownable {
 
     function work(uint256 amountIn) public onlyOwner returns(uint256 profit) {
         uint256 balanceBefore = IERC20(USDC).balanceOf(address(this));
-        console.log("making flash loan");
         loanPool.flash(
             address(this),
             USDCIsToken0 ? amountIn : 0,
@@ -72,7 +70,6 @@ contract ArbBurn is IUniswapV3FlashCallback, Ownable {
 
         require(balanceAfter > balanceBefore, "No profit");
         profit = balanceAfter - balanceBefore;
-        console.log("profit is: ", profit);
         emit Earned(profit);
     }
 
@@ -138,7 +135,6 @@ contract ArbBurn is IUniswapV3FlashCallback, Ownable {
             revert("Not enough to repay");
         }
         IERC20(USDC).safeTransfer(address(loanPool), remainingDebt);
-        console.log("Repaid");
     }
 
 
