@@ -39,9 +39,12 @@ contract zkZeroBatch is Ownable {
     function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
     }
-    
-    function batchMint(address payToken, uint256 _amount) public {
 
+    function batchMint(address payToken, uint256 _amount) public {
+            require(_amount > 0, "can only mint 1+");
+            uint256[] memory beforeTokens = zkZeroContract.tokensOfOwner(address(this));
+            require(beforeTokens.length == 0, "something is wrong");
+            
             uint256 totalPrice = _amount * prices[payToken];
             
             IERC20(payToken).safeTransferFrom(msg.sender, address(this), totalPrice);
