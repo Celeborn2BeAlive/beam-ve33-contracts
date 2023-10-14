@@ -42,6 +42,7 @@ contract zkZeroBatch is Ownable {
 
     function batchMint(address payToken, uint256 _amount, address _to) public {
             require(_amount > 0, "can only mint 1+");
+            require(_to != address(this));
             uint256[] memory beforeTokens = zkZeroContract.tokensOfOwner(address(this));
             require(beforeTokens.length == 0, "something is wrong");
 
