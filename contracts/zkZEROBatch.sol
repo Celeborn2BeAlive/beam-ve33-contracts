@@ -40,26 +40,34 @@ contract zkZeroBatch is Ownable {
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function batchMint(address payToken, uint256 _amount) public {
+    function batchMint(address payToken, uint256 _amount, address _to) public {
             require(_amount > 0, "can only mint 1+");
             uint256[] memory beforeTokens = zkZeroContract.tokensOfOwner(address(this));
             require(beforeTokens.length == 0, "something is wrong");
-            
+
             uint256 totalPrice = _amount * prices[payToken];
             
             IERC20(payToken).safeTransferFrom(msg.sender, address(this), totalPrice);
-            
+            IERC20(payToken).approve(address(zkZeroContract), totalPrice);
+
             for (uint256 index; index < _amount; index++) {
-                IERC20(payToken).approve(address(zkZeroContract), totalPrice);
                 zkZeroContract.mint(payToken);
             }
 
             uint256[] memory tokens = zkZeroContract.tokensOfOwner(address(this));
 
-            for(uint256 ind; ind < tokens.length; ind++){
-                zkZeroContract.transferFrom(address(this), msg.sender, tokens[ind]);
+            if(_to != address(0)){
+
+                for(uint256 ind; ind < tokens.length; ind++){
+                    zkZeroContract.transferFrom(address(this), _to, tokens[ind]);
+                }
+
+            }else{
+
+                for(uint256 ind; ind < tokens.length; ind++){
+                    zkZeroContract.transferFrom(address(this), msg.sender, tokens[ind]);
+                }
             }
 
     }
-
 }

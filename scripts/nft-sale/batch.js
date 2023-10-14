@@ -18,52 +18,36 @@ async function increaseTime(provider, seconds) {
 async function main () {
 
     var impersonateMyself = await ethers.getImpersonatedSigner("0xc8949dbaf261365083a4b46ab683BaE1C9273203");
-    var impersonateBuyer = await ethers.getImpersonatedSigner("0x03a1a0ee0e2a14bd069c8691a4adeabfa6a4d709");
-    var impersonateBuyerTwo = await ethers.getImpersonatedSigner("0x55d8ba4008185bfcfc2051860745d09688ddebc3");
+    var impersonateBuyer = await ethers.getImpersonatedSigner("0x0Bca0F5D3C7FF6a8344F9a821653D38Ed7Dc6Fde");
 
-    const cash = await ethers.getContractAt("Retro", "0x5D066D022EDE10eFa2717eD3D79f22F949F8C175", impersonateBuyer)
-    const zkZERO = await ethers.getContractAt("zkZERO", "0xB7675B762c683Fe8828c9102AeB5956737E1933A", impersonateMyself)
+    await impersonateMyself.sendTransaction({
+        to: impersonateBuyer.address,
+        value: ethers.utils.parseEther("20"),
+        });
 
-    const cashBuyerTwo = await ethers.getContractAt("Retro", "0x5D066D022EDE10eFa2717eD3D79f22F949F8C175", impersonateBuyerTwo)
+    const cash = await ethers.getContractAt("Retro", "0x2791bca1f2de4661ed88a30c99a7a9449aa84174", impersonateBuyer)
+    const zkZERO = await ethers.getContractAt("zkZERO", "0xB7675B762c683Fe8828c9102AeB5956737E1933A")
+    const zkZEROBatch = await ethers.getContractAt("zkZeroBatch", "0xbd95d199988d6F5b41Db12b9a0e3F37E43011F26", impersonateBuyer)
 
-    data = await ethers.getContractFactory("zkZeroBatch", impersonateBuyer);
-    zkZEROBatch = await data.deploy(zkZERO.address);
-    txDeployed = await zkZEROBatch.deployed();
-    console.log('zkZEROBatch deployed to', zkZEROBatch.address)
-
-    const zkZEROBatchTwo = await ethers.getContractAt("zkZeroBatch", zkZEROBatch.address, impersonateBuyerTwo)
-
-    console.log('setting operator...')
-    tx = await zkZERO.setOperator(zkZEROBatch.address);
-    await tx.wait()
 
     console.log('approving cash...')
     tx = await cash.approve(zkZEROBatch.address, "999999999999999999999999999999999");
-    await tx.wait()
-    tx = await cashBuyerTwo.approve(zkZEROBatch.address, "999999999999999999999999999999999");
     await tx.wait()
 
     console.log('buyers balance nft before', await zkZERO.balanceOf(impersonateBuyer.address))
     console.log('batch contract balance nft before', await zkZERO.balanceOf(zkZEROBatch.address))
     console.log('buyer cash balance before', await cash.balanceOf(impersonateBuyer.address))
 
-    tx = await zkZEROBatch.batchMint(cash.address, 100);
+    tx = await zkZEROBatch.batchMint(cash.address, 2);
     await tx.wait()
+    const receipt = await tx.wait()
+
+    console.log(receipt)
 
     console.log('buyer balance nft after', await zkZERO.balanceOf(impersonateBuyer.address))
     console.log('batch contract balance nft after', await zkZERO.balanceOf(zkZEROBatch.address))
     console.log('buyer cash balance after', await cash.balanceOf(impersonateBuyer.address))
 
-    console.log('buyer2 balance nft before', await zkZERO.balanceOf(impersonateBuyerTwo.address))
-    console.log('batch contract balance nft before', await zkZERO.balanceOf(zkZEROBatchTwo.address))
-    console.log('buyer2 cash balance before', await cash.balanceOf(impersonateBuyerTwo.address))
-
-    tx = await zkZEROBatchTwo.batchMint(cash.address, 50);
-    await tx.wait()
-
-    console.log('buyer2 balance nft after', await zkZERO.balanceOf(impersonateBuyerTwo.address))
-    console.log('batch contract balance nft after', await zkZERO.balanceOf(zkZEROBatchTwo.address))
-    console.log('buyer2 cash balance after', await cash.balanceOf(impersonateBuyerTwo.address))
     
 }
 
