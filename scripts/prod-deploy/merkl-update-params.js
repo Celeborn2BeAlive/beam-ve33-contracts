@@ -4,18 +4,18 @@ const { ethers  } = require('hardhat');
 
 async function main () {
     
-    const gauge = "0x16ab4d14eb7A998443Eda477EdaAb9202ae4957b"
+    const gauge = "0x273f8Fe9516458986d8710264a529a0a4a1517d4"
     const gaugeFactory = "0x9AE721D3Bae22FA42AA11eD7E4AB0b9b7263DE52"
 
     const desiredParams = [ '0x0000000000000000000000000000000000000000000000000000000000000000',
-    '0x13d5e61838D93F7962C52dc921FD7C0Ccc092E35',
+    '0x619259F699839dD1498FFC22297044462483bD27',
     '0x3A29CAb2E124919d14a6F735b6033a3AaD2B260F',
     0,
     [],
     [],
-    6000,
-    0,
-    4000,
+    100,
+    100,
+    9800,
     0,
     168,
     0,
