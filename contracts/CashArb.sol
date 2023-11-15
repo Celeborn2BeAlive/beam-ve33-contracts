@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3FlashCallback.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -10,7 +10,7 @@ import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "./interfaces/IVault.sol";
 import "./interfaces/ICash.sol";
 
-contract Arb is IUniswapV3FlashCallback, Ownable {
+contract Arb is IUniswapV3FlashCallback, AccessControl {
     using SafeERC20 for IERC20;
 
     
@@ -27,12 +27,17 @@ contract Arb is IUniswapV3FlashCallback, Ownable {
 
     IVault CASHVault;
     bool USDCIsToken0; // USDC number in loanPool
+
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     
 
     event Earned(uint256 amount, bool movePriceUp);
     event Distributed(uint256 amountDripper, uint256 amountAB);
 
     constructor(IUniswapV3Pool _loanPool, address _USDC, address _CASH, address _DAI, address _USDT, ISwapRouter _retroRouter, ISwapRouter _uniswapRouter, address _addressDripper, address _addressA, address _addressB) {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(OPERATOR_ROLE, msg.sender);
+
         USDC = _USDC;
         CASH = _CASH;
         DAI = _DAI;
@@ -43,7 +48,7 @@ contract Arb is IUniswapV3FlashCallback, Ownable {
         setConfig(_loanPool, _retroRouter, _uniswapRouter, _addressDripper, _addressA, _addressB);
     }
 
-    function setConfig(IUniswapV3Pool _loanPool, ISwapRouter _retroRouter, ISwapRouter _uniswapRouter, address _addressDripper, address _addressA, address _addressB) public onlyOwner() {
+    function setConfig(IUniswapV3Pool _loanPool, ISwapRouter _retroRouter, ISwapRouter _uniswapRouter, address _addressDripper, address _addressA, address _addressB) public onlyRole(DEFAULT_ADMIN_ROLE) {
         loanPool = _loanPool;
         retroRouter = _retroRouter;
         uniswapRouter = _uniswapRouter;
@@ -65,7 +70,7 @@ contract Arb is IUniswapV3FlashCallback, Ownable {
         bool movePriceUp;
     }
 
-    function work(uint256 amountIn, bool movePriceUp) public onlyOwner returns(uint256 profit) {
+    function work(uint256 amountIn, bool movePriceUp) public onlyRole(OPERATOR_ROLE) returns(uint256 profit) {
         uint256 balanceBefore = IERC20(USDC).balanceOf(address(this));
         loanPool.flash(
             address(this),
@@ -85,7 +90,7 @@ contract Arb is IUniswapV3FlashCallback, Ownable {
         emit Earned(profit, movePriceUp);
     }
 
-    function distributeProfits() public onlyOwner {
+    function distributeProfits() public onlyRole(OPERATOR_ROLE) {
         uint256 amountToDistribute = IERC20(USDC).balanceOf(address(this));
         uint256 amountAB = amountToDistribute*15/100;
         uint256 amountDripper = amountToDistribute - 2*amountAB;
@@ -99,14 +104,14 @@ contract Arb is IUniswapV3FlashCallback, Ownable {
         emit Distributed(amountDripper, amountAB);
     }
 
-    function recoverERC20(address token) external onlyOwner {
+    function recoverERC20(address token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 balance = IERC20(token).balanceOf(address(this));
         if (balance > 0) {
             IERC20(token).safeTransfer(msg.sender, balance);
         }
     }
 
-    function wokrAndDistributeProfits(uint256 amountIn, bool movePriceUp) external onlyOwner {
+    function wokrAndDistributeProfits(uint256 amountIn, bool movePriceUp) external onlyRole(OPERATOR_ROLE) {
         work(amountIn, movePriceUp);
         distributeProfits();
     }
