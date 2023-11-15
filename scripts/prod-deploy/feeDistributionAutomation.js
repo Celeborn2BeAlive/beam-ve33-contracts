@@ -13,6 +13,12 @@ const pairFactory = {"address": "0x1fC46294195aA87F77fAE299A14Bd1728dC1Cca9"}
 //UNISWAPV3
 const univ3_factory = {"address": "0x91e1B99072f238352f59e58de875691e20Dc19c1"};
 
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 async function main () {
     accounts = await ethers.getSigners();
     owner = accounts[0]
@@ -22,6 +28,9 @@ async function main () {
     DistributeFees = await upgrades.deployProxy(data, input, {initializer: 'initialize'});
     txDeployed = await DistributeFees.deployed();
     console.log("DistributeFees: ", DistributeFees.address)
+    await sleep(2500)
+    
+
 
 }
 

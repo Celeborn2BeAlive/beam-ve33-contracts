@@ -20,8 +20,6 @@ contract DistributeFees is AutomationCompatibleInterface, OwnableUpgradeable {
     uint256 public lastCalledAt;
     // last time automation completed all distribution
     uint256 public lastCompletedAt;
-    // delta from last lastCompletedAt and the previous
-    uint256 public deltaTimestamp;
     // track pool length
     uint256 public index;
     // voter interface
@@ -38,7 +36,7 @@ contract DistributeFees is AutomationCompatibleInterface, OwnableUpgradeable {
         __Ownable_init();
         voter = IVoter(_voter);
         maxLoops = _maxLoops;
-        lastCompletedAt = 1683695216;
+        lastCompletedAt = 0;
     }
 
     function _lockGauge(address[] memory gauges) external onlyOwner {
@@ -59,30 +57,19 @@ contract DistributeFees is AutomationCompatibleInterface, OwnableUpgradeable {
         index = _idx;
     }
 
-    function setMaxLoops(uint256 _maxLoops) public onlyOwner {
-        maxLoops = _maxLoops;
+    function setLastCompletedAt(uint256 _lastCompletedAt) public onlyOwner {
+        lastCompletedAt = _lastCompletedAt;
     }
 
-    function _getWeekSection(uint256 timestamp) internal pure returns (uint8 sector) {
-        uint256 day = (timestamp / 86400 + 4) % 7;
-        uint256 hour = (timestamp / 3600) % 24;
-
-        //Divide the week in 3 "sections": Mon 14:00 -> Wed 18:00, Wed 18:00 -> Fri 14:00, Fri 14:00 -> Mon 14:00
-        return
-            ((day == 1 && hour >= 14) || day == 2 || (day == 3 && hour < 18)) ? 0
-                : ((day == 3 && hour >= 18) || day == 4 || (day == 5 && hour < 14))? 1 : 2;
+    function setMaxLoops(uint256 _maxLoops) public onlyOwner {
+        maxLoops = _maxLoops;
     }
 
     function checkUpkeep(bytes memory /*checkdata*/) public view override returns (bool upkeepNeeded, bytes memory /*performData*/) {
         //upkeepneeded should be true monday, friday at 14 UTC, wednesday at 18UTC
         //If more than 3 days have passed since lastCompletedAt we must update!
-        if (block.timestamp - lastCompletedAt > 3 days) {
+        if (block.timestamp - lastCompletedAt >= 1 days) {
             upkeepNeeded = true;
-        } else {
-            //Miners use UTC time as a timestamp -> should check if hour is past 14 UTC (monday, friday) or 18UTC (friday)
-            //We are in the same week, compare the section!
-            upkeepNeeded = (_getWeekSection(block.timestamp) !=
-                _getWeekSection(lastCompletedAt));
         }
     }
 
@@ -90,7 +77,7 @@ contract DistributeFees is AutomationCompatibleInterface, OwnableUpgradeable {
 
         lastCalledAt = block.timestamp;
 
-        if(block.timestamp - lastCompletedAt <= 3 days && (_getWeekSection(block.timestamp) ==_getWeekSection(lastCompletedAt))) {
+        if(block.timestamp - lastCompletedAt <= 1 days) {
             revert("!checkUpkeep");
         }
 
@@ -122,7 +109,6 @@ contract DistributeFees is AutomationCompatibleInterface, OwnableUpgradeable {
 
 
         if(index >= voter.length()) {
-            deltaTimestamp = block.timestamp - lastCompletedAt;
             lastCompletedAt = block.timestamp;
             index = 0;
         }

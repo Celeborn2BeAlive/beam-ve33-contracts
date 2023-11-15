@@ -64,6 +64,11 @@
       "address": "0xEE6450e3049c4E82220b2960404EB0087852734E",
       "txHash": "0xde23197824579c12f49844cba6b5a358f0096b1c1b15e6ca7fa3406895b7e107",
       "kind": "transparent"
+    },
+    {
+      "address": "0x91DD40785A26bA12b73A7580621e1334DDF84406",
+      "txHash": "0x69955d3ad12d031435019b61a5325d9c58a9172711e82faefd26c871fc640731",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -3674,6 +3679,138 @@
           },
           "t_mapping(t_uint256,t_uint256)": {
             "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "66a09947bdc2c747a78257bdff9aa2c9104f23d2be8e87e50efccca71729ed03": {
+      "address": "0x62711e19baBa7ab775d19a99A2c83f76aF4Ca0f3",
+      "txHash": "0xb1d0aa225632de3f140cc0a02f47e078a3942e641c1d4324a2878ec48d1a01db",
+      "layout": {
+        "solcVersion": "0.8.13",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "lastCalledAt",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_uint256",
+            "contract": "DistributeFees",
+            "src": "contracts/FeesDistributor.sol:20"
+          },
+          {
+            "label": "lastCompletedAt",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_uint256",
+            "contract": "DistributeFees",
+            "src": "contracts/FeesDistributor.sol:22"
+          },
+          {
+            "label": "index",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_uint256",
+            "contract": "DistributeFees",
+            "src": "contracts/FeesDistributor.sol:24"
+          },
+          {
+            "label": "voter",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_contract(IVoter)663",
+            "contract": "DistributeFees",
+            "src": "contracts/FeesDistributor.sol:26"
+          },
+          {
+            "label": "maxLoops",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_uint256",
+            "contract": "DistributeFees",
+            "src": "contracts/FeesDistributor.sol:28"
+          },
+          {
+            "label": "lockGauge",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "DistributeFees",
+            "src": "contracts/FeesDistributor.sol:31"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IVoter)663": {
+            "label": "contract IVoter",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
             "numberOfBytes": "32"
           },
           "t_uint256": {
