@@ -25,12 +25,14 @@ async function main () {
 
     const zkZERO = await ethers.getContractAt("zkZERO", "0xB7675B762c683Fe8828c9102AeB5956737E1933A")
 
-    data = await ethers.getContractFactory("zkZeroBatch");
-    zkZEROBatch = await data.deploy(zkZERO.address);
-    txDeployed = await zkZEROBatch.deployed();
-    console.log('zkZEROBatch deployed to', zkZEROBatch.address)
+    // data = await ethers.getContractFactory("zkZeroBatch");
+    // zkZEROBatch = await data.deploy(zkZERO.address);
+    // txDeployed = await zkZEROBatch.deployed();
+    // console.log('zkZEROBatch deployed to', zkZEROBatch.address)
 
-    await sleep(2500)
+    // await sleep(2500)
+
+    zkZEROBatch = {"address":"0x2dD2dB29beBAcd726B3A51C1675adb06C892EfD9"}
 
     console.log('setting operator...')
     tx = await zkZERO.setOperator(zkZEROBatch.address);

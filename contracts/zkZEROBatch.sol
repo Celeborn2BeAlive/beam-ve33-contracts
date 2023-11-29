@@ -29,6 +29,7 @@ contract zkZeroBatch is Ownable {
         prices[0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174] = 450e6;
         prices[0xc2132D05D31c914a87C6611C10748AEb04B58e8F] = 450e6;
         prices[0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063] = 450e18;
+        prices[0x5D4387325EDF5dbF3247D099E39303E4E84f898D] = 1;
         zkZeroContract = IZkZERO(zkzero);
     }
 

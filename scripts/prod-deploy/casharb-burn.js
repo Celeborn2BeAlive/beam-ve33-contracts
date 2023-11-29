@@ -27,7 +27,7 @@ async function main () {
   const usdc = await ethers.getContractAt("Retro", "0x2791bca1f2de4661ed88a30c99a7a9449aa84174")
   console.log('starting')
   console.log('balance before', await usdc.balanceOf("0x026F9a7B3664a16c01c29F86092a6348adbf6638"))
-  tx = await CashArb.wokrAndDistributeProfits("10000000000"); //1m
+  tx = await CashArb.wokrAndDistributeProfits("150000000000"); //1m
   await tx.wait()
   await sleep(2500)
   console.log('done')
