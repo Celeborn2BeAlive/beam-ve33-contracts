@@ -7,11 +7,15 @@ require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-web3");
 
 require("hardhat-tracer");
+require("hardhat-gas-reporter");
 
 const { PRIVATEKEY, APIKEY, APIKEY_ZK } = require("./pvkey.js");
 
 module.exports = {
   // latest Solidity version
+  gasReporter: {
+    enabled: true
+  },
   solidity: {
     compilers: [
       {
