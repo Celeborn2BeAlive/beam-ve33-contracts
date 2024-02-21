@@ -201,7 +201,7 @@ contract Bribe is ReentrancyGuard {
             return 0;
         } else {
             uint256 _rewardPerToken = rewardPerToken(_rewardToken, _timestamp);
-            uint256 _rewards = _rewardPerToken * _balance / 1e18;
+            uint256 _rewards = _rewardPerToken * _balance / 1e36;
             return _rewards;
         }
     }
@@ -211,7 +211,7 @@ contract Bribe is ReentrancyGuard {
         if (_totalSupply[_timestamp] == 0) {
             return rewardData[_rewardsToken][_timestamp].rewardsPerEpoch;
         }
-        return rewardData[_rewardsToken][_timestamp].rewardsPerEpoch * 1e18 / _totalSupply[_timestamp];
+        return rewardData[_rewardsToken][_timestamp].rewardsPerEpoch * 1e36 / _totalSupply[_timestamp];
     }
 
  

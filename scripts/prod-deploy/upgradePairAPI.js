@@ -6,9 +6,9 @@ async function main () {
     accounts = await ethers.getSigners();
     owner = accounts[0]
 
-    const veartContract = await ethers.getContractFactory("PairAPI")
-    tx = await upgrades.prepareUpgrade('0xDF5ed9869721A37981359fA5a617D53Ef1B7e8b5', veartContract);
-    console.log('PairAPIProxy upgraded', tx);
+    const veartContract = await ethers.getContractAt("Retro", "0x5D066D022EDE10eFa2717eD3D79f22F949F8C175")
+    console.log(await veartContract.balanceOf('0x35dCEaD4670161a3D123b007922d61378D3A9d18', {blockTag: 51644349}))
+    console.log(await veartContract.balanceOf('0x35dCEaD4670161a3D123b007922d61378D3A9d18'))
 
 }
 

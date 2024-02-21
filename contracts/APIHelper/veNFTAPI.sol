@@ -107,6 +107,20 @@ contract veNFTAPI is Initializable {
 
         string symbol;
     }
+
+    struct RewardUser {
+        
+        address id;
+        uint256 amount;  
+        uint8 decimals;
+        
+        address pair;
+        address token;
+        address fee;
+        address bribe;
+
+        string symbol;
+    }
    
     uint256 constant public MAX_RESULTS = 1000;
     uint256 constant public MAX_PAIRS = 30;
@@ -248,10 +262,9 @@ contract veNFTAPI is Initializable {
         }
     }
 
-    function singlePairReward(uint256 id, address _pair) external view returns(Reward[] memory _reward){
-        return _pairReward(_pair, id);
+    function singlePairReward(address _user, address _pair) external view returns(RewardUser[] memory _reward){
+        return _pairRewardUser(_pair, _user);
     }
-
 
     function _pairReward(address _pair, uint256 id) internal view returns(Reward[] memory _reward){
 
@@ -332,6 +345,100 @@ contract veNFTAPI is Initializable {
 
             _reward[2 + k] = Reward({
                 id: id,
+                pair: _pair,
+                amount: bribeAmount,
+                token: _token,
+                symbol: IERC20(_token).symbol(),
+                decimals: IERC20(_token).decimals(),
+                fee: address(0),
+                bribe: externalBribe
+            });
+            
+        }   
+        
+
+        return _reward;
+    }
+
+    function _pairRewardUser(address _pair, address _user) internal view returns(RewardUser[] memory _reward){
+
+        if(_pair == address(0)){
+            return _reward;
+        }
+
+        
+        IPairAPI.pairInfo memory _pairApi = IPairAPI(pairAPI).getPair(_pair, address(0));
+               
+        address externalBribe = _pairApi.bribe;
+        
+        uint256 totBribeTokens = (externalBribe == address(0)) ? 0 : IBribeAPI(externalBribe).rewardsListLength();
+        
+        uint bribeAmount;
+
+        _reward = new RewardUser[](2 + totBribeTokens);
+
+        address _gauge;
+
+        try IHypervisor(_pair).pool(){
+            _gauge = (voter.gauges(IHypervisor(_pair).pool()));
+        } catch {
+            _gauge = (voter.gauges(_pair));
+        }
+        
+        if(_gauge == address(0)){
+            return _reward; 
+        }
+       
+
+        address t0 = _pairApi.token0;
+        address t1 = _pairApi.token1;
+        uint256 _feeToken0 = IBribeAPI(_pairApi.fee).earned(_user, t0);
+        uint256 _feeToken1 = IBribeAPI(_pairApi.fee).earned(_user, t1);
+
+        
+
+        if(_feeToken0 > 0){
+            _reward[0] = RewardUser({
+                id: _user,
+                pair: _pair,
+                amount: _feeToken0,
+                token: t0,
+                symbol: IERC20(t0).symbol(),
+                decimals: IERC20(t0).decimals(),
+                fee: _pairApi.fee,
+                bribe: address(0)
+            });
+        }
+
+        
+        if(_feeToken1 > 0){
+            _reward[1] = RewardUser({
+                id: _user,
+                pair: _pair,
+                amount: _feeToken1,
+                token: t1,
+                symbol: IERC20(t1).symbol(),
+                decimals: IERC20(t1).decimals(),
+                fee: _pairApi.fee,
+                bribe: address(0)
+            });
+        }
+        
+
+        //externalBribe point to Bribes.sol
+        if(externalBribe == address(0)){
+            return _reward;
+        }
+
+        uint k = 0;
+        address _token;      
+
+        for(k; k < totBribeTokens; k++){
+            _token = IBribeAPI(externalBribe).rewardTokens(k);
+            bribeAmount = IBribeAPI(externalBribe).earned(_user, _token);
+
+            _reward[2 + k] = RewardUser({
+                id: _user,
                 pair: _pair,
                 amount: bribeAmount,
                 token: _token,

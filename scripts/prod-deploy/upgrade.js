@@ -5,10 +5,12 @@ async function main () {
 
     accounts = await ethers.getSigners();
     owner = accounts[0]
-
-    const veartContract = await ethers.getContractFactory("VeArtProxyUpgradeable")
-    await upgrades.upgradeProxy('0x2f37885505cB4CcabBD587b1f56821A08685CD0C', veartContract);
-    console.log('VeArtProxy upgraded');
+    
+    data = await ethers.getContractFactory("RewardAPI");
+    input = ["0xAcCbA5e852AB85E5E3a84bc8E36795bD8cEC5C73"]
+    RewardAPI = await upgrades.deployProxy(data,input, {initializer: 'initialize'});
+    txDeployed = await RewardAPI.deployed();
+    console.log("RewardAPI: ", RewardAPI.address)
 
 }
 

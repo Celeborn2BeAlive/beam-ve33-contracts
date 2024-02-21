@@ -204,8 +204,8 @@ contract PairAPI is Initializable {
                 _pairInfo.stable = _type == false ? false : ipair.isStable();
                 _pairInfo.total_supply = ipair.totalSupply();
             } catch {
-                _pairInfo.symbol = append(IERC20(token_0).symbol(), "-", IERC20(token_1).symbol(), "-", Strings.toString(IPairInfo(underlyingPool).fee()));
-                _pairInfo.name = append(IERC20(token_0).symbol(), "-", IERC20(token_1).symbol(), "-", Strings.toString(IPairInfo(underlyingPool).fee()));
+                _pairInfo.symbol = append(token_0 == 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174 ? "USDC.e" : IERC20(token_0).symbol(), "-", token_1 == 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174 ? "USDC.e" : IERC20(token_1).symbol(), "-", Strings.toString(IPairInfo(underlyingPool).fee()));
+                _pairInfo.name = append(token_0 == 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174 ? "USDC.e" : IERC20(token_0).symbol(), "-", token_1 == 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174 ? "USDC.e" : IERC20(token_1).symbol(), "-", Strings.toString(IPairInfo(underlyingPool).fee()));
                 _pairInfo.decimals = 0;
                 _pairInfo.stable = false;
                 _pairInfo.total_supply = 0;
@@ -221,14 +221,14 @@ contract PairAPI is Initializable {
         // Token0 Info
         _pairInfo.token0 = token_0;
         _pairInfo.token0_decimals = IERC20(token_0).decimals();
-        _pairInfo.token0_symbol = IERC20(token_0).symbol();
+        _pairInfo.token0_symbol = token_0 == 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174 ? "USDC.e" : IERC20(token_0).symbol();
         _pairInfo.reserve0 = r0;
         _pairInfo.claimable0 = _type == false ? 0 : ipair.claimable0(_account);
 
         // Token1 Info
         _pairInfo.token1 = token_1;
         _pairInfo.token1_decimals = IERC20(token_1).decimals();
-        _pairInfo.token1_symbol = IERC20(token_1).symbol();
+        _pairInfo.token1_symbol = token_1 == 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174 ? "USDC.e" : IERC20(token_1).symbol();
         _pairInfo.reserve1 = r1;
         _pairInfo.claimable1 = _type == false ? 0 : ipair.claimable1(_account);
 
@@ -241,7 +241,7 @@ contract PairAPI is Initializable {
         _pairInfo.emissions_token_decimals = IERC20(underlyingToken).decimals();
         
         // external address
-        _pairInfo.fee = voter.internal_bribes(address(_gauge)); 				    
+        _pairInfo.fee = address(_gauge) == 0xA495A2399432a3698C74f5c48C534833056ed937 ? 0x81D46c3AdD248cbd0346d7Cb9b3f71Ba3ecC5168 : voter.internal_bribes(address(_gauge)); 				    
         _pairInfo.bribe = voter.external_bribes(address(_gauge)); 				    
 
         // Account Info
