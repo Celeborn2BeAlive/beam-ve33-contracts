@@ -104,7 +104,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
 
     function setTeamRate(uint _teamRate) external {
         require(msg.sender == team, "not team");
-        require(_teamRate <= MAX_TEAM_RATE, "rate too high");
+        require(_teamRate <= 2000, "rate too high");
         teamRate = _teamRate;
     }
 

@@ -2,7 +2,7 @@
 const ether = require('@openzeppelin/test-helpers/src/ether');
 const { ethers  } = require('hardhat');
 
-const pools = ["0x098c1e4bb34decdf49d5966014b5153af326e766","0xde4c8898cd50ebe9c167313b312d147d10d1c898","0xa97b2b9aca65aab57a6b0840b45777bd66fbcf33","0x5c09352b1aa703d18dbcf48c98655bfa19d07fbb"]
+const pools = ["0x8c862d100B94d95a49D91958c9e8C2c348d00F04","0xB8dD18F9b7C3Ad4bDd4B94cB819eda3bd4465119","0x058F5330Fef74445878110e201B04F36f8a51c9b","0x11275C625A7DEE3532E062Eef6915f00af85C3B5"]
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -31,7 +31,7 @@ async function main () {
         await sleep(2500);
         feeVaultAddress = await gaugeFactoryV2CL.last_feeVault()
         feeVault = await ethers.getContractAt("CLFeesVault", feeVaultAddress, signer);
-        tx = await feeVault.setGammaShare(1000);
+        tx = await feeVault.setGammaShare(1731);
         await tx.wait();
         await sleep(2500);
         console.log('done');

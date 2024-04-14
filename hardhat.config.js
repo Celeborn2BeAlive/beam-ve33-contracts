@@ -9,7 +9,7 @@ require("@nomiclabs/hardhat-web3");
 require("hardhat-tracer");
 require("hardhat-gas-reporter");
 
-const { PRIVATEKEY, APIKEY, APIKEY_ZK } = require("./pvkey.js");
+const { PRIVATEKEY, PRIVATEKEYSECRET, APIKEY, APIKEY_ZK } = require("./pvkey.js");
 
 module.exports = {
   // latest Solidity version
@@ -48,14 +48,20 @@ module.exports = {
 
     polygon: {
       url: "https://polygon-mainnet.infura.io/v3/28b6e1b06d8b4cbcaaf8d7065ee116f3",
+      // url: "https://polygon-rpc.com",
       chainId: 137,
       accounts: PRIVATEKEY,
-      gasPrice: 400e9,
+      gasPrice: 600e9,
     },
 
     "polygon-zkevm": {
       url: "https://zkevm-rpc.com",
       accounts: PRIVATEKEY,
+    },
+
+    optimism: {
+      url: "https://zkevm-rpc.com",
+      accounts: PRIVATEKEYSECRET,
     },
 
     bscTestnet: {

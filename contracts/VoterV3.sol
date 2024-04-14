@@ -448,7 +448,11 @@ contract VoterV3 is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     function claimFees(address[] memory _fees, address[][] memory _tokens, uint256 _tokenId) external {
         require(IVotingEscrow(_ve).isApprovedOrOwner(msg.sender, _tokenId), "!ao");
         for (uint256 i = 0; i < _fees.length; i++) {
-            IBribe(_fees[i]).getRewardForOwner(_tokenId, _tokens[i]);
+            try IBribe(_fees[i]).getRewardForOwner(_tokenId, _tokens[i]){
+
+            } catch {
+
+            }
         }
     }
 

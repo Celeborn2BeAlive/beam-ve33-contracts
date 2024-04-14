@@ -15,7 +15,7 @@ async function main () {
     owner = "0xc8949dbaf261365083a4b46ab683BaE1C9273203"
     voter = "0xAcCbA5e852AB85E5E3a84bc8E36795bD8cEC5C73"
     bribeFactory = "0x601b14aCb5C340f2a12Ee9D3BE0B0828E5619081"
-    type = "Retro LP Fees: WBTC-WETH-500"
+    type = "Retro LP Fees: WBTC-USDC-3000"
 
     data = await ethers.getContractFactory("Bribe");
     bribe = await data.deploy(owner, voter, bribeFactory, type);
