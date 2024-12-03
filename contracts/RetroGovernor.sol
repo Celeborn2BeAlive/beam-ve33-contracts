@@ -8,7 +8,7 @@ import {L2GovernorCountingSimple} from "./governance/L2GovernorCountingSimple.so
 import {L2GovernorVotes} from "./governance/L2GovernorVotes.sol";
 import {L2GovernorVotesQuorumFraction} from "./governance/L2GovernorVotesQuorumFraction.sol";
 
-contract RetroGovernor is L2Governor, L2GovernorCountingSimple, L2GovernorVotes, L2GovernorVotesQuorumFraction {
+abstract contract RetroGovernor is L2Governor, L2GovernorCountingSimple, L2GovernorVotes, L2GovernorVotesQuorumFraction {
     address public team;
     uint256 public constant MAX_PROPOSAL_NUMERATOR = 100; // max 10%
     uint256 public constant PROPOSAL_DENOMINATOR = 1000;
