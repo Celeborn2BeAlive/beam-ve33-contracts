@@ -9,6 +9,8 @@ require("@nomiclabs/hardhat-web3");
 require("hardhat-tracer");
 require("hardhat-gas-reporter");
 
+require("@nomicfoundation/hardhat-foundry");
+
 const { PRIVATEKEY, PRIVATEKEYSECRET, APIKEY, APIKEY_ZK } = require("./pvkey.js");
 
 module.exports = {

@@ -1,9 +1,11 @@
 # for verify
-args.js 
+args.js
 .env
 
 # Foundry
 cache/
+cache_forge/
+out/
 
 # JS
 node_modules/
