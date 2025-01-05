@@ -78,6 +78,12 @@ module.exports = {
       accounts: PRIVATEKEY,
     },
 
+    zetachain: {
+      url: `https://zetachain-mainnet.public.blastapi.io`,
+      chainId: 7000,
+      accounts: PRIVATEKEY,
+    },
+
     hardhat: {
       forking: {
         url: "https://polygon-mainnet.infura.io/v3/28b6e1b06d8b4cbcaaf8d7065ee116f3",
@@ -106,6 +112,14 @@ module.exports = {
           browserURL: "https://zkevm.polygonscan.com",
         },
       },
+      {
+        network: 'zetachain',
+        chainId: 7000,
+        urls: {
+          apiURL: 'https://zetachain.blockscout.com/api',
+          browserURL: 'https://zetachain.blockscout.com',
+        },
+      }
     ],
   },
 
