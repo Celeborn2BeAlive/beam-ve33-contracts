@@ -4,7 +4,7 @@ pragma solidity 0.8.13;
 import "./libraries/Math.sol";
 import "./interfaces/IMinter.sol";
 import "./interfaces/IRewardsDistributor.sol";
-import "./interfaces/IRetro.sol";
+import "./interfaces/IEmissionToken.sol";
 import "./interfaces/IVoter.sol";
 import "./interfaces/IVotingEscrow.sol";
 
@@ -32,7 +32,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
     address public team;
     address public pendingTeam;
     
-    IRetro public _retro;
+    IEmissionToken public _retro;
     IVoter public _voter;
     IVotingEscrow public _ve;
     IRewardsDistributor public _rewards_distributor;
@@ -57,7 +57,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
         TAIL_EMISSION = 2;
         REBASEMAX = 300;
 
-        _retro = IRetro(IVotingEscrow(__ve).token());
+        _retro = IEmissionToken(IVotingEscrow(__ve).token());
         _voter = IVoter(__voter);
         _ve = IVotingEscrow(__ve);
         _rewards_distributor = IRewardsDistributor(__rewards_distributor);

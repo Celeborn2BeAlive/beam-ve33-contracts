@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IVotingEscrow.sol";
-import "./interfaces/IRetro.sol";
+import "./interfaces/IEmissionToken.sol";
 import "./interfaces/IPermissionsRegistry.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
