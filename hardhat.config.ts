@@ -69,6 +69,7 @@ const config: HardhatUserConfig = {
     optimism: {
       url: "https://zkevm-rpc.com",
       accounts: PRIVATEKEYSECRET,
+      gasPrice: 500e9,
     },
 
     bscTestnet: {

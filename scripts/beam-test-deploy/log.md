@@ -1,0 +1,18 @@
+- `pnpm exec hardhat --verbose compile`
+- copy `pvkey_EXAMPLE.js` to `pvkey.js` and fill in PRIVATEKEY and APIKEY (blockscout API key)
+- `pnpm exec hardhat run --verbose --network zetachain scripts/beam-test-deploy/00_token.js`
+  - Tried `pnpm exec hardhat verify --verbose --network zetachain 0x7dBb53CB6c92DdC7F4AA426862a6DDA86cfB4326`
+    - Currently output 429 error Too Many Requests.
+    - Follow up on Blockscout discord: https://discord.com/channels/973915550965174292/973918139664453662/1325392935596068875
+- `pnpm exec hardhat run --verbose --network zetachain scripts/beam-test-deploy/01_initial_mint.js`
+  - [Mint 50M token to deployer address.](https://zetachain.blockscout.com/tx/0x8820ad87fdb379c8912162ab39eb533e292a97f8c0f4f05f5c1dae584f4f0080)
+- `pnpm exec hardhat run --verbose --network zetachain scripts/beam-test-deploy/02_veart_proxy_upgradeable.js`
+- `pnpm exec hardhat run --verbose --network zetachain scripts/beam-test-deploy/03_voting_escrow.js`
+- `pnpm exec hardhat run --verbose --network zetachain scripts/beam-test-deploy/04_rewards_distributor.js`
+- `pnpm exec hardhat run --verbose --network zetachain scripts/beam-test-deploy/05_permissions_registry.js`
+- `pnpm exec hardhat run --verbose --network zetachain scripts/beam-test-deploy/06_bribe_factory_v3.js`
+- `pnpm exec hardhat run --verbose --network zetachain scripts/beam-test-deploy/07_gauge_factory_v2.js`
+- `pnpm exec hardhat run --verbose --network zetachain scripts/beam-test-deploy/08_gauge_factory_v2_cl.js`
+- ... (all others in order)
+- Check addresses:
+  - `pnpm exec hardhat run --verbose --network zetachain scripts/beam-test-deploy/checkup.js`
