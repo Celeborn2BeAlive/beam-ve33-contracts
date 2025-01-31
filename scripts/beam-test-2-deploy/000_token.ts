@@ -11,8 +11,15 @@ async function main () {
     const name = "EmissionToken";
     const symbol = "ET";
 
-    const emissionToken = await hre.viem.deployContract("EmissionToken", [name, symbol]);
+    const constructorArguments: [string, string] = [name, symbol];
+    const emissionToken = await hre.viem.deployContract("EmissionToken", constructorArguments);
     console.log("Deployed at: ", emissionToken.address)
+
+    // console.log('Verifying Contract...');
+    // await hre.run("verify:verify", {
+    //   address: emissionToken.address,
+    //   constructorArguments
+    // });
 }
 
 main()

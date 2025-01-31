@@ -1,5 +1,6 @@
 import hre from "hardhat";
 import { checkIsDeployed, ZERO_ADDRESS } from "./deploys";
+import { Address } from "viem";
 
 // Depends on:
 // - 010_token.ts
@@ -15,8 +16,15 @@ async function main () {
     But can be deployed later.
     */
 
-    const veToken = await hre.viem.deployContract("VotingEscrow", [emissionToken.address, veArtProxyAddress,]);
+    const constructorArguments: [Address, Address] = [emissionToken.address, veArtProxyAddress,]
+    const veToken = await hre.viem.deployContract("VotingEscrow", constructorArguments);
     console.log("Deployed at: ", veToken.address);
+
+    // console.log('Verifying Contract...');
+    // await hre.run("verify:verify", {
+    //   address: emissionToken.address,
+    //   constructorArguments
+    // });
 }
 
 main()
