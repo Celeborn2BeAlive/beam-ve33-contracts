@@ -24,3 +24,6 @@ typechain-types/
 abi
 build
 ignition/deployments/chain-31337/
+
+# flattened contract file
+contracts/flatten.sol

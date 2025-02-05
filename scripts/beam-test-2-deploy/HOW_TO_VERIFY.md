@@ -1,0 +1,3 @@
+- Flatten with `pnpm exec hardhat flatten [PATH_TO_SOL_FILES] > contracts/flatten.sol`
+- Compile with `pnpm exec hardhat compile`
+- Verify with `pnpm exec hardhat verify [DEPLOYED_ADDR] --constructor-args scripts/beam-test-2-deploy/[BASENAME].constructorArgs.ts --contract contracts/flatten.sol:[NAME_OF_CONTRACT_TO_VERIFY]`

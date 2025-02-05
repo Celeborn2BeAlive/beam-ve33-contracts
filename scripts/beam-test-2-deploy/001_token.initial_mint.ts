@@ -9,7 +9,7 @@ async function main () {
 
     const EMISSION_TOKEN_ADDRESS = checkIsDeployed("EMISSION_TOKEN_ADDRESS");
 
-    const emissionToken = await hre.viem.getContractAt("EmissionToken", EMISSION_TOKEN_ADDRESS);
+    const emissionToken = await hre.viem.getContractAt("contracts/EmissionToken.sol:EmissionToken", EMISSION_TOKEN_ADDRESS);
     console.log("Deployed at: ", emissionToken.address)
 
     const mintTo = owner.account.address;
