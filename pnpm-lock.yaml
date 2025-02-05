@@ -11,6 +11,9 @@ importers:
       '@nomicfoundation/hardhat-foundry':
         specifier: ^1.1.2
         version: 1.1.2(hardhat@2.22.18(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.10.10)(typescript@5.7.3))(typescript@5.7.3)(utf-8-validate@5.0.7))
+      '@nomicfoundation/hardhat-ignition':
+        specifier: ^0.15.9
+        version: 0.15.9(@nomicfoundation/hardhat-verify@2.0.12(hardhat@2.22.18(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.10.10)(typescript@5.7.3))(typescript@5.7.3)(utf-8-validate@5.0.7)))(bufferutil@4.0.9)(hardhat@2.22.18(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.10.10)(typescript@5.7.3))(typescript@5.7.3)(utf-8-validate@5.0.7))(utf-8-validate@5.0.7)
       '@nomicfoundation/hardhat-ignition-viem':
         specifier: ^0.15.9
         version: 0.15.9(@nomicfoundation/hardhat-ignition@0.15.9(@nomicfoundation/hardhat-verify@2.0.12(hardhat@2.22.18(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.10.10)(typescript@5.7.3))(typescript@5.7.3)(utf-8-validate@5.0.7)))(bufferutil@4.0.9)(hardhat@2.22.18(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.10.10)(typescript@5.7.3))(typescript@5.7.3)(utf-8-validate@5.0.7))(utf-8-validate@5.0.7))(@nomicfoundation/hardhat-viem@2.0.6(hardhat@2.22.18(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.10.10)(typescript@5.7.3))(typescript@5.7.3)(utf-8-validate@5.0.7))(typescript@5.7.3)(viem@2.22.14(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.7)))(@nomicfoundation/ignition-core@0.15.9(bufferutil@4.0.9)(utf-8-validate@5.0.7))(hardhat@2.22.18(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.10.10)(typescript@5.7.3))(typescript@5.7.3)(utf-8-validate@5.0.7))(viem@2.22.14(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.7))
@@ -5118,7 +5121,7 @@ snapshots:
     dependencies:
       '@types/abstract-leveldown': 7.2.5
       '@types/level-errors': 3.0.2
-      '@types/node': 22.10.10
+      '@types/node': 22.12.0
 
   '@types/lru-cache@5.1.1': {}
 
@@ -5230,7 +5233,7 @@ snapshots:
 
   agent-base@6.0.2:
     dependencies:
-      debug: 4.3.7(supports-color@8.1.1)
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -6373,7 +6376,7 @@ snapshots:
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.3.7(supports-color@8.1.1)
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
