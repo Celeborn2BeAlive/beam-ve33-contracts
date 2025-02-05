@@ -121,7 +121,7 @@ const config: HardhatUserConfig = {
         network: 'zetachain',
         chainId: 7000,
         urls: {
-          // apiURL: 'https://zetachain.blockscout.com/api',
+          apiURL: 'https://zetachain.blockscout.com/api',
           browserURL: 'https://zetachain.blockscout.com',
         },
       }
