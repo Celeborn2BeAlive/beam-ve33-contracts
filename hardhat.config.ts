@@ -1,21 +1,26 @@
-require("@nomiclabs/hardhat-waffle");
+import { HardhatUserConfig } from "hardhat/types";
 
-require("@openzeppelin/hardhat-upgrades");
+import "@nomiclabs/hardhat-waffle";
 
-require("@nomiclabs/hardhat-etherscan");
+import "@openzeppelin/hardhat-upgrades";
 
-require("@nomiclabs/hardhat-web3");
+import "hardhat-tracer";
+import "hardhat-gas-reporter";
 
-require("hardhat-tracer");
-require("hardhat-gas-reporter");
+import "@nomicfoundation/hardhat-verify";
+import "@nomicfoundation/hardhat-foundry";
+import "@nomicfoundation/hardhat-viem";
+import "@nomicfoundation/hardhat-ignition-viem";
 
-require("@nomicfoundation/hardhat-foundry");
+const { PRIVATEKEY, PRIVATEKEYSECRET, APIKEY_POLYGONSCAN, APIKEY_ZK, APIKEY_BLOCKSCOUT_ZETACHAIN } = require("./pvkey.js");
+const { HARDHAT_NETWORK } = process.env;
 
-const { PRIVATEKEY, PRIVATEKEYSECRET, APIKEY, APIKEY_ZK } = require("./pvkey.js");
-
-module.exports = {
+const config: HardhatUserConfig = {
   // latest Solidity version
   gasReporter: {
+    enabled: true
+  },
+  sourcify: {
     enabled: true
   },
   solidity: {
@@ -40,7 +45,7 @@ module.exports = {
       },
     ],
   },
-
+  defaultNetwork: HARDHAT_NETWORK || "zetachain",
   networks: {
     bsc: {
       url: "https://bsc-dataseed1.binance.org",
@@ -87,14 +92,13 @@ module.exports = {
     hardhat: {
       forking: {
         url: "https://polygon-mainnet.infura.io/v3/28b6e1b06d8b4cbcaaf8d7065ee116f3",
-        chainId: 137,
       },
       //accounts: []
     },
   },
 
   etherscan: {
-    apiKey: { polygon: APIKEY, "polygon-zkevm": APIKEY_ZK },
+    apiKey: { polygon: APIKEY_POLYGONSCAN, "polygon-zkevm": APIKEY_ZK, zetachain: APIKEY_BLOCKSCOUT_ZETACHAIN },
     customChains: [
       {
         network: "polygon",
@@ -127,3 +131,4 @@ module.exports = {
     timeout: 100000000,
   },
 };
+export default config;
