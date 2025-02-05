@@ -12,7 +12,8 @@ import "@nomicfoundation/hardhat-foundry";
 import "@nomicfoundation/hardhat-viem";
 import "@nomicfoundation/hardhat-ignition-viem";
 
-const { PRIVATEKEY, PRIVATEKEYSECRET, APIKEY, APIKEY_ZK } = require("./pvkey.js");
+const { PRIVATEKEY, PRIVATEKEYSECRET, APIKEY_POLYGONSCAN, APIKEY_ZK, APIKEY_BLOCKSCOUT_ZETACHAIN } = require("./pvkey.js");
+const { HARDHAT_NETWORK } = process.env;
 
 const config: HardhatUserConfig = {
   // latest Solidity version
@@ -44,7 +45,7 @@ const config: HardhatUserConfig = {
       },
     ],
   },
-
+  defaultNetwork: HARDHAT_NETWORK || "zetachain",
   networks: {
     bsc: {
       url: "https://bsc-dataseed1.binance.org",
@@ -97,7 +98,7 @@ const config: HardhatUserConfig = {
   },
 
   etherscan: {
-    apiKey: { polygon: APIKEY, "polygon-zkevm": APIKEY_ZK, zetachain: APIKEY },
+    apiKey: { polygon: APIKEY_POLYGONSCAN, "polygon-zkevm": APIKEY_ZK, zetachain: APIKEY_BLOCKSCOUT_ZETACHAIN },
     customChains: [
       {
         network: "polygon",
