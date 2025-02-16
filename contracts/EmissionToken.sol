@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.13;
 
-import "./interfaces/IRetro.sol";
+import "./interfaces/IEmissionToken.sol";
 
-contract Retro is IRetro {
+contract EmissionToken is IEmissionToken {
 
-    string public constant name = "RETRO";
-    string public constant symbol = "RETRO";
+    string public name;
+    string public symbol;
     uint8 public constant decimals = 18;
     uint public totalSupply = 0;
 
@@ -19,7 +19,9 @@ contract Retro is IRetro {
     event Transfer(address indexed from, address indexed to, uint value);
     event Approval(address indexed owner, address indexed spender, uint value);
 
-    constructor() {
+    constructor(string memory _name, string memory _symbol) {
+        name = _name;
+        symbol = _symbol;
         minter = msg.sender;
         _mint(msg.sender, 0);
     }
@@ -31,7 +33,7 @@ contract Retro is IRetro {
     }
 
 
-    // Initial mint: total 50M    
+    // Initial mint: total 50M
     function initialMint(address _recipient) external {
         require(msg.sender == minter && !initialMinted);
         initialMinted = true;
