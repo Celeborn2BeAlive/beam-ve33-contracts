@@ -88,7 +88,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
     uint internal tokenId;
 
     /// @notice Contract constructor
-    /// @param token_addr `RETRO` token address
+    /// @param token_addr Emission token address
     constructor(address token_addr, address art_proxy) {
         token = token_addr;
         voter = msg.sender;
@@ -101,6 +101,12 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         supportedInterfaces[ERC165_INTERFACE_ID] = true;
         supportedInterfaces[ERC721_INTERFACE_ID] = true;
         supportedInterfaces[ERC721_METADATA_INTERFACE_ID] = true;
+
+        string memory tokenName = IERC20(token_addr).name();
+        name = string(abi.encodePacked("ve", tokenName));
+        string memory tokenSymbol =IERC20(token_addr).symbol();
+        symbol = string(abi.encodePacked("ve", tokenSymbol));
+
 
         // mint-ish
         emit Transfer(address(0), address(this), tokenId);
@@ -127,8 +133,8 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
                              METADATA STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    string constant public name = "veRetro";
-    string constant public symbol = "veRETRO";
+    string public name;
+    string public symbol;
     string constant public version = "1.0.0";
     uint8 constant public decimals = 18;
 
