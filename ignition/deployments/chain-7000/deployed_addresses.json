@@ -1,4 +1,5 @@
 {
   "TestEmissionToken#EmissionToken": "0x47611DfA47561a81154957c0191070F8A58566ba",
-  "Beam#EmissionToken": "0xADc8425a8f8b44c66982AFE00F601DF2cDC76acd"
+  "Beam#EmissionToken": "0xADc8425a8f8b44c66982AFE00F601DF2cDC76acd",
+  "VotingEscrow#VotingEscrow": "0x42D08bfC27898Bd4B0C3AEB44c4ea97717e7F219"
 }
