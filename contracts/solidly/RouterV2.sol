@@ -86,9 +86,9 @@ contract RouterV2 {
     uint internal constant MINIMUM_LIQUIDITY = 10**3;
     bytes32 immutable pairCodeHash;
 
-    
+
     // swap event for the referral system
-    event Swap(address indexed sender,uint amount0In,address _tokenIn, address indexed to, bool stable);  
+    event Swap(address indexed sender,uint amount0In,address _tokenIn, address indexed to, bool stable);
 
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'BaseV1Router: EXPIRED');
@@ -392,7 +392,7 @@ contract RouterV2 {
                 amount0Out, amount1Out, to, new bytes(0)
             );
 
-            emit Swap(msg.sender,amounts[i],routes[i].from, _to, routes[i].stable); 
+            emit Swap(msg.sender,amounts[i],routes[i].from, _to, routes[i].stable);
         }
     }
 
@@ -530,7 +530,7 @@ contract RouterV2 {
             token, stable, liquidity, amountTokenMin, amountETHMin, to, deadline
         );
     }
-    
+
     // **** SWAP (supporting fee-on-transfer tokens) ****
     // requires the initial amount to have already been sent to the first pair
     function _swapSupportingFeeOnTransferTokens(route[] calldata routes, address _to) internal virtual {
@@ -551,7 +551,7 @@ contract RouterV2 {
             pair.swap(amount0Out, amount1Out, to, new bytes(0));
 
             bool _stable = routes[i].stable;
-            emit Swap(msg.sender,amountInput,input,_to,_stable);  
+            emit Swap(msg.sender,amountInput,input,_to,_stable);
         }
     }
     function swapExactTokensForTokensSupportingFeeOnTransferTokens(
