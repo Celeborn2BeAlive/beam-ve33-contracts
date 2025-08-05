@@ -41,8 +41,6 @@ const ProxyAdmin = buildModule("ProxyAdmin", (m) => {
 });
 
 const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
-  const minterUpgradeable = m.contract("MinterUpgradeable");
-
   const { beamToken } = m.useModule(BeamToken);
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { rewardsDistributor } = m.useModule(RewardsDistributor);
@@ -50,17 +48,22 @@ const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
 
   const { proxyAdmin } = m.useModule(ProxyAdmin);
 
+  const minterUpgradeable = m.contract("MinterUpgradeable", undefined, {
+    id: "MinterUpgradeableImplementation",
+  });
   const encodedInitializeCall = m.encodeFunctionCall(minterUpgradeable, "initialize",
     [epochDistributor, votingEscrow, rewardsDistributor],
   );
 
-  const minterProxy = m.contract("TransparentUpgradeableProxy", [
+  const minterTransparentProxy = m.contract("TransparentUpgradeableProxy", [
     minterUpgradeable,
     proxyAdmin,
     encodedInitializeCall,
   ]);
 
-  m.call(beamToken, "setMinter", [minterProxy,]);
+  m.call(beamToken, "setMinter", [minterTransparentProxy,]);
+
+  const minterProxy = m.contractAt("MinterUpgradeable", minterTransparentProxy)
 
   return { proxyAdmin, minterProxy };
 });
@@ -74,14 +77,42 @@ const Voter = buildModule("Voter", (m) => {
   m.call(votingEscrow, "setVoter", [voter,]);
 
   return { voter };
-})
+});
+
+const EpochDistributorUpgradeable = buildModule("EpochDistributorUpgradeable", (m) => {
+  const { minterProxy } = m.useModule(MinterUpgradeable);
+  const { beamToken } = m.useModule(BeamToken);
+  const { voter } = m.useModule(Voter);
+  const { proxyAdmin } = m.useModule(ProxyAdmin);
+
+  const epochDistributorUpgradeable = m.contract("EpochDistributorUpgradeable", undefined, {
+    id: "EpochDistributorUpgradeableImplementation",
+  });
+  const encodedInitializeCall = m.encodeFunctionCall(epochDistributorUpgradeable, "initialize",
+    [minterProxy, beamToken, voter],
+  );
+
+  const epochDistributorTransparentProxy = m.contract("TransparentUpgradeableProxy", [
+    epochDistributorUpgradeable,
+    proxyAdmin,
+    encodedInitializeCall,
+  ]);
+
+  const epochDistributorProxy = m.contractAt("EpochDistributorUpgradeable", epochDistributorTransparentProxy)
+
+  m.call(minterProxy, "setEpochDistributor", [epochDistributorProxy,]);
+
+  return { epochDistributorProxy, proxyAdmin }
+});
 
 export default buildModule("BeamProtocol", (m) => {
   const { beamToken } = m.useModule(BeamToken);
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { rewardsDistributor } = m.useModule(RewardsDistributor);
-  const { proxyAdmin, minterProxy } = m.useModule(MinterUpgradeable);
+  const { proxyAdmin } = m.useModule(ProxyAdmin)
+  const { minterProxy } = m.useModule(MinterUpgradeable);
   const { voter } = m.useModule(Voter);
+  const { epochDistributorProxy } = m.useModule(EpochDistributorUpgradeable);
 
   return {
     beamToken,
@@ -89,6 +120,7 @@ export default buildModule("BeamProtocol", (m) => {
     rewardsDistributor,
     minterProxy,
     voter,
+    epochDistributorProxy,
     proxyAdmin,
   }
 });
