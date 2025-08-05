@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-
+import '@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol';
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -11,12 +11,6 @@ import "./interfaces/IIncentiveMaker.sol";
 interface IFeeVault {
     function claimFees() external returns(uint256 gauge0, uint256 gauge1);
 }
-
-interface IPairInfo {
-    function token0() external view returns(address);
-    function token1() external view returns(address);
-}
-
 
 /// @title GaugeEternalFarming
 /// @notice Gauge contract for eternal farming
@@ -33,7 +27,7 @@ contract GaugeEternalFarming is ReentrancyGuard, Ownable {
     address public feeVault;
 
     /// @notice The underlying LP token to deposit
-    IERC20 public immutable TOKEN;
+    IAlgebraPool public immutable TOKEN;
     /// @notice Contract that manages farm updates
     IIncentiveMaker public incentiveMaker;
     /// @notice The voting incentives contract
@@ -64,7 +58,7 @@ contract GaugeEternalFarming is ReentrancyGuard, Ownable {
         DISTRIBUTION = _distribution;
         feeVault = _feeVault;
         incentiveMaker = IIncentiveMaker(_incentiveMaker);
-        TOKEN = IERC20(_pool);
+        TOKEN = IAlgebraPool(_pool);
 
         if(_votingIncentives != address(0)) votingIncentives = IVotingIncentives(_votingIncentives);
     }
@@ -124,8 +118,8 @@ contract GaugeEternalFarming is ReentrancyGuard, Ownable {
     /// @return _claimed1 Amount of token1 claimed
     function _claimFees() internal returns (uint _claimed0, uint _claimed1) {
 
-        address _token0 = IPairInfo(address(TOKEN)).token0();
-        address _token1 = IPairInfo(address(TOKEN)).token1();
+        address _token0 = TOKEN.token0();
+        address _token1 = TOKEN.token1();
 
         (_claimed0, _claimed1) = IFeeVault(feeVault).claimFees();
 
