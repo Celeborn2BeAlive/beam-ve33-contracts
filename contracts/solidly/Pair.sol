@@ -1,13 +1,22 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity >=0.8.0;
 
-import './libraries/Math.sol';
-import './interfaces/IERC20.sol';
+import 'contracts/libraries/Math.sol';
+import 'contracts/interfaces/IERC20.sol';
 import './interfaces/IPair.sol';
 import './interfaces/IDibs.sol';
 import './interfaces/IPairCallee.sol';
-import './factories/PairFactory.sol';
 import './PairFees.sol';
+
+interface PairFactory {
+    function getInitializable() external view returns (address, address, bool);
+    function stakingFeeHandler() external view returns (address);
+    function dibs() external view returns (address);
+    function MAX_REFERRAL_FEE() external view returns (uint256);
+    function stakingNFTFee() external view returns (uint256);
+    function isPaused() external view returns (bool);
+    function getFee(bool _stable) external view returns(uint256);
+}
 
 
 // The base pair of pools, either stable or volatile
@@ -167,13 +176,13 @@ contract Pair is IPair {
         uint256 _referralFee = amount * _maxRef / 10000;
         _safeTransfer(token0, _dibs, _referralFee); // transfer the fees out to PairFees
         amount -= _referralFee;
-        
+
         // get lp and staking fee
         uint256 _stakingNftFee =  amount * PairFactory(factory).stakingNFTFee() / 10000;
         PairFees(fees).processStakingFees(_stakingNftFee, true);
         _safeTransfer(token0, fees, amount); // transfer the fees out to PairFees
 
-        
+
         // remove staking fees from lpfees
         amount -= _stakingNftFee;
         uint256 _ratio = amount * 1e18 / totalSupply; // 1e18 adjustment is removed during claim
@@ -580,5 +589,5 @@ contract Pair is IPair {
         require(success && (data.length == 0 || abi.decode(data, (bool))));
     }
 
-    
+
 }

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity >=0.8.0;
 
 import '../interfaces/IPairFactory.sol';
-import '../Pair.sol';
+import './Pair.sol';
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract PairFactoryUpgradeable is IPairFactory, OwnableUpgradeable {
+contract PairFactoryUpgradeable is IPairFactory, PairFactory, OwnableUpgradeable {
 
     bool public isPaused;
 

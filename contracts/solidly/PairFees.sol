@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity >=0.8.0;
 
-import './interfaces/IERC20.sol';
+import 'contracts/interfaces/IERC20.sol';
 
 // Pair Fees contract is used as a 1:1 pair relationship to split out fees, this ensures that the curve does not need to be modified for LP shares
 contract PairFees {
@@ -32,14 +32,14 @@ contract PairFees {
         if (amount1 > 0) _safeTransfer(token1, recipient, amount1);
     }
 
-   
+
 
     function processStakingFees(uint amount, bool isTokenZero) external {
         require(msg.sender == pair);
         if(amount > 0 && isTokenZero){
             toStake0 += amount;
         }
-    
+
         if(amount > 0 && !isTokenZero){
             toStake1 += amount;
         }
@@ -51,13 +51,13 @@ contract PairFees {
         if (toStake0 > 0){
             _safeTransfer(token0, recipient, toStake0);
             toStake0 = 0;
-        } 
+        }
         if (toStake1 > 0){
             _safeTransfer(token1, recipient, toStake1);
             toStake1 = 0;
         }
     }
 
-      
+
 
 }
