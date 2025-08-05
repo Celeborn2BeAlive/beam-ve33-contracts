@@ -44,6 +44,9 @@
     - Adapt and migrate all code to our codebase
   - Finish deployment script and try it onchain
     - Try to run the protocol at high frequency (one epoch = 1 minute)
+- NEXT TODO
+  - Include Algebra fees to AlgebraVault
+    - Check with Chase if we also have some treasuryShare ?
 
 **Questions / Investigations**:
 - Should we centralize role management to `PermissionsRegistry` or have roles defined at each contract ?
