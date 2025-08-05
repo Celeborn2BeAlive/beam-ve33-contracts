@@ -19,39 +19,89 @@
   - Router V2
   - Classic PairFactory
 
-**Dev roadmap**:
-- DONE:
-  - Migrate Retro as EmissionToken to new codebase
-  - Migrate VotingEscrow to new codebase
-  - Write Beam ignition deployment script
-- TODO:
-  - Re-read VotingEscrow code and document it
-  - Migrate Minter to new codebase
-    - Re-read code and document it
-    - Make some adaptation, for example rename "voter" => "epochDistributor"
-  - Migrate "Rebase veBEAM" (RewardsDistributor) contract
-    - Re-read code and document it
-  - Thena V3 forking for CL farming
-    - Read Epoch Distributor and document it
-    - Read Voter and document it
-      - Ensure we can integrate new gauge systems for future extension of the DEX
-    - Read Incentive Maker and document it
-      - Check that it can be used for our version of Algebra
-      - If not, adapt the contract
-    - Read Gauge Algebra Eternal Farming and document it
-    - Read Algebra Vault and document it
-    - Read Gauge Factory and document it
-    - Adapt and migrate all code to our codebase
-  - Finish deployment script and try it onchain
-    - Try to run the protocol at high frequency (one epoch = 1 minute)
-- NEXT TODO
-  - Include Algebra fees to AlgebraVault
-    - Check with Chase if we also have some treasuryShare ?
-  - Adapt IncentiveMaker => rename thena to emissionToken, and wbnb to wrappedGasToken
-  - Rename ignition contract proxy with Proxy at the end
+**Dev Log**
 
-**Questions / Investigations**:
-- Should we centralize role management to `PermissionsRegistry` or have roles defined at each contract ?
-  - Thena V3 contracts seems to have roles defined at each contract
-- For upgradable contracts, check how to deploy & admin them with hardhat ignition
-  - Avoid upgradable ?
+- 2025-08-05
+  - DONE:
+    - From Retro:
+      - Migrated Minter contracts
+        - Updated to rename `voter` to `epochDistributor`
+      - Migrated "Rebase veBEAM" (RewardsDistributorV2) contract
+      - Migrated "Solidy UniV2" DEX contracts (PairFactory, Pair, PairFees, RouterV2)
+        - *NOTE*: Probably won't be used for Beam, but if we need they are ready.
+          - They're quite limited though (same fee tier for all pairs)
+          - Would be better to fork another adaptation (Velodrome or Ramses)
+    - Forked from Thena V3
+      - EpochDistributorUpgradeable (from EpochDistributorBSC)
+        - Removed crosschain distribution
+        - Adapted variable names, removed references to THE and BNB
+        - This contract received liquid emission tokens from the Minter and distribute them to gauges at each epoch
+      - VotingIncentives
+        - This contract replace bribe contracts from Retro / Thena V2, with cleaner code
+      - VotingIncentivesFactory
+        - Used to deploy VotingIncentives for each pool
+      - Voter
+        - This new Voter only handles vote allocation while reward distribution is handled by EpochDistributor
+      - Gauge
+        - This is the staking contract for UniV2 LP tokens and ALM tokens
+        - Probably won't be used for Beam, but if we need they are ready.
+        - Each Gauge has a VotingIncentive
+      - FeeVault
+        - Aggregate swap fees for legacy pools, so gauge can claim them and distribute to VotingIncentive contracts
+      - GaugeFactory
+        - Used by GlobalFactory to deploy gauge contracts
+      - GlobalFactory
+        - Used to deploy gauges and track whitelisted tokens
+      - Algebra farming and voting incentives distribution:
+        - AlgebraVault
+          - This contract should be instanciated for each Algebra pool and set as communityVault of that pool
+          - The GaugeEternalFarming claims aggregated swap fees from it to route them to VotingIncentive
+        - AlgebraVaultFactory
+          - This contract is used to create AlgebraVault
+          - It should be set as the `vaultFactory` of the AlgebraFactory
+          - Current limitation for us is that we cannot create new vault for existing pools => needs adaptation
+        - GaugeEternalFarming
+          - Manage swap fee claiming from AlgebraVault and route them to VotingIncentive
+          - Managed distribution of farming rewards to Algebra Farming Center using IncentiveMaker
+        - IncentiveMakerUpgradeable
+          - Manage creation & management of farming campaign on the Algebra Farming Center
+    - Deployment
+      - Iterated on hardhat ignition modules to deploy everything
+  - TODO:
+    - Rename RewardsDistributorV2 to RebaseDistributor for clarity
+      - In Minter rename state variable to match
+    - Adapt AlgebraVaultFactory so we can create AlgebraVault for already deployed CL pool
+    - Adapt remaining Thena V3 contracts to remove theNFT related stuff, BNB stuff, etc.
+    - Deployment: handle setup script to connect all contracts together
+    - Test farming & reward distribution in prod with a fake Beam token
+      - Think about a way to easily test the required parts without the epoch system
+    - Include Algebra fees to AlgebraVault
+      - Check with Chase if we also have some treasuryShare ?
+    - Adapt IncentiveMaker => rename thena to emissionToken, and wbnb to wrappedGasToken
+    - Rename ignition contract proxy with Proxy at the end for clarity
+
+- 2025-08-03
+  - DONE:
+    - Migrate Retro as EmissionToken to new codebase
+    - Migrate VotingEscrow to new codebase
+    - Write Beam ignition deployment script
+  - TODO:
+    - Re-read VotingEscrow code and document it
+    - Migrate Minter to new codebase
+      - Re-read code and document it
+      - Make some adaptation, for example rename "voter" => "epochDistributor"
+    - Migrate "Rebase veBEAM" (RewardsDistributor) contract
+      - Re-read code and document it
+    - Thena V3 forking for CL farming
+      - Read Epoch Distributor and document it
+      - Read Voter and document it
+        - Ensure we can integrate new gauge systems for future extension of the DEX
+      - Read Incentive Maker and document it
+        - Check that it can be used for our version of Algebra
+        - If not, adapt the contract
+      - Read Gauge Algebra Eternal Farming and document it
+      - Read Algebra Vault and document it
+      - Read Gauge Factory and document it
+      - Adapt and migrate all code to our codebase
+    - Finish deployment script and try it onchain
+      - Try to run the protocol at high frequency (one epoch = 1 minute)
