@@ -7,6 +7,13 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@cryptoalgebra/integral-core':
+        specifier: ^1.2.9
+        version: 1.2.9
+      '@cryptoalgebra/integral-farming':
+        specifier: ^1.2.4
+        version: 1.2.4
     devDependencies:
       '@nomicfoundation/hardhat-foundry':
         specifier: ^1.1.2
@@ -218,6 +225,22 @@ packages:
 
   '@bytecodealliance/preview2-shim@0.17.0':
     resolution: {integrity: sha512-JorcEwe4ud0x5BS/Ar2aQWOQoFzjq/7jcnxYXCvSMh0oRm0dQXzOA+hqLDBnOMks1LLBA7dmiLLsEBl09Yd6iQ==}
+
+  '@cryptoalgebra/integral-base-plugin@1.2.4':
+    resolution: {integrity: sha512-c2uhVNivETo7f61UOyF1puSGQQG/aR4/DtSNWcEGKJBWxyMBS2ThRROOmpP7ts2mISJZoZBVIv54VRXkgbj5qg==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+
+  '@cryptoalgebra/integral-core@1.2.9':
+    resolution: {integrity: sha512-8a2/W/3BDWThJpMORIjfN7eN3KCKDQ7i2unCB3YBsnT7kXrUN6ntpJgl3clSe1o/nG/9SjpXHyLz75J4r2YGEw==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+
+  '@cryptoalgebra/integral-farming@1.2.4':
+    resolution: {integrity: sha512-+c7ahj73v/I3JN4cJVOSRntQi8JkGrq6nXZNYDmHyWQapY+vvSXKYZ0IQ6MJrgECv4lJwYj+Q3kvkRRj+ZH1yA==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+
+  '@cryptoalgebra/integral-periphery@1.2.4':
+    resolution: {integrity: sha512-gaVKaZ7EWMkbzS6z7tzTB3C2r9vdupfGbAscWNEXB57A47b3uWo7hElfsxg/gfb0FmBFpfaamqVW+Q8FHZatLg==}
+    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -686,6 +709,9 @@ packages:
 
   '@openzeppelin/contracts@3.4.2-solc-0.7':
     resolution: {integrity: sha512-W6QmqgkADuFcTLzHL8vVoNBtkwjvQRpYIAom7KiUNoLKghyx3FgH0GBjt8NRvigV1ZmMOBllvE1By1C+bi8WpA==}
+
+  '@openzeppelin/contracts@4.9.3':
+    resolution: {integrity: sha512-He3LieZ1pP2TNt5JbkPA4PNT9WC3gOTOlDcFGJW4Le4QKqwmiNJCRt44APfxMxvq7OugU/cqYuPcSBzOw38DAg==}
 
   '@openzeppelin/contracts@4.9.6':
     resolution: {integrity: sha512-xSmezSupL+y9VkHZJGDoCBpmnB2ogM13ccaYDWqJTfS3dbuHkgjuwDFUmaFauBCboQMGB/S5UqUl2y54X99BmA==}
@@ -1791,7 +1817,7 @@ packages:
     engines: {node: '>=14.0.0'}
 
   ethjs-unit@0.1.6:
-    resolution: {integrity: sha1-xmWSHkduh7ziqdWIpv4EBbLEFpk=}
+    resolution: {integrity: sha512-/Sn9Y0oKl0uqQuvgFk/zQgR7aw1g36qX/jzSQ5lSwlO0GigPymk4eGQfeNTD03w1dPOqfz8V77Cy43jH56pagw==}
     engines: {node: '>=6.5.0', npm: '>=3'}
 
   ethjs-util@0.1.6:
@@ -2546,7 +2572,7 @@ packages:
     engines: {node: '>=0.10.0'}
 
   number-to-bn@1.7.0:
-    resolution: {integrity: sha1-uzYjWS9+X54AMLGXe9QaDFP+HqA=}
+    resolution: {integrity: sha512-wsJ9gfSz1/s4ZsJN01lyonwuxA1tml6X1yBDnfpMglypcBRFZZkus26EdPSlqS5GJfYddVZa22p3VNb3z5m5Ig==}
     engines: {node: '>=6.5.0', npm: '>=3'}
 
   oauth-sign@0.9.0:
@@ -3805,6 +3831,28 @@ snapshots:
 
   '@bytecodealliance/preview2-shim@0.17.0': {}
 
+  '@cryptoalgebra/integral-base-plugin@1.2.4':
+    dependencies:
+      '@cryptoalgebra/integral-core': 1.2.9
+      '@cryptoalgebra/integral-periphery': 1.2.4
+
+  '@cryptoalgebra/integral-core@1.2.9':
+    dependencies:
+      '@openzeppelin/contracts': 4.9.3
+
+  '@cryptoalgebra/integral-farming@1.2.4':
+    dependencies:
+      '@cryptoalgebra/integral-base-plugin': 1.2.4
+      '@cryptoalgebra/integral-core': 1.2.9
+      '@cryptoalgebra/integral-periphery': 1.2.4
+      '@openzeppelin/contracts': 4.9.3
+
+  '@cryptoalgebra/integral-periphery@1.2.4':
+    dependencies:
+      '@cryptoalgebra/integral-core': 1.2.9
+      '@openzeppelin/contracts': 4.9.3
+      '@uniswap/v2-core': 1.0.1
+
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
@@ -4547,6 +4595,8 @@ snapshots:
   '@openzeppelin/contracts-upgradeable@4.9.6': {}
 
   '@openzeppelin/contracts@3.4.2-solc-0.7': {}
+
+  '@openzeppelin/contracts@4.9.3': {}
 
   '@openzeppelin/contracts@4.9.6': {}
 

@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import './interfaces/algebra-integral/core/IAlgebraPool.sol';
+import '@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol';
 import "contracts/interfaces/IVoter.sol";
 import "./interfaces/IAlgebraVault.sol";
 import "./interfaces/IAlgebraVaultFactory.sol";
