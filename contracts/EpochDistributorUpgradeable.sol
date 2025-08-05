@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 /// @title Distribute weekly EmissionToken to gauges
 /// @author Prometheus - Thena Finance
 /// @author Forked and adapted by c2ba - Beam team
-contract EpochDistributor is IEpochDistributor, OwnableUpgradeable {
+contract EpochDistributorUpgradeable is IEpochDistributor, OwnableUpgradeable {
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
