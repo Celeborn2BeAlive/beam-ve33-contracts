@@ -1,15 +1,15 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { getAddress } from "viem";
 
-const ZERO_ADDRESS = getAddress("0x0000000000000000000000000000000000000000")
+export const ZERO_ADDRESS = getAddress("0x0000000000000000000000000000000000000000")
 
 const beamTokenName = "Beam";
 const beamTokenSymbol = "BEAM";
 export const beamTokenConstructorArgs = [beamTokenName, beamTokenSymbol]
 
-const beamMultisigAddress = getAddress("0x0029eD88Ec602d32eB93d1c42b73a5206Ec046A3");
-const beamAlgebraFactory = getAddress("0x28b5244B6CA7Cb07f2f7F40edE944c07C2395603")
-const wzetaAddress = getAddress("0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf");
+export const beamMultisigAddress = getAddress("0x0029eD88Ec602d32eB93d1c42b73a5206Ec046A3");
+export const beamAlgebraFactory = getAddress("0x28b5244B6CA7Cb07f2f7F40edE944c07C2395603")
+export const wzetaAddress = getAddress("0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf");
 
 const BeamToken = buildModule("BeamToken", (m) => {
   const beamToken = m.contract("contracts/EmissionToken.sol:EmissionToken", beamTokenConstructorArgs);
@@ -108,134 +108,12 @@ const EpochDistributorUpgradeable = buildModule("EpochDistributorUpgradeable", (
   return { epochDistributorImplementation, epochDistributorProxy, proxyAdmin }
 });
 
-const VotingIncentivesFactory = buildModule("VotingIncentivesFactory", (m) => {
-  const { beamToken } = m.useModule(BeamToken);
-
-  const globalFactory = ZERO_ADDRESS; // Set after deployment of GlobalFactory
-  const defaultTokens = [beamToken];
-  const votingIncentivesFactory = m.contract("VotingIncentivesFactory", [globalFactory, defaultTokens]);
-
-  // TODO votingIncentivesFactory.setGlobalFactory
-
-  return { votingIncentivesFactory };
-});
-
-const GaugeFactory = buildModule("GaugeFactory", (m) => {
-  const globalFactory = ZERO_ADDRESS; // Set after deployment of GlobalFactory
-
-  const gaugeFactory = m.contract("GaugeFactory", [globalFactory,]);
-
-  // TODO gaugeFactory.setGlobalFactory
-
-  return { gaugeFactory };
-});
-
-const AlgebraVaultFactory = buildModule("AlgebraVaultFactory", (m) => {
-  const { voter } = m.useModule(Voter);
-
-  const algebraVaultFactory = m.contract("AlgebraVaultFactory", [voter, beamAlgebraFactory]);
-
-  // TODO The AlgebraVaultFactory should be set on the AlgebraFactory
-  // with AlgebraFactory.setVaultFactory
-  // It will call AlgebraVaultFactory.createVaultForPool at each new pool
-  // deployment.
-
-  // TODO For all existing pools we need to call .setCommunityVault on each one to plug-in an AlgebraVault instance.
-  // one issue with that is only the `algebraFactory` recorded in AlgebraVaultFactory can do the .createVaultForPool
-  // and it cannot be changed after AlgebraVaultFactory is instanciated.
-  // TODO Add a new role to AlgebraVaultFactory to allow the creation and assignation of AlgebraVault to an existing pool
-
-  // TODO In order to call AlgebraVaultFactory.setCommunityFee for a pool
-  // we need the AlgebraVaultFactory to have role POOLS_ADMINISTRATOR_ROLE
-  // on the AlgebraFactory.
-
-  return { algebraVaultFactory }
-});
-
 const Claimer = buildModule("Claimer", (m) => {
   const { votingEscrow } = m.useModule(VotingEscrow);
   const claimer = m.contract("Claimer", [votingEscrow,]);
   return { claimer };
 });
 
-const IncentiveMakerUpgradeable = buildModule("IncentiveMaker", (m) => {
-  const { proxyAdmin } = m.useModule(ProxyAdmin);
-  const { beamToken } = m.useModule(BeamToken);
-
-  const incentiveMakerImplementation = m.contract("IncentiveMakerUpgradeable", undefined, {
-    id: "IncentiveMakerUpgradeableImplementation",
-  });
-  const encodedInitializeCall = m.encodeFunctionCall(incentiveMakerImplementation, "initialize",
-    [beamToken, wzetaAddress],
-  );
-
-  const incentiveMakerTransparentProxy = m.contract("TransparentUpgradeableProxy", [
-    incentiveMakerImplementation,
-    proxyAdmin,
-    encodedInitializeCall,
-  ]);
-
-  const incentiveMakerProxy = m.contractAt("IncentiveMakerUpgradeable", incentiveMakerTransparentProxy)
-
-  return { incentiveMakerImplementation, incentiveMakerProxy, proxyAdmin }
-});
-
-const SolidlyPairFactoryUpgradeable = buildModule("SolidlyPairFactoryUpgradeable", (m) => {
-  const { proxyAdmin } = m.useModule(ProxyAdmin);
-
-  const solidlyPairFactoryImplementation = m.contract("PairFactoryUpgradeable", undefined, {
-    id: "PairFactoryUpgradeableImplementation",
-  });
-  const encodedInitializeCall = m.encodeFunctionCall(solidlyPairFactoryImplementation, "initialize",
-    [],
-  );
-
-  const solidlyPairFactoryTransparentProxy = m.contract("TransparentUpgradeableProxy", [
-    solidlyPairFactoryImplementation,
-    proxyAdmin,
-    encodedInitializeCall,
-  ]);
-
-  const solidlyPairFactoryProxy = m.contractAt("PairFactoryUpgradeable", solidlyPairFactoryTransparentProxy)
-
-  return { solidlyPairFactoryImplementation, solidlyPairFactoryProxy, proxyAdmin }
-})
-
-const SolidlyRouter = buildModule("SolidlyRouter", (m) => {
-  const { solidlyPairFactoryProxy } = m.useModule(SolidlyPairFactoryUpgradeable);
-  const solidlyRouter = m.contract("RouterV2", [
-    solidlyPairFactoryProxy,
-    wzetaAddress,
-  ]);
-  return { solidlyRouter };
-});
-
-const GlobalFactory = buildModule("GlobalFactory", (m) => {
-  const { voter } = m.useModule(Voter);
-  const { beamToken } = m.useModule(BeamToken);
-  const { epochDistributorProxy } = m.useModule(EpochDistributorUpgradeable)
-  const { solidlyPairFactoryProxy } = m.useModule(SolidlyPairFactoryUpgradeable);
-  const { gaugeFactory } = m.useModule(GaugeFactory);
-  const { votingIncentivesFactory } = m.useModule(VotingIncentivesFactory);
-  const { claimer } = m.useModule(Claimer);
-  const { incentiveMakerProxy } = m.useModule(IncentiveMakerUpgradeable);
-
-  // constructor(address _voter, address _thena, address _distribution, address _pfsld, address _pfalgb, address _gf, address _vif, address _theNFT, address _claimer, address _incentiveMaker)
-  const globalFactory = m.contract("GlobalFactory", [
-    voter,
-    beamToken,
-    epochDistributorProxy,
-    solidlyPairFactoryProxy,
-    beamAlgebraFactory,
-    gaugeFactory,
-    votingIncentivesFactory,
-    beamMultisigAddress,
-    claimer,
-    incentiveMakerProxy,
-  ]);
-
-  return { globalFactory };
-});
 
 export default buildModule("BeamProtocol", (m) => {
   const { beamToken } = m.useModule(BeamToken);
@@ -245,14 +123,7 @@ export default buildModule("BeamProtocol", (m) => {
   const { minterImplementation, minterProxy } = m.useModule(MinterUpgradeable);
   const { voter } = m.useModule(Voter);
   const { epochDistributorImplementation, epochDistributorProxy } = m.useModule(EpochDistributorUpgradeable);
-  const { votingIncentivesFactory } = m.useModule(VotingIncentivesFactory);
-  const { gaugeFactory } = m.useModule(GaugeFactory);
-  const { algebraVaultFactory } = m.useModule(AlgebraVaultFactory);
-  const { incentiveMakerImplementation, incentiveMakerProxy } = m.useModule(IncentiveMakerUpgradeable)
   const { claimer } = m.useModule(Claimer);
-  const { globalFactory } = m.useModule(GlobalFactory);
-  const { solidlyPairFactoryImplementation, solidlyPairFactoryProxy } = m.useModule(SolidlyPairFactoryUpgradeable)
-  const { solidlyRouter } = m.useModule(SolidlyRouter);
 
   return {
     proxyAdmin,
@@ -264,15 +135,6 @@ export default buildModule("BeamProtocol", (m) => {
     voter,
     epochDistributorImplementation,
     epochDistributorProxy,
-    votingIncentivesFactory,
-    gaugeFactory,
-    algebraVaultFactory,
-    incentiveMakerImplementation,
-    incentiveMakerProxy,
     claimer,
-    globalFactory,
-    solidlyPairFactoryImplementation,
-    solidlyPairFactoryProxy,
-    solidlyRouter,
   }
 });
