@@ -1,4 +1,7 @@
 {
-  "Beam#EmissionToken": "0xeC564b4277F69921cBdf2748bf260969820527C5",
-  "VotingEscrow#VotingEscrow": "0x376Fd332791Dc2f8eeB1648827d4Ddc96357aF6a"
+  "Beam#EmissionToken": "0x0B8C842Aa75f89f0807Bf3BC52a307518318bF60",
+  "MinterUpgradeable#MinterUpgradeable": "0xa6C2611A38C127EcE85Ee94457BF4cD5E8689b9A",
+  "MinterUpgradeable#ProxyAdmin": "0x9fA4181Fe3f3fC89b3218169051c4666fc4a9421",
+  "VotingEscrow#VotingEscrow": "0xe2025774cd98749D365b1a764d1b29f05c68841d",
+  "MinterUpgradeable#TransparentUpgradeableProxy": "0x8F7253e62E0265792134c442Ea703a914BB5541B"
 }
