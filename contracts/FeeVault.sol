@@ -87,7 +87,7 @@ contract FeeVault is Ownable, IFeeVault {
     --------------------------------------------------------------------------------
     ----------------------------------------------------------------------------- */
 
-    /// @notice Claim Fees from the pool and send to the votingIncetives
+    /// @notice Claim Fees from the pool and send to the votingIncentives
     /// @dev gauge must be set != address(0) else revert
     function claimFees() external returns(uint256 gauge0, uint256 gauge1) {
 

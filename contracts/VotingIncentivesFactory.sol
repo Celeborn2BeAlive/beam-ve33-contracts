@@ -31,7 +31,7 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
             _grantRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE, globalFactory);
         }
 
-        //VotingIncetives default tokens
+        //VotingIncentives default tokens
         uint i;
         for(; i < defaultTokens.length; i++){
             defaultRewardToken.push(defaultTokens[i]);
@@ -102,7 +102,7 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
     }
 
 
-    /// @notice set the VotingIncetives factory permission registry
+    /// @notice set the VotingIncentives factory permission registry
     /// @param _token add a new token as defaultRewardtoken
     function pushDefaultRewardToken(address _token) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         require(_token != address(0));
@@ -110,7 +110,7 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
     }
 
 
-    /// @notice set the VotingIncetives factory permission registry
+    /// @notice set the VotingIncentives factory permission registry
     /// @param _token   remove a token from defaultRewardtoken list
     function removeDefaultRewardToken(address _token) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         require(_token != address(0));
@@ -125,67 +125,63 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
     }
 
 
-    /// @notice Add a reward token to a given VotingIncetives
-    /// @param _token   token to add as reward token
+    /// @notice Add a reward token to a given VotingIncentives    /// @param _token   token to add as reward token
     /// @param _vi     voting incentives contract
-    function addRewardToVotingIncetives(address _token, address _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+    function addRewardToVotingIncentives(address _token, address _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         IVotingIncentives(_vi).addReward(_token);
     }
 
-    /// @notice Add multiple reward token to a given VotingIncetives
-    /// @param _token   array of tokens to add as reward token
+    /// @notice Add multiple reward token to a given VotingIncentives    /// @param _token   array of tokens to add as reward token
     /// @param _vi     voting incentives contract
-    function addRewardsToVotingIncetives(address[] calldata _token, address _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+    function addRewardsToVotingIncentives(address[] calldata _token, address _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         IVotingIncentives(_vi).addRewards(_token);
     }
 
-    /// @notice Add a reward token to a given VotingIncetives
-    /// @param _token   token to add as reward token
+    /// @notice Add a reward token to a given VotingIncentives    /// @param _token   token to add as reward token
     /// @param _vi     voting incentives contract
-    function removeRewardToVotingIncetives(address _token, address _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+    function removeRewardToVotingIncentives(address _token, address _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         IVotingIncentives(_vi).removeReward(_token);
     }
 
-    /// @notice Add a reward token to a given VotingIncetives
-    /// @param _token   token to add as reward token
+    /// @notice Add a reward token to a given VotingIncentives    /// @param _token   token to add as reward token
     /// @param _vi     voting incentives contract
-    function removeRewardsToVotingIncetives(address[] calldata _token, address _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+    function removeRewardsToVotingIncentives(address[] calldata _token, address _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         IVotingIncentives(_vi).removeRewards(_token);
     }
 
 
 
-    /// @notice set a new voter in given VotingIncetivess
+    /// @notice set a new voter in given VotingIncentives
     /// @param _vi     array of voting incentives contract
     /// @param _voter  new voter contract
-    function setVotingIncetivesVoter(address[] calldata _vi, address _voter) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+    function setVotingIncentivesVoter(address[] calldata _vi, address _voter) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         uint i;
         for(i; i< _vi.length; i++){
             IVotingIncentives(_vi[i]).setVoter(_voter);
         }
     }
 
-    /// @notice set a new minter in given VotingIncetivess
+    /// @notice set a new minter in given VotingIncentives
     /// @param _vi     array of voting incentives contract
     /// @param _minter  new minter contract
-    function setVotingIncetivesMinter(address[] calldata _vi, address _minter) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+    function setVotingIncentivesMinter(address[] calldata _vi, address _minter) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         uint i;
         for(i; i< _vi.length; i++){
             IVotingIncentives(_vi[i]).setMinter(_minter);
         }
     }
 
-    /// @notice set a new owner in given VotingIncetivess
+    /// @notice set a new owner in given VotingIncentives
     /// @param _vi     array of voting incentives contract
     /// @param _owner  new owner address
-    function setVotingIncetivesOwner(address[] calldata _vi, address _owner) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+    function setVotingIncentivesOwner(address[] calldata _vi, address _owner) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         uint i;
         for(i; i< _vi.length; i++){
             IVotingIncentives(_vi[i]).setOwner(_owner);
         }
     }
 
-    /// @notice Set a new claimer in the VotingIncetivess
+    /// @notice Set a new claimer in the VotingIncentives
     /// @param _vi     array of voting incentives contract
     /// @param claimer  new claimer contract
     function setClaimer(address claimer, address[] calldata _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
@@ -195,7 +191,7 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
         }
     }
 
-    /// @notice recover an ERC20 from VotingIncetives contracts.
+    /// @notice recover an ERC20 from VotingIncentives contracts.
     /// @param _vi      array of voting incentives contract
     /// @param _tokens  array of tokens to recover
     /// @param _amounts array of amounts to recover
@@ -209,7 +205,7 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
         }
     }
 
-    /// @notice recover an ERC20 from VotingIncetives contracts and update.
+    /// @notice recover an ERC20 from VotingIncentives contracts and update.
     /// @param _vi     array of voting incentives contract
     /// @param _tokens array of tokens to recover
     /// @param _amounts array of amounts to recover
@@ -224,7 +220,7 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
         }
     }
 
-    /// @notice Pause VotingIncetives contracts
+    /// @notice Pause VotingIncentives contracts
     /// @param _vi     array of voting incentives contract
     function pauseVotingIncentives(address[] calldata _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         uint i;
@@ -233,7 +229,7 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
         }
     }
 
-    /// @notice Unpause VotingIncetives contracts
+    /// @notice Unpause VotingIncentives contracts
     /// @param _vi     array of voting incentives contract
     function unpauseVotingIncentives(address[] calldata _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         uint i;

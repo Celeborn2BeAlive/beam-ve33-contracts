@@ -9,9 +9,9 @@ import "./interfaces/IVoter.sol";
 import "./interfaces/IVotingEscrow.sol";
 import "./interfaces/IVotingIncentives.sol";
 
-/// @title Voting Incetives
+/// @title Voting Incentives
 /// @author Prometheus - Perseus, ThenaFi $THE
-/// @notice Voting Incetives contract for veTHE voters. It manages fees and external incentives.
+/// @notice Voting Incentives contract for veTHE voters. It manages fees and external incentives.
 contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     using SafeERC20 for IERC20;
 
@@ -24,7 +24,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
     address[] public rewardTokens;      //  list of reward tokens
     address public voter;               //  voter contract
-    address public votingIncentivesFactory;//  Voting Incetives deployer
+    address public votingIncentivesFactory;//  Voting Incentives deployer
     address public feeDistributor;               //  underlying feeDistributor linked to this.contract
     address public owner;               //  owner of this contract (should be MultiSig)
     address public claimer;             // allow multiple claims
@@ -50,7 +50,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
 
     /* ========== CONSTRUCTOR ========== */
-    /// @notice Deploy VotingIncetives.sol
+    /// @notice Deploy VotingIncentives.sol
     /// @param _owner   the owner of this contract, multisig
     /// @param _voter   the voter contract used to interface with this contract
     /// @param _feeDistributor   the feeDistributor linked with this incentive contract (the gauge)
