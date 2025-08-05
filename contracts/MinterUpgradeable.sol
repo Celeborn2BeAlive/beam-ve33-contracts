@@ -13,7 +13,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 // codifies the minting rules as per ve(3,3), abstracted from the token to support any token that allows minting
 
 contract MinterUpgradeable is IMinter, OwnableUpgradeable {
-    
+
     bool public isFirstMint;
 
     uint public EMISSION;
@@ -31,7 +31,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
     address internal _initializer;
     address public team;
     address public pendingTeam;
-    
+
     IEmissionToken public _retro;
     IVoter public _voter;
     IVotingEscrow public _ve;
@@ -41,7 +41,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
 
     constructor() {}
 
-    function initialize(    
+    function initialize(
         address __voter, // the voting & distribution system
         address __ve, // the ve(3,3) system that will be locked into
         address __rewards_distributor // the distribution system that ensures users aren't diluted
@@ -145,7 +145,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
     function calculate_rebase(uint _weeklyMint) public view returns (uint) {
         uint _veTotal = _retro.balanceOf(address(_ve));
         uint _retroTotal = _retro.totalSupply();
-        
+
         uint lockedShare = (_veTotal) * PRECISION  / _retroTotal;
         if(lockedShare >= REBASEMAX){
             return _weeklyMint * REBASEMAX / PRECISION;
@@ -179,7 +179,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
             }
 
             require(_retro.transfer(team, _teamEmissions));
-            
+
             require(_retro.transfer(address(_rewards_distributor), _rebase));
             _rewards_distributor.checkpoint_token(); // checkpoint token balance that was just minted in rewards distributor
             _rewards_distributor.checkpoint_total_supply(); // checkpoint supply
