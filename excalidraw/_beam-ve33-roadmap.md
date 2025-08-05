@@ -1,0 +1,52 @@
+**Minimal contract set to deploy:**
+- Core emission & lock protocol:
+  - EmissionToken (BEAM)
+  - VotingEscrow (veBEAM)
+  - Rebase veBEAM (RewardsDistributor)
+  - Minter
+- Voting:
+  - Epoch Distributor (fork & adapt Thena V3)
+  - Voter (fork & adapt Thena V3)
+- Voters rewarding:
+  - Gauge Factory (fork & adapt Thena V3)
+  - Algebra Vault (fork & adapt Thena V3)
+  - Voting Incentive (fork & adapt Thena V3)
+  - Voting Incentive Factory (fork & adapt Thena V3)
+- Farming:
+  - Incentive Maker (fork & adapt Thena V3)
+  - Gauge Algebra Eternal Farming (fork & adapt Thena V3)
+- UniV2 DEX (optional, can be added after)
+  - Router V2
+  - Classic PairFactory
+
+**Dev roadmap**:
+- DONE:
+  - Migrate Retro as EmissionToken to new codebase
+  - Migrate VotingEscrow to new codebase
+  - Write Beam ignition deployment script
+- TODO:
+  - Re-read VotingEscrow code and document it
+  - Migrate Minter to new codebase
+    - Re-read code and document it
+    - Make some adaptation, for example rename "voter" => "epochDistributor"
+  - Migrate "Rebase veBEAM" (RewardsDistributor) contract
+    - Re-read code and document it
+  - Thena V3 forking for CL farming
+    - Read Epoch Distributor and document it
+    - Read Voter and document it
+      - Ensure we can integrate new gauge systems for future extension of the DEX
+    - Read Incentive Maker and document it
+      - Check that it can be used for our version of Algebra
+      - If not, adapt the contract
+    - Read Gauge Algebra Eternal Farming and document it
+    - Read Algebra Vault and document it
+    - Read Gauge Factory and document it
+    - Adapt and migrate all code to our codebase
+  - Finish deployment script and try it onchain
+    - Try to run the protocol at high frequency (one epoch = 1 minute)
+
+**Questions / Investigations**:
+- Should we centralize role management to `PermissionsRegistry` or have roles defined at each contract ?
+  - Thena V3 contracts seems to have roles defined at each contract
+- For upgradable contracts, check how to deploy & admin them with hardhat ignition
+  - Avoid upgradable ?
