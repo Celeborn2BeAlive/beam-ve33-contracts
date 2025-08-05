@@ -7,7 +7,7 @@ const beamTokenName = "Beam";
 const beamTokenSymbol = "BEAM";
 export const beamTokenConstructorArgs = [beamTokenName, beamTokenSymbol]
 
-const Beam = buildModule("Beam", (m) => {
+const BeamToken = buildModule("BeamToken", (m) => {
   const beamToken = m.contract("contracts/EmissionToken.sol:EmissionToken", beamTokenConstructorArgs);
 
   const beamMultisigAddress = getAddress("0x0029eD88Ec602d32eB93d1c42b73a5206Ec046A3");
@@ -18,13 +18,14 @@ const Beam = buildModule("Beam", (m) => {
 });
 
 const VotingEscrow = buildModule("VotingEscrow", (m) => {
-  const { beamToken } = m.useModule(Beam);
+  const { beamToken } = m.useModule(BeamToken);
   const artProxyAddress = ZERO_ADDRESS;
 
   const votingEscrow = m.contract("contracts/VotingEscrow.sol:VotingEscrow", [beamToken, artProxyAddress]);
 
   return { votingEscrow };
 });
+
 
 const RewardsDistributor = buildModule("RewardsDistributor", (m) => {
   const { votingEscrow } = m.useModule(VotingEscrow);
@@ -42,7 +43,7 @@ const ProxyAdmin = buildModule("ProxyAdmin", (m) => {
 const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
   const minterUpgradeable = m.contract("MinterUpgradeable");
 
-  const { beamToken } = m.useModule(Beam);
+  const { beamToken } = m.useModule(BeamToken);
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { rewardsDistributor } = m.useModule(RewardsDistributor);
   const epochDistributor = ZERO_ADDRESS;
@@ -64,11 +65,30 @@ const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
   return { proxyAdmin, minterProxy };
 });
 
+const Voter = buildModule("Voter", (m) => {
+  const { votingEscrow } = m.useModule(VotingEscrow);
+  const { minterProxy } = m.useModule(MinterUpgradeable);
+
+  const voter = m.contract("contracts/Voter.sol:Voter", [votingEscrow, minterProxy,]);
+
+  m.call(votingEscrow, "setVoter", [voter,]);
+
+  return { voter };
+})
+
 export default buildModule("BeamProtocol", (m) => {
-  const { beamToken } = m.useModule(Beam);
+  const { beamToken } = m.useModule(BeamToken);
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { rewardsDistributor } = m.useModule(RewardsDistributor);
   const { proxyAdmin, minterProxy } = m.useModule(MinterUpgradeable);
+  const { voter } = m.useModule(Voter);
 
-  return { beamToken, votingEscrow, rewardsDistributor, minterProxy, proxyAdmin }
+  return {
+    beamToken,
+    votingEscrow,
+    rewardsDistributor,
+    minterProxy,
+    voter,
+    proxyAdmin,
+  }
 });
