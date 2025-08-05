@@ -11,15 +11,15 @@ interface IVotingIncentivesFactory { // View functions
     function removeDefaultRewardToken(address _token) external;
 
     // Reward token management
-    function addRewardToVotingIncetives(address _token, address _vi) external;
-    function addRewardsToVotingIncetives(address[] calldata _token, address _vi) external;
-    function removeRewardToVotingIncetives(address _token, address _vi) external;
-    function removeRewardsToVotingIncetives(address[] calldata _token, address _vi) external;
+    function addRewardToVotingIncentives(address _token, address _vi) external;
+    function addRewardsToVotingIncentives(address[] calldata _token, address _vi) external;
+    function removeRewardToVotingIncentives(address _token, address _vi) external;
+    function removeRewardsToVotingIncentives(address[] calldata _token, address _vi) external;
 
     // Voting incentives management
-    function setVotingIncetivesVoter(address[] calldata _vi, address _voter) external;
-    function setVotingIncetivesMinter(address[] calldata _vi, address _minter) external;
-    function setVotingIncetivesOwner(address[] calldata _vi, address _owner) external;
+    function setVotingIncentivesVoter(address[] calldata _vi, address _voter) external;
+    function setVotingIncentivesMinter(address[] calldata _vi, address _minter) external;
+    function setVotingIncentivesOwner(address[] calldata _vi, address _owner) external;
     function setClaimer(address claimer, address[] calldata _vi) external;
 
     // Emergency recovery

@@ -190,7 +190,7 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
         // Step 4: Finish setup
         if(pool_type == 1) IFeeVault(feeVault).setGauge(gauge);
         IGaugeFactory(address(gaugeFactory)).setVotingIncentives(gauge, votingIncentives);
-        votingIncentivesFactory.addRewardsToVotingIncetives(_tokens, votingIncentives);
+        votingIncentivesFactory.addRewardsToVotingIncentives(_tokens, votingIncentives);
 
         // Step 5: Add to Voter
         voter.addPoolData(_pool, gauge, votingIncentives);

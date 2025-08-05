@@ -42,11 +42,11 @@ contract GaugeFactory is AccessControl {
     /// @param _token           the underlying LP strategy
     /// @param _distribution    the reward tokens distribution address
     /// @param _feeVault        the fee vault where to claim fees
-    /// @param _votingIncetives the voting incentives where to send fees
+    /// @param _votingIncentives the voting incentives where to send fees
     /// @param _claimer         the claimer contract to manage multiple claims
     /// @param isWeighted       the boolean to define if it's weighted pool
-    function createGauge(address[] memory _rewardtokens,address _token,address _distribution, address _feeVault, address _votingIncetives, address _claimer, bool isWeighted) external onlyRole(CREATE_ROLE) returns(address){
-        address gauge = address ( new Gauge(_rewardtokens, _token, _distribution, _feeVault, _votingIncetives, _claimer, isWeighted) );
+    function createGauge(address[] memory _rewardtokens,address _token,address _distribution, address _feeVault, address _votingIncentives, address _claimer, bool isWeighted) external onlyRole(CREATE_ROLE) returns(address){
+        address gauge = address ( new Gauge(_rewardtokens, _token, _distribution, _feeVault, _votingIncentives, _claimer, isWeighted) );
         emit CreateGauge(_token, gauge);
         return gauge;
     }
