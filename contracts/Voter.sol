@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "../interfaces/Minter/IMinter.sol";
-import "../interfaces/VotingEscrow/IVotingEscrow.sol";
-import "../interfaces/Voter/IVoter.sol";
-import "../interfaces/VotingEscrow/IVotingEscrowAttach.sol";
-import "../interfaces/VotingIncentives/IVotingIncentives.sol";
+import "./interfaces/IMinter.sol";
+import "./interfaces/IVotingEscrow.sol";
+import "./interfaces/IVoter.sol";
+import "./interfaces/IVotingIncentives.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
@@ -52,14 +51,11 @@ contract Voter is Ownable, Pausable, IVoter {
     mapping(address => bool) internal _isManager;
 
     /* ========== INTERFACES ========== */
-    /// @notice $THE Minter interface
+    /// @notice EmissionToken Minter interface
     IMinter internal _minter;
 
-    /// @notice veTHE Interface
+    /// @notice Voting Escrow Interface
     IVotingEscrow internal _ve;
-
-    /// @notice veTHE Attach contract. Used to lock transfer on voting/reset or other operations
-    IVotingEscrowAttach public attach;
 
 
     /* ===================================== */
@@ -67,14 +63,12 @@ contract Voter is Ownable, Pausable, IVoter {
     /* ========== INIT AND DEPLOY ========== */
     /* ===================================== */
     /* ===================================== */
-    constructor(address __ve, address _attach, address __minter) {
+    constructor(address __ve, address __minter) {
         if(__ve == address(0)) revert AddressZero();
         if(__minter == address(0)) revert AddressZero();
-        if(_attach == address(0)) revert AddressZero();
 
         _ve = IVotingEscrow(__ve);
         _minter = IMinter(__minter);
-        attach = IVotingEscrowAttach(_attach);
 
         _isManager[owner()] = true;
     }
@@ -87,7 +81,7 @@ contract Voter is Ownable, Pausable, IVoter {
     /* ==================================== */
 
     /// @notice Vote again with tokenID using past epoch data
-    /// @param _tokenId veTHE tokenID used to revote
+    /// @param _tokenId veNFT tokenID used to revote
     /// @dev    We load the LAST epoch data from memory (epochs lasts 1 week).
     ///         We do not call _vote() to avoid removing calldata.
     function poke(uint256 _tokenId) external whenNotPaused {
@@ -118,20 +112,20 @@ contract Voter is Ownable, Pausable, IVoter {
         }
 
         _tokenIdVotes[_tokenId][_currEpochTime] = TokenIdVote({
-            vetheBalance: _weight,
+            veBalance: _weight,
             totalWeight: _totWgts,
             weights: _weights,
             pools: _pools
         });
 
         _totalWeights[_currEpochTime] += _weight;
-        attach.voting(_tokenId);
+        _ve.voting(_tokenId);
         emit Vote(msg.sender, _tokenId, _currEpochTime);
     }
 
 
     /// @notice Reset the votes of a position
-    /// @param _tokenId veTHE tokenID
+    /// @param _tokenId veNFT tokenID
     function reset(uint256 _tokenId) external whenNotPaused {
         if(!_ve.isApprovedOrOwner(msg.sender, _tokenId)) revert NotOwnerOrApproved();
         _reset(_tokenId);
@@ -144,23 +138,23 @@ contract Voter is Ownable, Pausable, IVoter {
         PoolData memory _poolDataTemp;
 
         if(tiv.totalWeight != 0) {
-            _totalWeights[_currEpochTime] -= tiv.vetheBalance;
+            _totalWeights[_currEpochTime] -= tiv.veBalance;
             uint256 _poolWeight;
             uint256 i;
             for(i; i < tiv.pools.length; i++){
-                _poolWeight = tiv.weights[i] * tiv.vetheBalance / tiv.totalWeight;
+                _poolWeight = tiv.weights[i] * tiv.veBalance / tiv.totalWeight;
                 _poolTotalWeights[tiv.pools[i]][_currEpochTime] -= _poolWeight;
                 _poolDataTemp = _poolData[tiv.pools[i]];
                 IVotingIncentives(_poolDataTemp.votingIncentives).withdraw(_poolWeight, _tokenId);
             }
             delete _tokenIdVotes[_tokenId][_currEpochTime];
         }
-        attach.abstain(_tokenId);
+        _ve.abstain(_tokenId);
         emit Reset(msg.sender, _tokenId, _currEpochTime);
     }
 
     /// @notice Vote a given pool to earn rewards
-    /// @param _tokenId veTHE tokenID
+    /// @param _tokenId veNFT tokenID
     /// @param _pools   array with pools to vote
     /// @param _weights array with weights for each pool
     /// @dev Pool_vote_wieght = User NFT Balance * _weights[i] / sumOfWeights;
@@ -199,13 +193,13 @@ contract Voter is Ownable, Pausable, IVoter {
         }
 
         _tokenIdVotes[_tokenId][_currEpochTime] = TokenIdVote({
-            vetheBalance: _weight,
+            veBalance: _weight,
             totalWeight: _totWgts,
             weights: _weights,
             pools: _pools
         });
         _totalWeights[_currEpochTime] += _weight;
-        attach.voting(_tokenId);
+        _ve.voting(_tokenId);
 
         emit Vote(msg.sender, _tokenId, _currEpochTime);
     }
@@ -292,12 +286,12 @@ contract Voter is Ownable, Pausable, IVoter {
 
 
     /// @notice Set new Voting Escrow
-    /// @param _veTHE Voting Escrow Contract
-    function setVeTHE(address _veTHE) external {
+    /// @param _votingEscrow Voting Escrow Contract
+    function setVotingEscrow(address _votingEscrow) external {
         if(!_onlyManager(msg.sender)) revert NotManager();
-        if(_veTHE == address(0)) revert AddressZero();
-        _ve = IVotingEscrow(_veTHE);
-        emit BanPool(_veTHE);
+        if(_votingEscrow == address(0)) revert AddressZero();
+        _ve = IVotingEscrow(_votingEscrow);
+        emit SetVotingEscrow(_votingEscrow);
     }
 
     /// @notice Set new Minter
@@ -307,15 +301,6 @@ contract Voter is Ownable, Pausable, IVoter {
         if(_mint == address(0)) revert AddressZero();
         _minter = IMinter(_mint);
         emit SetMinter(_mint);
-    }
-
-    /// @notice Set new Attach
-    /// @param _att veTHE Attach Contract
-    function setVotingEscrowAttach(address _att) external {
-        if(!_onlyManager(msg.sender)) revert NotManager();
-        if(_att == address(0)) revert AddressZero();
-        attach = IVotingEscrowAttach(_att);
-        emit SetVotingEscrowAttach(_att);
     }
 
     /// @notice Set the status of a manager address
