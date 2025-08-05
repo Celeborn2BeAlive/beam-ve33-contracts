@@ -1,6 +1,4 @@
 {
-  "TestEmissionToken#EmissionToken": "0x47611DfA47561a81154957c0191070F8A58566ba",
-  "Beam#EmissionToken": "0xADc8425a8f8b44c66982AFE00F601DF2cDC76acd",
-  "VotingEscrow#VotingEscrow": "0x42D08bfC27898Bd4B0C3AEB44c4ea97717e7F219",
-  "EmissionToken#EmissionToken": "0x2D9df2d60d158c2428CCA1381D62A1CBEA5C99da"
+  "Beam#EmissionToken": "0xeC564b4277F69921cBdf2748bf260969820527C5",
+  "VotingEscrow#VotingEscrow": "0x376Fd332791Dc2f8eeB1648827d4Ddc96357aF6a"
 }

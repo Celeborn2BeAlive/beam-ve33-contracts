@@ -85,15 +85,16 @@ const config: HardhatUserConfig = {
     },
 
     zetachain: {
-      url: `https://zetachain-mainnet.public.blastapi.io`,
+      // url: `https://zetachain-mainnet.public.blastapi.io`,
+      url: `https://zeta-chain.drpc.org`,
       chainId: 7000,
       accounts: PRIVATEKEY,
     },
 
     hardhat: {
-      forking: {
-        url: "https://polygon-mainnet.infura.io/v3/28b6e1b06d8b4cbcaaf8d7065ee116f3",
-      },
+      // forking: {
+      //   url: "https://polygon-mainnet.infura.io/v3/28b6e1b06d8b4cbcaaf8d7065ee116f3",
+      // },
       //accounts: []
     },
   },
