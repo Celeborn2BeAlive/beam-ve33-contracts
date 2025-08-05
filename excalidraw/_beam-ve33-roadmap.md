@@ -47,6 +47,8 @@
 - NEXT TODO
   - Include Algebra fees to AlgebraVault
     - Check with Chase if we also have some treasuryShare ?
+  - Adapt IncentiveMaker => rename thena to emissionToken, and wbnb to wrappedGasToken
+  - Rename ignition contract proxy with Proxy at the end
 
 **Questions / Investigations**:
 - Should we centralize role management to `PermissionsRegistry` or have roles defined at each contract ?
