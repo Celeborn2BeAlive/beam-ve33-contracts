@@ -6,11 +6,9 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "contracts/interfaces/IVotingIncentives.sol";
+import "contracts/interfaces/IFeeVault.sol";
 import "./interfaces/IIncentiveMaker.sol";
 
-interface IFeeVault {
-    function claimFees() external returns(uint256 gauge0, uint256 gauge1);
-}
 
 /// @title GaugeEternalFarming
 /// @notice Gauge contract for eternal farming
