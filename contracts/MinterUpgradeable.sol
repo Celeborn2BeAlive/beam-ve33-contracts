@@ -5,7 +5,7 @@ import "./libraries/Math.sol";
 import "./interfaces/IMinter.sol";
 import "./interfaces/IRewardsDistributor.sol";
 import "./interfaces/IEmissionToken.sol";
-import "./interfaces/IVoter.sol";
+import "./interfaces/IEpochDistributor.sol";
 import "./interfaces/IVotingEscrow.sol";
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -33,7 +33,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
     address public pendingTeam;
 
     IEmissionToken public _emissionToken;
-    IVoter public _voter;
+    IEpochDistributor public _epochDistributor;
     IVotingEscrow public _ve;
     IRewardsDistributor public _rewards_distributor;
 
@@ -42,7 +42,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
     constructor() {}
 
     function initialize(
-        address __voter, // the voting & distribution system
+        address __epoch_distributor, // the farming distribution system
         address __ve, // the ve(3,3) system that will be locked into
         address __rewards_distributor // the distribution system that ensures users aren't diluted
     ) initializer public {
@@ -58,7 +58,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
         REBASEMAX = 300;
 
         _emissionToken = IEmissionToken(IVotingEscrow(__ve).token());
-        _voter = IVoter(__voter);
+        _epochDistributor = IEpochDistributor(__epoch_distributor);
         _ve = IVotingEscrow(__ve);
         _rewards_distributor = IRewardsDistributor(__rewards_distributor);
 
@@ -96,10 +96,10 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
         team = pendingTeam;
     }
 
-    function setVoter(address __voter) external {
-        require(__voter != address(0));
+    function setEpochDistributor(address __epochDistributor) external {
+        require(__epochDistributor != address(0));
         require(msg.sender == team, "not team");
-        _voter = IVoter(__voter);
+        _epochDistributor = IEpochDistributor(__epochDistributor);
     }
 
     function setTeamRate(uint _teamRate) external {
@@ -184,8 +184,8 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
             _rewards_distributor.checkpoint_token(); // checkpoint token balance that was just minted in rewards distributor
             _rewards_distributor.checkpoint_total_supply(); // checkpoint supply
 
-            _emissionToken.approve(address(_voter), _gauge);
-            _voter.notifyRewardAmount(_gauge);
+            _emissionToken.approve(address(_epochDistributor), _gauge);
+            _epochDistributor.notifyRewardAmount(_gauge);
 
             emit Mint(msg.sender, weekly, circulating_supply(), circulating_emission());
         }

@@ -45,12 +45,12 @@ const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
   const { beamToken } = m.useModule(Beam);
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { rewardsDistributor } = m.useModule(RewardsDistributor);
-  const voterV3Address = ZERO_ADDRESS;
+  const epochDistributor = ZERO_ADDRESS;
 
   const { proxyAdmin } = m.useModule(ProxyAdmin);
 
   const encodedInitializeCall = m.encodeFunctionCall(minterUpgradeable, "initialize",
-    [voterV3Address, votingEscrow, rewardsDistributor],
+    [epochDistributor, votingEscrow, rewardsDistributor],
   );
 
   const minterProxy = m.contract("TransparentUpgradeableProxy", [
