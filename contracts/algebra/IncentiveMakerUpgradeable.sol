@@ -11,7 +11,7 @@ import "contracts/interfaces/IVoter.sol";
 
 /// @title Incentive Maker Contract
 /// @notice Manages the creation and updating of farming incentives for Algebra pools
-contract IncentiveMaker is AccessControlUpgradeable {
+contract IncentiveMakerUpgradeable is AccessControlUpgradeable {
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
