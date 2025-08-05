@@ -33,7 +33,7 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
   address public algebraFactory;
 
   /// @notice Mapping of pool addresses to their corresponding vault addresses
-  mapping(address => address) public poolToVault;
+  mapping(address pool => address vault) public poolToVault;
 
 
   /// @notice Constructs the AlgebraVaultFactory contract
