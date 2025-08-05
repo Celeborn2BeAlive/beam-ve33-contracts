@@ -8,10 +8,16 @@ importers:
 
   .:
     dependencies:
+      '@cryptoalgebra/integral-base-plugin':
+        specifier: ^1.2.4
+        version: 1.2.4
       '@cryptoalgebra/integral-core':
         specifier: ^1.2.9
         version: 1.2.9
       '@cryptoalgebra/integral-farming':
+        specifier: ^1.2.4
+        version: 1.2.4
+      '@cryptoalgebra/integral-periphery':
         specifier: ^1.2.4
         version: 1.2.4
     devDependencies:
