@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.13;
+pragma solidity >=0.8.0;
 
 import './libraries/Math.sol';
 import './interfaces/IERC20.sol';
@@ -50,18 +50,18 @@ contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
     address public token;
     address public depositor;
 
-    
+
     mapping(uint => uint) public time_cursor_of;
     mapping(address => bool) public lockAddress;       // remove permissionless claim for an address owner
     mapping(uint => uint) internal time_to_block;
 
-  
+
 
     constructor(address _voting_escrow) {
         uint _t = block.timestamp / WEEK * WEEK;
         last_token_time = _t;
         time_cursor = _t;
-        
+
         address _token = IVotingEscrow(_voting_escrow).token();
         token = _token;
 
@@ -108,7 +108,7 @@ contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
         time_cursor = t;
     }
 
-    
+
     function _find_timestamp_epoch(address ve, uint _timestamp) internal view returns (uint) {
         uint _min = 0;
         uint _max = IVotingEscrow(ve).epoch();
@@ -138,19 +138,19 @@ contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
         last_week = block.timestamp / WEEK * WEEK;
         time_to_block[last_week] = block.number;
         last_token_time = block.timestamp;
-        
+
         uint token_balance = IERC20(token).balanceOf(address(this));
         uint diff = total_distributed - token_claimed;
         uint to_distribute = token_balance - diff;
-        
+
         tokens_per_week[last_week] += to_distribute;
         total_distributed += to_distribute;
 
         emit CheckpointToken(block.timestamp, to_distribute);
     }
-  
 
-    
+
+
     function claimable(uint _tokenId) external view returns(uint) {
         uint t = time_cursor_of[_tokenId];
         if(t == 0) t = start_time;
@@ -160,10 +160,10 @@ contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
             if(t > _last_week) break;
             to_claim += _toClaim(_tokenId, t);
             t += WEEK;
-        }        
+        }
         return to_claim;
     }
-        
+
 
     function claim_many(uint[] memory tokenIds) external nonReentrant returns(bool) {
         require(tokenIds.length <= 25);
@@ -180,7 +180,7 @@ contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
     function _claim(uint _tokenId) internal returns (uint) {
         address _owner = IVotingEscrow(voting_escrow).ownerOf(_tokenId);
 
-        // if lockAddress then check if msg.sender is allowed to call claim 
+        // if lockAddress then check if msg.sender is allowed to call claim
         if(lockAddress[_owner]) require(IVotingEscrow(voting_escrow).isApprovedOrOwner(msg.sender, _tokenId), 'not approved');
 
         IVotingEscrow.LockedBalance memory _locked = IVotingEscrow(voting_escrow).locked(_tokenId);
@@ -196,7 +196,7 @@ contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
             if(t > _last_week) break;
             to_claim += _toClaim(_tokenId, t);
             t += WEEK;
-        }        
+        }
 
         if(to_claim > 0) IVotingEscrow(voting_escrow).deposit_for(_tokenId, to_claim);
         time_cursor_of[_tokenId] = t;
@@ -218,15 +218,15 @@ contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
         //uint id_bal = IVotingEscrow(voting_escrow).balanceOfNFTAt(id, t);
         uint id_bal = IVotingEscrow(voting_escrow).balanceOfAtNFT(id, time_to_block[t]);
         uint share =  id_bal * 1e18 / ve_supply[t];
-        
+
         to_claim = share * tokens_per_week[t] / 1e18;
     }
 
 
 
 
-    
-    // prevent to claim rebase from any non-auth source. If true then require isApprovedOrOwner(msg.sender, _tokenId). 
+
+    // prevent to claim rebase from any non-auth source. If true then require isApprovedOrOwner(msg.sender, _tokenId).
     // Saved per owner address to avoid recall after split/merge
     function _lockAddress(address caller) external {
         require(msg.sender == caller || msg.sender == owner);

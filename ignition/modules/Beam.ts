@@ -7,15 +7,14 @@ const beamTokenName = "Beam";
 const beamTokenSymbol = "BEAM";
 export const beamTokenConstructorArgs = [beamTokenName, beamTokenSymbol]
 
+const beamMultisigAddress = getAddress("0x0029eD88Ec602d32eB93d1c42b73a5206Ec046A3");
 const beamAlgebraFactory = getAddress("0x28b5244B6CA7Cb07f2f7F40edE944c07C2395603")
 const wzetaAddress = getAddress("0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf");
 
 const BeamToken = buildModule("BeamToken", (m) => {
   const beamToken = m.contract("contracts/EmissionToken.sol:EmissionToken", beamTokenConstructorArgs);
 
-  const beamMultisigAddress = getAddress("0x0029eD88Ec602d32eB93d1c42b73a5206Ec046A3");
-
-  m.call(beamToken, "initialMint", [beamMultisigAddress,]);
+  // m.call(beamToken, "initialMint", [beamMultisigAddress,]);
 
   return { beamToken };
 });
@@ -33,7 +32,7 @@ const VotingEscrow = buildModule("VotingEscrow", (m) => {
 const RewardsDistributor = buildModule("RewardsDistributor", (m) => {
   const { votingEscrow } = m.useModule(VotingEscrow);
 
-  const rewardsDistributor = m.contract("contracts/RewardsDistributor.sol:RewardsDistributor", [votingEscrow,]);
+  const rewardsDistributor = m.contract("contracts/RewardsDistributorV2.sol:RewardsDistributorV2", [votingEscrow,]);
 
   return { rewardsDistributor };
 });
@@ -180,14 +179,34 @@ const IncentiveMakerUpgradeable = buildModule("IncentiveMaker", (m) => {
   return { incentiveMakerImplementation, incentiveMakerProxy, proxyAdmin }
 });
 
+const PairFactoryUpgradeable = buildModule("PairFactoryUpgradeable", (m) => {
+  const { proxyAdmin } = m.useModule(ProxyAdmin);
+
+  const pairFactoryImplementation = m.contract("PairFactoryUpgradeable", undefined, {
+    id: "PairFactoryUpgradeableImplementation",
+  });
+  const encodedInitializeCall = m.encodeFunctionCall(pairFactoryImplementation, "initialize",
+    [],
+  );
+
+  const pairFactoryTransparentProxy = m.contract("TransparentUpgradeableProxy", [
+    pairFactoryImplementation,
+    proxyAdmin,
+    encodedInitializeCall,
+  ]);
+
+  const pairFactoryProxy = m.contractAt("PairFactoryUpgradeable", pairFactoryTransparentProxy)
+
+  return { pairFactoryImplementation, pairFactoryProxy, proxyAdmin }
+})
+
 const GlobalFactory = buildModule("GlobalFactory", (m) => {
   const { voter } = m.useModule(Voter);
   const { beamToken } = m.useModule(BeamToken);
   const { epochDistributorProxy } = m.useModule(EpochDistributorUpgradeable)
-  const pairFactorySolidly = ZERO_ADDRESS;
+  const { pairFactoryProxy } = m.useModule(PairFactoryUpgradeable);
   const { gaugeFactory } = m.useModule(GaugeFactory);
   const { votingIncentivesFactory } = m.useModule(VotingIncentivesFactory);
-  const theNFT = ZERO_ADDRESS;
   const { claimer } = m.useModule(Claimer);
   const { incentiveMakerProxy } = m.useModule(IncentiveMakerUpgradeable);
 
@@ -196,11 +215,11 @@ const GlobalFactory = buildModule("GlobalFactory", (m) => {
     voter,
     beamToken,
     epochDistributorProxy,
-    pairFactorySolidly,
+    pairFactoryProxy,
     beamAlgebraFactory,
     gaugeFactory,
     votingIncentivesFactory,
-    theNFT,
+    beamMultisigAddress,
     claimer,
     incentiveMakerProxy,
   ]);
@@ -222,6 +241,7 @@ export default buildModule("BeamProtocol", (m) => {
   const { incentiveMakerImplementation, incentiveMakerProxy } = m.useModule(IncentiveMakerUpgradeable)
   const { claimer } = m.useModule(Claimer);
   const { globalFactory } = m.useModule(GlobalFactory);
+  const { pairFactoryImplementation, pairFactoryProxy } = m.useModule(PairFactoryUpgradeable)
 
   return {
     proxyAdmin,
@@ -240,5 +260,7 @@ export default buildModule("BeamProtocol", (m) => {
     incentiveMakerProxy,
     claimer,
     globalFactory,
+    pairFactoryImplementation,
+    pairFactoryProxy,
   }
 });
