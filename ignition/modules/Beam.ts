@@ -180,32 +180,41 @@ const IncentiveMakerUpgradeable = buildModule("IncentiveMaker", (m) => {
   return { incentiveMakerImplementation, incentiveMakerProxy, proxyAdmin }
 });
 
-const PairFactoryUpgradeable = buildModule("PairFactoryUpgradeable", (m) => {
+const SolidlyPairFactoryUpgradeable = buildModule("SolidlyPairFactoryUpgradeable", (m) => {
   const { proxyAdmin } = m.useModule(ProxyAdmin);
 
-  const pairFactoryImplementation = m.contract("PairFactoryUpgradeable", undefined, {
+  const solidlyPairFactoryImplementation = m.contract("PairFactoryUpgradeable", undefined, {
     id: "PairFactoryUpgradeableImplementation",
   });
-  const encodedInitializeCall = m.encodeFunctionCall(pairFactoryImplementation, "initialize",
+  const encodedInitializeCall = m.encodeFunctionCall(solidlyPairFactoryImplementation, "initialize",
     [],
   );
 
-  const pairFactoryTransparentProxy = m.contract("TransparentUpgradeableProxy", [
-    pairFactoryImplementation,
+  const solidlyPairFactoryTransparentProxy = m.contract("TransparentUpgradeableProxy", [
+    solidlyPairFactoryImplementation,
     proxyAdmin,
     encodedInitializeCall,
   ]);
 
-  const pairFactoryProxy = m.contractAt("PairFactoryUpgradeable", pairFactoryTransparentProxy)
+  const solidlyPairFactoryProxy = m.contractAt("PairFactoryUpgradeable", solidlyPairFactoryTransparentProxy)
 
-  return { pairFactoryImplementation, pairFactoryProxy, proxyAdmin }
+  return { solidlyPairFactoryImplementation, solidlyPairFactoryProxy, proxyAdmin }
 })
+
+const SolidlyRouter = buildModule("SolidlyRouter", (m) => {
+  const { solidlyPairFactoryProxy } = m.useModule(SolidlyPairFactoryUpgradeable);
+  const solidlyRouter = m.contract("RouterV2", [
+    solidlyPairFactoryProxy,
+    wzetaAddress,
+  ]);
+  return { solidlyRouter };
+});
 
 const GlobalFactory = buildModule("GlobalFactory", (m) => {
   const { voter } = m.useModule(Voter);
   const { beamToken } = m.useModule(BeamToken);
   const { epochDistributorProxy } = m.useModule(EpochDistributorUpgradeable)
-  const { pairFactoryProxy } = m.useModule(PairFactoryUpgradeable);
+  const { solidlyPairFactoryProxy } = m.useModule(SolidlyPairFactoryUpgradeable);
   const { gaugeFactory } = m.useModule(GaugeFactory);
   const { votingIncentivesFactory } = m.useModule(VotingIncentivesFactory);
   const { claimer } = m.useModule(Claimer);
@@ -216,7 +225,7 @@ const GlobalFactory = buildModule("GlobalFactory", (m) => {
     voter,
     beamToken,
     epochDistributorProxy,
-    pairFactoryProxy,
+    solidlyPairFactoryProxy,
     beamAlgebraFactory,
     gaugeFactory,
     votingIncentivesFactory,
@@ -242,7 +251,8 @@ export default buildModule("BeamProtocol", (m) => {
   const { incentiveMakerImplementation, incentiveMakerProxy } = m.useModule(IncentiveMakerUpgradeable)
   const { claimer } = m.useModule(Claimer);
   const { globalFactory } = m.useModule(GlobalFactory);
-  const { pairFactoryImplementation, pairFactoryProxy } = m.useModule(PairFactoryUpgradeable)
+  const { solidlyPairFactoryImplementation, solidlyPairFactoryProxy } = m.useModule(SolidlyPairFactoryUpgradeable)
+  const { solidlyRouter } = m.useModule(SolidlyRouter);
 
   return {
     proxyAdmin,
@@ -261,7 +271,8 @@ export default buildModule("BeamProtocol", (m) => {
     incentiveMakerProxy,
     claimer,
     globalFactory,
-    pairFactoryImplementation,
-    pairFactoryProxy,
+    solidlyPairFactoryImplementation,
+    solidlyPairFactoryProxy,
+    solidlyRouter,
   }
 });
