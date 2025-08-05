@@ -14,7 +14,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /// @title Distribute weekly $THE to BSC gauges and opBNB
 /// @author Prometheus - Thena Finance
-contract EpochDistributorBSC is OwnableUpgradeable {
+contract EpochDistributor is OwnableUpgradeable {
 
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
