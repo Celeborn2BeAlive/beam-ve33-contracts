@@ -20,7 +20,7 @@ interface IAlgebraVaultFactory {
   function getVaultForPool(address pool) external view returns (address);
   function getFees(uint256 amount) external view returns (uint256 thenftAmount, uint256 thenatreasuryAmount);
   function getFeesReceivers() external view returns (address thenft, address thenatreasury);
-  function createVaultForPool(address pool, address, address, address, address) external returns (address _vault);
+  function createVaultForPool(address pool) external returns (address _vault);
   function withdrawFromVault(address to, address[] calldata vault, address[][] calldata token, uint256[][] calldata amount) external;
   function withdrawFromVaultWithPools(address to, address[] calldata pools, address[][] calldata token, uint256[][] calldata amount) external;
   function setVoter(address _voter) external;

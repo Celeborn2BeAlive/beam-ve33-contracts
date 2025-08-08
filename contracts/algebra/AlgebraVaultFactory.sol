@@ -100,7 +100,7 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
   /// @notice Creates a new vault for a pool
   /// @param pool The address of the pool to create a vault for
   /// @return _vault The address of the newly created vault
-  function createVaultForPool(address pool, address, address, address, address) external returns (address _vault) {
+  function createVaultForPool(address pool) external returns (address _vault) {
     if(msg.sender != algebraFactory) revert NotAlgebraFactory();
     if(pool == address(0)) revert ZeroAddress();
 
