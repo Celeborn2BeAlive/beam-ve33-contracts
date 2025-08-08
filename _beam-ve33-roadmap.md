@@ -21,6 +21,10 @@
 
 **Dev Log**
 
+- 2025-08-08
+  - DONE:
+    - Investigated how to run automated tests on hardhat and localhost networks + use of ignition to deploy
+    - Implemented simple tests for BeamToken contract
 - 2025-08-05
   - DONE:
     - From Retro:

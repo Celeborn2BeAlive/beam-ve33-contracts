@@ -43,42 +43,42 @@ const config: HardhatUserConfig = {
   },
   defaultNetwork: HARDHAT_NETWORK || "zetachain",
   networks: {
-    bsc: {
-      url: "https://bsc-dataseed1.binance.org",
-      chainId: 56,
-      accounts: PRIVATEKEY,
-    },
+    // bsc: {
+    //   url: "https://bsc-dataseed1.binance.org",
+    //   chainId: 56,
+    //   accounts: PRIVATEKEY,
+    // },
 
-    polygon: {
-      url: "https://polygon-mainnet.infura.io/v3/28b6e1b06d8b4cbcaaf8d7065ee116f3",
-      // url: "https://polygon-rpc.com",
-      chainId: 137,
-      accounts: PRIVATEKEY,
-      gasPrice: 600e9,
-    },
+    // polygon: {
+    //   url: "https://polygon-mainnet.infura.io/v3/28b6e1b06d8b4cbcaaf8d7065ee116f3",
+    //   // url: "https://polygon-rpc.com",
+    //   chainId: 137,
+    //   accounts: PRIVATEKEY,
+    //   gasPrice: 600e9,
+    // },
 
-    "polygon-zkevm": {
-      url: "https://zkevm-rpc.com",
-      accounts: PRIVATEKEY,
-    },
+    // "polygon-zkevm": {
+    //   url: "https://zkevm-rpc.com",
+    //   accounts: PRIVATEKEY,
+    // },
 
-    optimism: {
-      url: "https://zkevm-rpc.com",
-      accounts: PRIVATEKEYSECRET,
-      gasPrice: 500e9,
-    },
+    // optimism: {
+    //   url: "https://zkevm-rpc.com",
+    //   accounts: PRIVATEKEYSECRET,
+    //   gasPrice: 500e9,
+    // },
 
-    bscTestnet: {
-      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
-      chainId: 97,
-      accounts: PRIVATEKEY,
-    },
+    // bscTestnet: {
+    //   url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+    //   chainId: 97,
+    //   accounts: PRIVATEKEY,
+    // },
 
-    op: {
-      url: "https://mainnet.optimism.io",
-      chainId: 10,
-      accounts: PRIVATEKEY,
-    },
+    // op: {
+    //   url: "https://mainnet.optimism.io",
+    //   chainId: 10,
+    //   accounts: PRIVATEKEY,
+    // },
 
     zetachain: {
       // url: `https://zetachain-mainnet.public.blastapi.io`,

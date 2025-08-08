@@ -13,7 +13,12 @@ describe("BeamToken", () => {
     const otherAccountAddress = getAddress(otherAccount.account.address);
     const publicClient = await hre.viem.getPublicClient();
 
-    const { beamToken } = await ignition.deploy(BeamToken);
+    // const { beamToken } = await ignition.deploy(BeamToken);
+
+    const beamToken = await hre.viem.deployContract(
+      "contracts/EmissionToken.sol:EmissionToken",
+      [beamTokenName, beamTokenSymbol],
+    );
 
     return {
       beamToken,

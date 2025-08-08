@@ -12,7 +12,7 @@ export const beamAlgebraFactory = getAddress("0x28b5244B6CA7Cb07f2f7F40edE944c07
 export const wzetaAddress = getAddress("0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf");
 
 export const BeamToken = buildModule("BeamToken", (m) => {
-  const beamToken = m.contract("contracts/EmissionToken.sol:EmissionToken", beamTokenConstructorArgs);
+  const beamToken = m.contract("EmissionToken", beamTokenConstructorArgs);
 
   // m.call(beamToken, "initialMint", [beamMultisigAddress,]);
 
@@ -23,7 +23,7 @@ const VotingEscrow = buildModule("VotingEscrow", (m) => {
   const { beamToken } = m.useModule(BeamToken);
   const artProxyAddress = ZERO_ADDRESS;
 
-  const votingEscrow = m.contract("contracts/VotingEscrow.sol:VotingEscrow", [beamToken, artProxyAddress]);
+  const votingEscrow = m.contract("VotingEscrow", [beamToken, artProxyAddress]);
 
   return { votingEscrow };
 });
@@ -32,7 +32,7 @@ const VotingEscrow = buildModule("VotingEscrow", (m) => {
 const RewardsDistributor = buildModule("RewardsDistributor", (m) => {
   const { votingEscrow } = m.useModule(VotingEscrow);
 
-  const rewardsDistributor = m.contract("contracts/RewardsDistributorV2.sol:RewardsDistributorV2", [votingEscrow,]);
+  const rewardsDistributor = m.contract("RewardsDistributorV2", [votingEscrow,]);
 
   return { rewardsDistributor };
 });
@@ -75,7 +75,7 @@ const Voter = buildModule("Voter", (m) => {
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { minterProxy } = m.useModule(MinterUpgradeable);
 
-  const voter = m.contract("contracts/Voter.sol:Voter", [votingEscrow, minterProxy,]);
+  const voter = m.contract("Voter", [votingEscrow, minterProxy,]);
 
   m.call(votingEscrow, "setVoter", [voter,]);
 
