@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import './libraries/Math.sol';
 import './interfaces/IERC20.sol';
-import './interfaces/IRewardsDistributor.sol';
+import './interfaces/IRebaseDistributor.sol';
 import './interfaces/IVotingEscrow.sol';
 import './interfaces/IMinter.sol';
 
@@ -18,7 +18,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 */
 
-contract RewardsDistributorV2 is ReentrancyGuard, IRewardsDistributor {
+contract RebaseDistributor is ReentrancyGuard, IRebaseDistributor {
 
     event CheckpointToken(
         uint time,

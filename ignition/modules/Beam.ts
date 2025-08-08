@@ -29,12 +29,12 @@ const VotingEscrow = buildModule("VotingEscrow", (m) => {
 });
 
 
-const RewardsDistributor = buildModule("RewardsDistributor", (m) => {
+const RebaseDistributor = buildModule("RebaseDistributor", (m) => {
   const { votingEscrow } = m.useModule(VotingEscrow);
 
-  const rewardsDistributor = m.contract("RewardsDistributorV2", [votingEscrow,]);
+  const rebaseDistributor = m.contract("RebaseDistributor", [votingEscrow,]);
 
-  return { rewardsDistributor };
+  return { rebaseDistributor };
 });
 
 const ProxyAdmin = buildModule("ProxyAdmin", (m) => {
@@ -45,7 +45,7 @@ const ProxyAdmin = buildModule("ProxyAdmin", (m) => {
 const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
   const { beamToken } = m.useModule(BeamToken);
   const { votingEscrow } = m.useModule(VotingEscrow);
-  const { rewardsDistributor } = m.useModule(RewardsDistributor);
+  const { rebaseDistributor } = m.useModule(RebaseDistributor);
   const epochDistributor = ZERO_ADDRESS;
 
   const { proxyAdmin } = m.useModule(ProxyAdmin);
@@ -54,7 +54,7 @@ const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
     id: "MinterUpgradeableImplementation",
   });
   const encodedInitializeCall = m.encodeFunctionCall(minterImplementation, "initialize",
-    [epochDistributor, votingEscrow, rewardsDistributor],
+    [epochDistributor, votingEscrow, rebaseDistributor],
   );
 
   const minterTransparentProxy = m.contract("TransparentUpgradeableProxy", [
@@ -64,7 +64,7 @@ const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
   ]);
 
   m.call(beamToken, "setMinter", [minterTransparentProxy,]);
-  m.call(rewardsDistributor, "setDepositor", [minterTransparentProxy,]);
+  m.call(rebaseDistributor, "setDepositor", [minterTransparentProxy,]);
 
   const minterProxy = m.contractAt("MinterUpgradeable", minterTransparentProxy)
 
@@ -115,10 +115,10 @@ const Claimer = buildModule("Claimer", (m) => {
 });
 
 
-export default buildModule("BeamProtocol", (m) => {
+export default buildModule("Beam", (m) => {
   const { beamToken } = m.useModule(BeamToken);
   const { votingEscrow } = m.useModule(VotingEscrow);
-  const { rewardsDistributor } = m.useModule(RewardsDistributor);
+  const { rebaseDistributor } = m.useModule(RebaseDistributor);
   const { proxyAdmin } = m.useModule(ProxyAdmin)
   const { minterImplementation, minterProxy } = m.useModule(MinterUpgradeable);
   const { voter } = m.useModule(Voter);
@@ -129,7 +129,7 @@ export default buildModule("BeamProtocol", (m) => {
     proxyAdmin,
     beamToken,
     votingEscrow,
-    rewardsDistributor,
+    rebaseDistributor,
     minterImplementation,
     minterProxy,
     voter,

@@ -25,6 +25,10 @@
   - DONE:
     - Investigated how to run automated tests on hardhat and localhost networks + use of ignition to deploy
     - Implemented simple tests for BeamToken contract
+    - Rename RewardsDistributorV2 to RebaseDistributor for clarity
+      - In Minter rename state variable to match
+
+
 - 2025-08-05
   - DONE:
     - From Retro:
@@ -72,8 +76,8 @@
     - Deployment
       - Iterated on hardhat ignition modules to deploy everything
   - TODO:
-    - Rename RewardsDistributorV2 to RebaseDistributor for clarity
-      - In Minter rename state variable to match
+    - ~~Rename RewardsDistributorV2 to RebaseDistributor for clarity~~
+      - ~~In Minter rename state variable to match~~
     - Adapt AlgebraVaultFactory so we can create AlgebraVault for already deployed CL pool
     - Adapt remaining Thena V3 contracts to remove theNFT related stuff, BNB stuff, etc.
     - Deployment: handle setup script to connect all contracts together
@@ -83,6 +87,7 @@
       - Check with Chase if we also have some treasuryShare ?
     - Adapt IncentiveMaker => rename thena to emissionToken, and wbnb to wrappedGasToken
     - Rename ignition contract proxy with Proxy at the end for clarity
+    - Deploy veNFT Art contract
 
 - 2025-08-03
   - DONE:

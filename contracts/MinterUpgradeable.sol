@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "./libraries/Math.sol";
 import "./interfaces/IMinter.sol";
-import "./interfaces/IRewardsDistributor.sol";
+import "./interfaces/IRebaseDistributor.sol";
 import "./interfaces/IEmissionToken.sol";
 import "./interfaces/IEpochDistributor.sol";
 import "./interfaces/IVotingEscrow.sol";
@@ -35,7 +35,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
     IEmissionToken public _emissionToken;
     IEpochDistributor public _epochDistributor;
     IVotingEscrow public _ve;
-    IRewardsDistributor public _rewards_distributor;
+    IRebaseDistributor public _rebase_distributor;
 
     event Mint(address indexed sender, uint weekly, uint circulating_supply, uint circulating_emission);
 
@@ -44,7 +44,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
     function initialize(
         address __epoch_distributor, // the farming distribution system
         address __ve, // the ve(3,3) system that will be locked into
-        address __rewards_distributor // the distribution system that ensures users aren't diluted
+        address __rebase_distributor // the distribution system that ensures users aren't diluted
     ) initializer public {
         __Ownable_init();
 
@@ -60,7 +60,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
         _emissionToken = IEmissionToken(IVotingEscrow(__ve).token());
         _epochDistributor = IEpochDistributor(__epoch_distributor);
         _ve = IVotingEscrow(__ve);
-        _rewards_distributor = IRewardsDistributor(__rewards_distributor);
+        _rebase_distributor = IRebaseDistributor(__rebase_distributor);
 
         active_period = ((block.timestamp + (2 * WEEK)) / WEEK) * WEEK;
         weekly = 2_600_000 * 1e18; // represents a starting weekly emission of 2.6M RETRO (RETRO has 18 decimals)
@@ -180,9 +180,9 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
 
             require(_emissionToken.transfer(team, _teamEmissions));
 
-            require(_emissionToken.transfer(address(_rewards_distributor), _rebase));
-            _rewards_distributor.checkpoint_token(); // checkpoint token balance that was just minted in rewards distributor
-            _rewards_distributor.checkpoint_total_supply(); // checkpoint supply
+            require(_emissionToken.transfer(address(_rebase_distributor), _rebase));
+            _rebase_distributor.checkpoint_token(); // checkpoint token balance that was just minted in rewards distributor
+            _rebase_distributor.checkpoint_total_supply(); // checkpoint supply
 
             _emissionToken.approve(address(_epochDistributor), _gauge);
             _epochDistributor.notifyRewardAmount(_gauge);
@@ -200,8 +200,8 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
     function period() external view returns(uint){
         return(block.timestamp / WEEK) * WEEK;
     }
-    function setRewardDistributor(address _rewardDistro) external {
+    function setRewardDistributor(address _rebaseDistro) external {
         require(msg.sender == team);
-        _rewards_distributor = IRewardsDistributor(_rewardDistro);
+        _rebase_distributor = IRebaseDistributor(_rebaseDistro);
     }
 }
