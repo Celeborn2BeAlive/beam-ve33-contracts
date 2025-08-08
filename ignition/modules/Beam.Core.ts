@@ -81,7 +81,7 @@ const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
   return { minterImplementation, minterProxy, proxyAdmin };
 });
 
-const Voter = buildModule("Voter", (m) => {
+export const Voter = buildModule("Voter", (m) => {
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { minterProxy } = m.useModule(MinterUpgradeable);
 

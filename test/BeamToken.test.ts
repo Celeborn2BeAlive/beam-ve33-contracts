@@ -17,7 +17,7 @@ describe("BeamToken", () => {
     // const { beamToken } = await ignition.deploy(BeamToken);
 
     const beamToken = await hre.viem.deployContract(
-      "contracts/EmissionToken.sol:EmissionToken",
+      "EmissionToken",
       [beamTokenName, beamTokenSymbol],
     );
 
