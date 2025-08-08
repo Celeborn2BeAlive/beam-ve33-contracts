@@ -1,4 +1,4 @@
-import { HardhatUserConfig } from "hardhat/types";
+import { HardhatUserConfig } from "hardhat/config";
 
 import "@nomiclabs/hardhat-waffle";
 
@@ -7,6 +7,7 @@ import "@openzeppelin/hardhat-upgrades";
 import "hardhat-tracer";
 import "hardhat-gas-reporter";
 
+import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomicfoundation/hardhat-verify";
 import "@nomicfoundation/hardhat-foundry";
 import "@nomicfoundation/hardhat-viem";
@@ -18,12 +19,6 @@ const { ZETACHAIN_RPC_URL } = process.env;
 
 const config: HardhatUserConfig = {
   // latest Solidity version
-  gasReporter: {
-    enabled: true
-  },
-  sourcify: {
-    enabled: true
-  },
   solidity: {
     compilers: [
       {
@@ -99,7 +94,9 @@ const config: HardhatUserConfig = {
       //accounts: []
     },
   },
-
+  sourcify: {
+    enabled: true
+  },
   etherscan: {
     apiKey: { polygon: APIKEY_POLYGONSCAN, "polygon-zkevm": APIKEY_ZK, zetachain: APIKEY_BLOCKSCOUT_ZETACHAIN },
     customChains: [
@@ -129,7 +126,6 @@ const config: HardhatUserConfig = {
       }
     ],
   },
-
   mocha: {
     timeout: 100000000,
   },
