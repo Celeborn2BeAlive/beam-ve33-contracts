@@ -9,17 +9,17 @@ importers:
   .:
     dependencies:
       '@cryptoalgebra/integral-base-plugin':
-        specifier: ^1.2.4
-        version: 1.2.4
+        specifier: 1.0.0
+        version: 1.0.0
       '@cryptoalgebra/integral-core':
-        specifier: ^1.2.9
-        version: 1.2.9
+        specifier: 1.0.0
+        version: 1.0.0
       '@cryptoalgebra/integral-farming':
-        specifier: ^1.2.4
-        version: 1.2.4
+        specifier: 1.0.0
+        version: 1.0.0
       '@cryptoalgebra/integral-periphery':
-        specifier: ^1.2.4
-        version: 1.2.4
+        specifier: 1.0.0
+        version: 1.0.0
     devDependencies:
       '@nomicfoundation/hardhat-foundry':
         specifier: ^1.1.2
@@ -241,21 +241,21 @@ packages:
   '@bytecodealliance/preview2-shim@0.17.0':
     resolution: {integrity: sha512-JorcEwe4ud0x5BS/Ar2aQWOQoFzjq/7jcnxYXCvSMh0oRm0dQXzOA+hqLDBnOMks1LLBA7dmiLLsEBl09Yd6iQ==}
 
-  '@cryptoalgebra/integral-base-plugin@1.2.4':
-    resolution: {integrity: sha512-c2uhVNivETo7f61UOyF1puSGQQG/aR4/DtSNWcEGKJBWxyMBS2ThRROOmpP7ts2mISJZoZBVIv54VRXkgbj5qg==}
-    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+  '@cryptoalgebra/integral-base-plugin@1.0.0':
+    resolution: {integrity: sha512-vl7iV02qZ+Q8wDhh6nkhVUHdfVHTpbHUkZy2FcHtZg0+apF4Cey8G5lhNyxLQLmwvMydYGQvtEIXkpGgaQ8LQA==}
+    engines: {node: '>=14.0.0', npm: '>=8.0.0'}
 
-  '@cryptoalgebra/integral-core@1.2.9':
-    resolution: {integrity: sha512-8a2/W/3BDWThJpMORIjfN7eN3KCKDQ7i2unCB3YBsnT7kXrUN6ntpJgl3clSe1o/nG/9SjpXHyLz75J4r2YGEw==}
-    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+  '@cryptoalgebra/integral-core@1.0.0':
+    resolution: {integrity: sha512-1cUooKmmeNDdubiTcosXQ0vQ7qszgBiFxkJFue4rqSzNQs47wrCHnyA0tC86D+mOQFssZ1DDaK7ghNFb5+OPzA==}
+    engines: {node: '>=14.0.0', npm: '>=8.0.0'}
 
-  '@cryptoalgebra/integral-farming@1.2.4':
-    resolution: {integrity: sha512-+c7ahj73v/I3JN4cJVOSRntQi8JkGrq6nXZNYDmHyWQapY+vvSXKYZ0IQ6MJrgECv4lJwYj+Q3kvkRRj+ZH1yA==}
-    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+  '@cryptoalgebra/integral-farming@1.0.0':
+    resolution: {integrity: sha512-pLoSOwR8VuqprpWkaSM4Ecw82I9lL2AUbJhEC6/CXF/Lt8rXYIQG9i0u572H0AA+4h/c/bbXeqyKqDPY8SM7oA==}
+    engines: {node: '>=14.0.0', npm: '>=8.0.0'}
 
-  '@cryptoalgebra/integral-periphery@1.2.4':
-    resolution: {integrity: sha512-gaVKaZ7EWMkbzS6z7tzTB3C2r9vdupfGbAscWNEXB57A47b3uWo7hElfsxg/gfb0FmBFpfaamqVW+Q8FHZatLg==}
-    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
+  '@cryptoalgebra/integral-periphery@1.0.0':
+    resolution: {integrity: sha512-nYez6ISd2/MGKK2FMKH6RCBNjtX6naVjk1PCs90amcyheb4ngkK0QdYa/+feC0aXxTK/iSjww7ZjgqBhbX9/6g==}
+    engines: {node: '>=14.0.0', npm: '>=8.0.0'}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -3960,25 +3960,25 @@ snapshots:
 
   '@bytecodealliance/preview2-shim@0.17.0': {}
 
-  '@cryptoalgebra/integral-base-plugin@1.2.4':
+  '@cryptoalgebra/integral-base-plugin@1.0.0':
     dependencies:
-      '@cryptoalgebra/integral-core': 1.2.9
-      '@cryptoalgebra/integral-periphery': 1.2.4
+      '@cryptoalgebra/integral-core': 1.0.0
+      '@cryptoalgebra/integral-periphery': 1.0.0
 
-  '@cryptoalgebra/integral-core@1.2.9':
+  '@cryptoalgebra/integral-core@1.0.0':
     dependencies:
       '@openzeppelin/contracts': 4.9.3
 
-  '@cryptoalgebra/integral-farming@1.2.4':
+  '@cryptoalgebra/integral-farming@1.0.0':
     dependencies:
-      '@cryptoalgebra/integral-base-plugin': 1.2.4
-      '@cryptoalgebra/integral-core': 1.2.9
-      '@cryptoalgebra/integral-periphery': 1.2.4
+      '@cryptoalgebra/integral-base-plugin': 1.0.0
+      '@cryptoalgebra/integral-core': 1.0.0
+      '@cryptoalgebra/integral-periphery': 1.0.0
       '@openzeppelin/contracts': 4.9.3
 
-  '@cryptoalgebra/integral-periphery@1.2.4':
+  '@cryptoalgebra/integral-periphery@1.0.0':
     dependencies:
-      '@cryptoalgebra/integral-core': 1.2.9
+      '@cryptoalgebra/integral-core': 1.0.0
       '@openzeppelin/contracts': 4.9.3
       '@uniswap/v2-core': 1.0.1
 
