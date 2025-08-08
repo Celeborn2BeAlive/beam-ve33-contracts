@@ -1,9 +1,9 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { getAddress } from "viem";
-import Beam, { wzetaAddress } from "./Beam";
+import BeamCore, { wzetaAddress } from "./Beam.Core";
 
 const SolidlyPairFactoryUpgradeable = buildModule("SolidlyPairFactoryUpgradeable", (m) => {
-  const { proxyAdmin } = m.useModule(Beam);
+  const { proxyAdmin } = m.useModule(BeamCore);
 
   const solidlyPairFactoryImplementation = m.contract("PairFactoryUpgradeable", undefined, {
     id: "PairFactoryUpgradeableImplementation",

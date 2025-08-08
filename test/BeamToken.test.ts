@@ -1,4 +1,4 @@
-import { BeamToken, beamTokenName, beamTokenSymbol } from "../ignition/modules/Beam";
+import { BeamToken, beamTokenName, beamTokenSymbol } from "../ignition/modules/Beam.Core";
 import hre, { ignition } from "hardhat";
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";

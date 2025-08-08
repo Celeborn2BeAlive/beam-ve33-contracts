@@ -1,10 +1,10 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { getAddress } from "viem";
-import Beam, { beamAlgebraFactory, beamMultisigAddress, wzetaAddress, ZERO_ADDRESS } from "./Beam";
+import BeamCore, { beamAlgebraFactory, beamMultisigAddress, wzetaAddress, ZERO_ADDRESS } from "./Beam.Core";
 import BeamSolidyDEX from "./Beam.SolidyDEX";
 
 const VotingIncentivesFactory = buildModule("VotingIncentivesFactory", (m) => {
-  const { beamToken } = m.useModule(Beam);
+  const { beamToken } = m.useModule(BeamCore);
 
   const globalFactory = ZERO_ADDRESS; // Set after deployment of GlobalFactory
   const defaultTokens = [beamToken];
@@ -26,7 +26,7 @@ const GaugeFactory = buildModule("GaugeFactory", (m) => {
 });
 
 const AlgebraVaultFactory = buildModule("AlgebraVaultFactory", (m) => {
-  const { voter } = m.useModule(Beam);
+  const { voter } = m.useModule(BeamCore);
 
   const algebraVaultFactory = m.contract("AlgebraVaultFactory", [voter, beamAlgebraFactory]);
 
@@ -48,8 +48,8 @@ const AlgebraVaultFactory = buildModule("AlgebraVaultFactory", (m) => {
 });
 
 const IncentiveMakerUpgradeable = buildModule("IncentiveMaker", (m) => {
-  const { proxyAdmin } = m.useModule(Beam);
-  const { beamToken } = m.useModule(Beam);
+  const { proxyAdmin } = m.useModule(BeamCore);
+  const { beamToken } = m.useModule(BeamCore);
 
   const incentiveMakerImplementation = m.contract("IncentiveMakerUpgradeable", undefined, {
     id: "IncentiveMakerUpgradeableImplementation",
@@ -70,13 +70,13 @@ const IncentiveMakerUpgradeable = buildModule("IncentiveMaker", (m) => {
 });
 
 const GlobalFactory = buildModule("GlobalFactory", (m) => {
-  const { voter } = m.useModule(Beam);
-  const { beamToken } = m.useModule(Beam);
-  const { epochDistributorProxy } = m.useModule(Beam)
+  const { voter } = m.useModule(BeamCore);
+  const { beamToken } = m.useModule(BeamCore);
+  const { epochDistributorProxy } = m.useModule(BeamCore)
   const { solidlyPairFactoryProxy } = m.useModule(BeamSolidyDEX);
   const { gaugeFactory } = m.useModule(GaugeFactory);
   const { votingIncentivesFactory } = m.useModule(VotingIncentivesFactory);
-  const { claimer } = m.useModule(Beam);
+  const { claimer } = m.useModule(BeamCore);
   const { incentiveMakerProxy } = m.useModule(IncentiveMakerUpgradeable);
 
   // constructor(address _voter, address _thena, address _distribution, address _pfsld, address _pfalgb, address _gf, address _vif, address _theNFT, address _claimer, address _incentiveMaker)

@@ -1,5 +1,5 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
-import Beam from "./Beam";
+import Beam from "./Beam.Core";
 import BeamSolidyDEX from "./Beam.SolidyDEX";
 import BeamVe33Factories from "./Beam.Ve33Factories";
 

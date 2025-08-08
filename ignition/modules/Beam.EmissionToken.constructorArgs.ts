@@ -1,4 +1,4 @@
-import { beamTokenConstructorArgs } from "./Beam";
+import { beamTokenConstructorArgs } from "./Beam.Core";
 
 export default beamTokenConstructorArgs;
 

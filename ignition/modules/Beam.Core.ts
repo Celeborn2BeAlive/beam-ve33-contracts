@@ -115,7 +115,7 @@ const Claimer = buildModule("Claimer", (m) => {
 });
 
 
-export default buildModule("Beam", (m) => {
+export default buildModule("BeamCore", (m) => {
   const { beamToken } = m.useModule(BeamToken);
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { rebaseDistributor } = m.useModule(RebaseDistributor);
