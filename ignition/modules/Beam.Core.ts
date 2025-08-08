@@ -11,6 +11,11 @@ export const beamMultisigAddress = getAddress("0x0029eD88Ec602d32eB93d1c42b73a52
 export const beamAlgebraFactory = getAddress("0x28b5244B6CA7Cb07f2f7F40edE944c07C2395603")
 export const wzetaAddress = getAddress("0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf");
 
+const ProxyAdmin = buildModule("ProxyAdmin", (m) => {
+  const proxyAdmin = m.contract("ProxyAdmin");
+  return { proxyAdmin };
+});
+
 export const BeamToken = buildModule("BeamToken", (m) => {
   const beamToken = m.contract("EmissionToken", beamTokenConstructorArgs);
 
@@ -19,15 +24,35 @@ export const BeamToken = buildModule("BeamToken", (m) => {
   return { beamToken };
 });
 
+const VeArtProxyUpgradeable = buildModule("VeArtProxyUpgradeable", (m) => {
+  const { proxyAdmin } = m.useModule(ProxyAdmin);
+
+  const veArtProxyImplementation = m.contract("VeArtProxyUpgradeable", undefined, {
+    id: "VeArtProxyUpgradeableImplementation",
+  });
+  const encodedInitializeCall = m.encodeFunctionCall(veArtProxyImplementation, "initialize");
+
+  const veArtProxyTransparentProxy = m.contract("TransparentUpgradeableProxy", [
+    veArtProxyImplementation,
+    proxyAdmin,
+    encodedInitializeCall,
+  ]);
+
+  const veArtProxyProxy = m.contractAt("VeArtProxyUpgradeable", veArtProxyTransparentProxy, {
+    id: "VeArtProxyUpgradeableProxy"
+  })
+
+  return { veArtProxyImplementation, veArtProxyProxy, proxyAdmin };
+});
+
 const VotingEscrow = buildModule("VotingEscrow", (m) => {
   const { beamToken } = m.useModule(BeamToken);
-  const artProxyAddress = ZERO_ADDRESS;
+  const { veArtProxyProxy } = m.useModule(VeArtProxyUpgradeable);
 
-  const votingEscrow = m.contract("VotingEscrow", [beamToken, artProxyAddress]);
+  const votingEscrow = m.contract("VotingEscrow", [beamToken, veArtProxyProxy]);
 
   return { votingEscrow };
 });
-
 
 const RebaseDistributor = buildModule("RebaseDistributor", (m) => {
   const { votingEscrow } = m.useModule(VotingEscrow);
@@ -37,10 +62,6 @@ const RebaseDistributor = buildModule("RebaseDistributor", (m) => {
   return { rebaseDistributor };
 });
 
-const ProxyAdmin = buildModule("ProxyAdmin", (m) => {
-  const proxyAdmin = m.contract("ProxyAdmin");
-  return { proxyAdmin };
-});
 
 const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
   const { beamToken } = m.useModule(BeamToken);
@@ -122,6 +143,7 @@ const Claimer = buildModule("Claimer", (m) => {
 
 export default buildModule("BeamCore", (m) => {
   const { beamToken } = m.useModule(BeamToken);
+  const { veArtProxyProxy } = m.useModule(VeArtProxyUpgradeable);
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { rebaseDistributor } = m.useModule(RebaseDistributor);
   const { proxyAdmin } = m.useModule(ProxyAdmin)
@@ -133,6 +155,7 @@ export default buildModule("BeamCore", (m) => {
   return {
     proxyAdmin,
     beamToken,
+    veArtProxyProxy,
     votingEscrow,
     rebaseDistributor,
     minterImplementation,
