@@ -18,7 +18,9 @@ const SolidlyPairFactoryUpgradeable = buildModule("SolidlyPairFactoryUpgradeable
     encodedInitializeCall,
   ]);
 
-  const solidlyPairFactoryProxy = m.contractAt("PairFactoryUpgradeable", solidlyPairFactoryTransparentProxy)
+  const solidlyPairFactoryProxy = m.contractAt("PairFactoryUpgradeable", solidlyPairFactoryTransparentProxy, {
+    id: "PairFactoryUpgradeableProxy",
+  })
 
   return { solidlyPairFactoryImplementation, solidlyPairFactoryProxy, proxyAdmin }
 })

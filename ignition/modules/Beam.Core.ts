@@ -66,7 +66,9 @@ const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
   m.call(beamToken, "setMinter", [minterTransparentProxy,]);
   m.call(rebaseDistributor, "setDepositor", [minterTransparentProxy,]);
 
-  const minterProxy = m.contractAt("MinterUpgradeable", minterTransparentProxy)
+  const minterProxy = m.contractAt("MinterUpgradeable", minterTransparentProxy, {
+    id: "MinterUpgradeableProxy"
+  })
 
   return { minterImplementation, minterProxy, proxyAdmin };
 });
@@ -101,7 +103,10 @@ const EpochDistributorUpgradeable = buildModule("EpochDistributorUpgradeable", (
     encodedInitializeCall,
   ]);
 
-  const epochDistributorProxy = m.contractAt("EpochDistributorUpgradeable", epochDistributorTransparentProxy)
+  const epochDistributorProxy = m.contractAt("EpochDistributorUpgradeable", epochDistributorTransparentProxy, {
+      id: "EpochDistributorUpgradeableProxy",
+    }
+  )
 
   m.call(minterProxy, "setEpochDistributor", [epochDistributorProxy,]);
 

@@ -64,7 +64,9 @@ const IncentiveMakerUpgradeable = buildModule("IncentiveMaker", (m) => {
     encodedInitializeCall,
   ]);
 
-  const incentiveMakerProxy = m.contractAt("IncentiveMakerUpgradeable", incentiveMakerTransparentProxy)
+  const incentiveMakerProxy = m.contractAt("IncentiveMakerUpgradeable", incentiveMakerTransparentProxy, {
+    id: "IncentiveMakerUpgradeableProxy",
+  })
 
   return { incentiveMakerImplementation, incentiveMakerProxy, proxyAdmin }
 });
