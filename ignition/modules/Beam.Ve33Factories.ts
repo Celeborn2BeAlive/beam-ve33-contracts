@@ -1,7 +1,7 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
-import { getAddress } from "viem";
-import BeamCore, { beamAlgebraFactory, beamMultisigAddress, wzetaAddress, ZERO_ADDRESS } from "./Beam.Core";
+import BeamCore from "./Beam.Core";
 import BeamSolidyDEX from "./Beam.SolidyDEX";
+import { beamAlgebraFactory, beamMultisigAddress, wzetaAddress, ZERO_ADDRESS } from "./constants";
 
 const VotingIncentivesFactory = buildModule("VotingIncentivesFactory", (m) => {
   const { beamToken } = m.useModule(BeamCore);

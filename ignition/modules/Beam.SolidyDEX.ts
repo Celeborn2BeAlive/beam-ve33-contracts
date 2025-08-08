@@ -1,6 +1,6 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
-import { getAddress } from "viem";
-import BeamCore, { wzetaAddress } from "./Beam.Core";
+import BeamCore from "./Beam.Core";
+import { wzetaAddress } from "./constants";
 
 const SolidlyPairFactoryUpgradeable = buildModule("SolidlyPairFactoryUpgradeable", (m) => {
   const { proxyAdmin } = m.useModule(BeamCore);

@@ -1,8 +1,9 @@
-import { BeamToken, beamTokenName, beamTokenSymbol } from "../ignition/modules/Beam.Core";
+import { BeamToken } from "../ignition/modules/Beam.Core";
 import hre, { ignition } from "hardhat";
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { getAddress, parseEther } from "viem";
+import { beamTokenName, beamTokenSymbol } from "../ignition/modules/constants";
 
 const EXPECTED_INITIAL_MINT_AMOUNT = parseEther("50000000");
 
