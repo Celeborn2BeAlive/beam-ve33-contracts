@@ -18,9 +18,6 @@ const ProxyAdmin = buildModule("ProxyAdmin", (m) => {
 
 export const BeamToken = buildModule("BeamToken", (m) => {
   const beamToken = m.contract("EmissionToken", beamTokenConstructorArgs);
-
-  // m.call(beamToken, "initialMint", [beamMultisigAddress,]);
-
   return { beamToken };
 });
 

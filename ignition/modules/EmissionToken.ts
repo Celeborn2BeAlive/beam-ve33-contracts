@@ -1,13 +1,13 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
-import { getAddress } from "viem";
-import constructorArgs from "./EmissionToken.constructorArgs"
 
 export default buildModule("EmissionToken", (m) => {
-  const beamToken = m.contract("contracts/EmissionToken.sol:EmissionToken", constructorArgs);
+  const account = m.getAccount(0);
+  const name = "EmissionToken";
+  const symbol = "EMISSION_TOKEN";
 
-  const beamMultisigAddress = getAddress("0x0029eD88Ec602d32eB93d1c42b73a5206Ec046A3");
+  const emissionToken = m.contract("contracts/EmissionToken.sol:EmissionToken", [name, symbol]);
 
-  m.call(beamToken, "initialMint", [beamMultisigAddress,]);
+  m.call(emissionToken, "initialMint", [account]);
 
-  return { beamToken };
+  return { emissionToken };
 });
