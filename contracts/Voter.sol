@@ -420,7 +420,7 @@ contract Voter is Ownable, Pausable, IVoter {
         return _isManager[manager];
     }
 
-    /// @notice Read the address of veTHE
+    /// @notice Read the address of VotingEscrow
     function ve() external view returns(address){
         return address(_ve);
     }

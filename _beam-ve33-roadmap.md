@@ -28,7 +28,22 @@
     - Rename RewardsDistributorV2 to RebaseDistributor for clarity
       - In Minter rename state variable to match
     - Add Proxy suffix to ignition deployed contracts that are proxies, for clarity
-
+    - Deploy veNFT Art contract
+    - Adapt IncentiveMaker => rename thena to emissionToken, and wbnb to wrappedGasToken
+    - Adapt remaining Thena V3 contracts to remove theNFT related stuff, BNB stuff, etc.
+    - Include Algebra fees to AlgebraVault
+      - NOTE: the AlgebraVault supports a treasury and treasuryShare, so we can put behind a contract splitting accross several receivers, Algebra would be among them
+        - The initial setup could be treasuryShare = 3%, and all is sent to Algebra
+  - Notes:
+    - FeeVault is not very scalable for fee sharing to treasury and other actors because it stores the address
+      - A better design would centralize that information on another contract, similar to AlgebraVaultFactory
+      - It's still possible to call setTreasury_feeVault on GlobalFactory for each fee vault in a script
+  - TODO
+    - Deploy bveToken contract
+    - Adapt AlgebraVaultFactory so we can create AlgebraVault for already deployed CL pool
+    - Deployment: handle setup script to connect all contracts together
+    - Test farming & reward distribution in prod with a fake Beam token
+      - Think about a way to easily test the required parts without the epoch system
 
 - 2025-08-05
   - DONE:
@@ -80,15 +95,15 @@
     - ~~Rename RewardsDistributorV2 to RebaseDistributor for clarity~~
       - ~~In Minter rename state variable to match~~
     - Adapt AlgebraVaultFactory so we can create AlgebraVault for already deployed CL pool
-    - Adapt remaining Thena V3 contracts to remove theNFT related stuff, BNB stuff, etc.
+    - ~~Adapt remaining Thena V3 contracts to remove theNFT related stuff, BNB stuff, etc.~~
     - Deployment: handle setup script to connect all contracts together
     - Test farming & reward distribution in prod with a fake Beam token
       - Think about a way to easily test the required parts without the epoch system
-    - Include Algebra fees to AlgebraVault
-      - Check with Chase if we also have some treasuryShare ?
-    - Adapt IncentiveMaker => rename thena to emissionToken, and wbnb to wrappedGasToken
+    - ~~Include Algebra fees to AlgebraVault~~
+      - ~~Check with Chase if we also have some treasuryShare ?~~
+    - ~~Adapt IncentiveMaker => rename thena to emissionToken, and wbnb to wrappedGasToken~~
     - ~~Add Proxy suffix to ignition deployed contracts that are proxies, for clarity~~
-    - Deploy veNFT Art contract
+    - ~~Deploy veNFT Art contract~~
 
 - 2025-08-03
   - DONE:
@@ -97,21 +112,21 @@
     - Write Beam ignition deployment script
   - TODO:
     - Re-read VotingEscrow code and document it
-    - Migrate Minter to new codebase
+    - ~~Migrate Minter to new codebase~~
       - Re-read code and document it
-      - Make some adaptation, for example rename "voter" => "epochDistributor"
-    - Migrate "Rebase veBEAM" (RewardsDistributor) contract
+      - ~~Make some adaptation, for example rename "voter" => "epochDistributor"~~
+    - ~~Migrate "Rebase veBEAM" (RewardsDistributor) contract~~
       - Re-read code and document it
     - Thena V3 forking for CL farming
       - Read Epoch Distributor and document it
       - Read Voter and document it
-        - Ensure we can integrate new gauge systems for future extension of the DEX
+        - ~~Ensure we can integrate new gauge systems for future extension of the DEX~~
       - Read Incentive Maker and document it
         - Check that it can be used for our version of Algebra
         - If not, adapt the contract
       - Read Gauge Algebra Eternal Farming and document it
       - Read Algebra Vault and document it
       - Read Gauge Factory and document it
-      - Adapt and migrate all code to our codebase
+      - ~~Adapt and migrate all code to our codebase~~
     - Finish deployment script and try it onchain
       - Try to run the protocol at high frequency (one epoch = 1 minute)

@@ -35,7 +35,7 @@ interface IGlobalFactory {
     event SetWeightedFactory(address indexed wf);
     event SetGaugeFactory(address indexed gf);
     event SetVotingIncentivesFactory(address indexed vif);
-    event SetTheNFT(address indexed thenft);
+    event SetTreasury(address indexed treasury);
     event SetDistribution(address indexed distribution);
     event SetClaimer(address indexed claimer);
     event SetIncentiveMaker(address indexed incentiveMaker);
@@ -43,8 +43,8 @@ interface IGlobalFactory {
     function FEE_VAULT_MANAGER_ROLE() external view returns (bytes32);
     function GLOBAL_FACTORY_MANAGER_ROLE() external view returns (bytes32);
     function ADDR_0() external view returns (address);
-    function thena() external view returns (address);
-    function theNFT() external view returns (address);
+    function emissionToken() external view returns (address);
+    function treasury() external view returns (address);
     function claimer() external view returns (address);
     function distribution() external view returns (address);
     function incentiveMaker() external view returns (address);
@@ -72,12 +72,12 @@ interface IGlobalFactory {
     function setGaugeFactory(address _fact) external;
     function setWeightedFactory(address _fact) external;
     function setVotingIncentivesFactory(address _fact) external;
-    function setTheNFT(address _thenft) external;
+    function setTreasury(address _treasury) external;
     function setDistribution(address distro) external;
     function setClaimer(address claim) external;
     function setIncentiveMaker(address _incentivemaker) external;
-    function setTheNFT_feeVault(address feevault, address the_nft) external;
-    function setTheNFTShare_feeVault(address feevault, uint256 share) external;
+    function setTreasury_feeVault(address feevault, address treasury) external;
+    function setTreasuryShare_feeVault(address feevault, uint256 share) external;
     function setGauge_feeVault(address feevault, address _gauge) external;
     function allow_feeVault(address feevault, address caller, bool status) external;
     function setPool_feeVault(address feevault, address _pool) external;

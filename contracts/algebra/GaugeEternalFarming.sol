@@ -97,7 +97,7 @@ contract GaugeEternalFarming is ReentrancyGuard, Ownable {
     /// @dev This function is called after the tokens have been transferred to this contract
     /// @param _token Address of the reward token
     /// @param _amount Amount of reward tokens
-    /// @dev In this case _token is always $THE. Keep compatibility with IGauge.sol
+    /// @dev In this case _token is always emissionToken. Keep compatibility with IGauge.sol
     function notifyRewardAmount(address _token, uint _amount) external nonReentrant onlyDistribution {
         IERC20(_token).safeIncreaseAllowance(address(incentiveMaker), _amount);
         incentiveMaker.updateIncentive(address(TOKEN), _amount);

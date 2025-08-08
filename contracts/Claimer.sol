@@ -51,8 +51,8 @@ contract Claimer is Ownable {
         }
     }
 
-    /// @notice Set veTHE contract address
-    /// @param _ve  veTHE address
+    /// @notice Set VotingEscrow contract address
+    /// @param _ve VotingEscrow contract address
     function setVe(address _ve) external onlyOwner {
         ve = IVotingEscrow(_ve);
     }

@@ -11,7 +11,7 @@ import "./interfaces/IVotingIncentives.sol";
 
 /// @title Voting Incentives
 /// @author Prometheus - Perseus, ThenaFi $THE
-/// @notice Voting Incentives contract for veTHE voters. It manages fees and external incentives.
+/// @notice Voting Incentives contract for veNFT voters. It manages fees and external incentives.
 contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     using SafeERC20 for IERC20;
 
@@ -31,8 +31,8 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
     string public constant version = "1.0.0";
 
-    IVotingEscrow public ve;            //  veTHE contract
-    IMinter public minter;              //  $THE Minter contract
+    IVotingEscrow public ve;            //  VotingEscrow contract
+    IMinter public minter;              //  EmissionToken minter contract
 
     // owner -> reward token -> lastTime
     mapping(address => mapping(address => uint256)) public userRewardPerTokenPaid;

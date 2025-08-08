@@ -50,7 +50,6 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
     /// @param voter    the voter contract address
     /// @param gauge    the gauge where to stake LP tokens
     /// @param claimer  the claim contract that allows multiple claims
-    /// @dev    _owner must be thenaTeamMultisig
     function createVotingIncentives(address _token0, address _token1, address voter, address gauge, address claimer) external onlyRole(CREATE_ROLE) returns (address) {
 
         if(voter == address(0)) revert AddressZero();

@@ -24,16 +24,16 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
     /// @notice Zero Address
     address constant public ADDR_0 = address(0);
 
-    /// @notice Thena token contract
-    address public immutable thena;
+    /// @notice Emission token contract
+    address public immutable emissionToken;
 
-    /// @notice TheNFT converter contract
-    address public theNFT;
+    /// @notice Treasury address or contract
+    address public treasury;
 
     /// @notice Claimer contract for multiple claims
     address public claimer;
 
-    /// @notice $THE emission distribution contract
+    /// @notice EpochDistributor contract
     address public distribution;
 
     /// @notice IncentiveMaker contract
@@ -68,16 +68,16 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
 
     /// @notice Constructor for GlobalFactory
     /// @param _voter Voter contract
-    /// @param _thena Thena token contract
-    /// @param _distribution Distribution contract
+    /// @param _emissionToken Emission token contract
+    /// @param _distribution EpochDistributor contract
     /// @param _pfsld Solidly Pair Factory contract
     /// @param _pfalgb Algebra Pair Factory contract
     /// @param _gf Gauge Factory contract
     /// @param _vif Voting Incentives Factory contract
-    /// @param _theNFT Thena NFT contract
-    /// @param _claimer Thena Claimer contract
+    /// @param _treasury Treasury address or contract
+    /// @param _claimer Claimer contract
     /// @param _incentiveMaker Eternal Farming contract
-    constructor(address _voter, address _thena, address _distribution, address _pfsld, address _pfalgb, address _gf, address _vif, address _theNFT, address _claimer, address _incentiveMaker) {
+    constructor(address _voter, address _emissionToken, address _distribution, address _pfsld, address _pfalgb, address _gf, address _vif, address _treasury, address _claimer, address _incentiveMaker) {
 
         if(_voter == ADDR_0) revert AddressZero();
         if(_distribution == ADDR_0) revert AddressZero();
@@ -85,15 +85,15 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
         if(_pfalgb == ADDR_0) revert AddressZero();
         if(_gf == ADDR_0) revert AddressZero();
         if(_vif == ADDR_0) revert AddressZero();
-        if(_theNFT == ADDR_0) revert AddressZero();
+        if(_treasury == ADDR_0) revert AddressZero();
         if(_claimer == ADDR_0) revert AddressZero();
-        if(_thena == ADDR_0) revert AddressZero();
+        if(_emissionToken == ADDR_0) revert AddressZero();
         if(_incentiveMaker == ADDR_0) revert AddressZero();
 
         voter = IVoter(_voter);
 
-        thena = _thena;
-        defaultGaugeRewardTokens.push(_thena);
+        emissionToken = _emissionToken;
+        defaultGaugeRewardTokens.push(_emissionToken);
 
         claimer = _claimer;
         distribution = _distribution;
@@ -102,8 +102,7 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
         algebraFactory = IAlgebraFactory(_pfalgb);
         votingIncentivesFactory = IVotingIncentivesFactory(_vif);
         incentiveMaker = _incentiveMaker;
-
-        theNFT = _theNFT;
+        treasury = _treasury;
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(GLOBAL_FACTORY_MANAGER_ROLE, msg.sender);
@@ -170,7 +169,7 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
     function _deploy(address[] memory _tokens,address _pool, uint8 pool_type) internal returns(address feeVault, address gauge, address votingIncentives) {
         // Step 1: Get Fee Vault
         if(pool_type == 0) feeVault = _pool;
-        else if(pool_type == 1) feeVault = address( new FeeVault(_pool, ADDR_0, theNFT) );
+        else if(pool_type == 1) feeVault = address( new FeeVault(_pool, ADDR_0, treasury) );
         else if(pool_type == 3) feeVault = IWeightedPoolsSimple(_pool).feesContract();
         else {
             feeVault =  IAlgebraPool(_pool).communityVault();
@@ -316,13 +315,13 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
         emit SetVotingIncentivesFactory(_fact);
     }
 
-    /// @notice Set the theNFT staking converter
-    /// @dev This contract receives 10% of the trading fees to be distributed to theNFT holders each epoch
-    /// @param _thenft Address of the new theNFT contract
-    function setTheNFT(address _thenft) external onlyRole(GLOBAL_FACTORY_MANAGER_ROLE) {
-        if(_thenft == ADDR_0) revert AddressZero();
-        theNFT = _thenft;
-        emit SetTheNFT(_thenft);
+    /// @notice Set the treasury address
+    /// @dev This contract receives a share of the trading fees
+    /// @param _treasury Address of the new treasury contract
+    function setTreasury(address _treasury) external onlyRole(GLOBAL_FACTORY_MANAGER_ROLE) {
+        if(_treasury == ADDR_0) revert AddressZero();
+        treasury = _treasury;
+        emit SetTreasury(_treasury);
     }
 
     /// @notice Set the distribution contract (epochDistributor contract)
@@ -360,18 +359,18 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
     --------------------------------------------------------------------------------
     ----------------------------------------------------------------------------- */
 
-    /// @notice Set a new THENFT address for a given feevault
+    /// @notice Set a new treasury address for a given feevault
     /// @param feevault Address of the fee vault contract
-    /// @param the_nft Address of the new theNFT staking converter contract
-    function setTheNFT_feeVault(address feevault, address the_nft) external onlyRole(FEE_VAULT_MANAGER_ROLE) {
-        IFeeVault(feevault).setTheNFT(the_nft);
+    /// @param _treasury Address of the new treasury
+    function setTreasury_feeVault(address feevault, address _treasury) external onlyRole(FEE_VAULT_MANAGER_ROLE) {
+        IFeeVault(feevault).setTreasury(_treasury);
     }
 
-    /// @notice Set a new share for theNFT
+    /// @notice Set a new share for treasury
     /// @param feevault Address of the fee vault contract
-    /// @param share The new share for theNFT
-    function setTheNFTShare_feeVault(address feevault, uint256 share) external onlyRole(FEE_VAULT_MANAGER_ROLE) {
-        IFeeVault(feevault).setTheNFTShare(share);
+    /// @param share The new share for treasury
+    function setTreasuryShare_feeVault(address feevault, uint256 share) external onlyRole(FEE_VAULT_MANAGER_ROLE) {
+        IFeeVault(feevault).setTreasuryShare(share);
     }
 
     /// @notice Set a new gauge for the fee vault contract

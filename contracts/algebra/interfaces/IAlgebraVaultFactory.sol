@@ -37,10 +37,6 @@ interface IAlgebraVaultFactory {
   event VaultCreated(address indexed pool, address indexed vault);
   /// @notice Emitted when voter address is updated
   event SetVoter(address indexed oldVoter, address indexed newVoter);
-  /// @notice Emitted when theNFT fee share is updated
-  event SetTheNftShare(uint32 oldShare, uint32 newShare);
-  /// @notice Emitted when theNFT fee receiver is updated
-  event SetTheNftFeeReceiver(address indexed oldReceiver, address indexed newReceiver);
   /// @notice Emitted when community fee is updated for a pool
   event SetCommunityFee(address indexed pool, uint16 newFee);
   /// @notice Emitted when tokens are withdrawn from vaults

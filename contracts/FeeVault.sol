@@ -18,15 +18,15 @@ contract FeeVault is Ownable, IFeeVault {
     ----------------------------------------------------------------------------- */
     /// @dev PRECISION for decimals
     uint256 constant public PRECISION = 1e6;
-    /// @dev Share for the theNFT contract (10%)
-    uint256 public theNFTShare = 1e5;
+    /// @dev Share for the treasury
+    uint256 public treasuryShare = 0;
 
     /// @dev underlying pool of the feevault
     address public pool;
     /// @dev underlying gauge of the feevault
     address public gauge;
-    /// @dev theNFT staking converter contract
-    address public theNFT;
+    /// @dev treasury fee receiver address
+    address public treasury;
     /// @dev the token0 of the underlying pool
     address public token0;
     /// @dev the token1 of the underlying pool
@@ -61,10 +61,10 @@ contract FeeVault is Ownable, IFeeVault {
     /// @notice Deploy Fee vault
     /// @param _pool    underlying pool contract
     /// @param _gauge   underlying gauge contract
-    /// @param _theNFT  the nft converter contract
-    constructor(address _pool, address _gauge, address _theNFT) {
+    /// @param _treasury  the nft converter contract
+    constructor(address _pool, address _gauge, address _treasury) {
         if(_pool == address(0)) revert AddressZero();
-        if(_theNFT == address(0)) revert AddressZero();
+        if(_treasury == address(0)) revert AddressZero();
 
         pool = _pool;
         // gauge can be set later using ::setgauge()
@@ -73,7 +73,7 @@ contract FeeVault is Ownable, IFeeVault {
             gauge = _gauge;
         }
 
-        theNFT = _theNFT;
+        treasury = _treasury;
 
         token0 = IPairInfo(pool).token0();
         token1 = IPairInfo(pool).token1();
@@ -93,30 +93,30 @@ contract FeeVault is Ownable, IFeeVault {
 
         if(!isAllowed[msg.sender]) revert NotAllowed();
         if(gauge == address(0)) revert AddressZero();
-        if(theNFT == address(0)) revert AddressZero();
+        if(treasury == address(0)) revert AddressZero();
 
         // token0
         address t0 = token0;
         uint256 balance = IERC20(t0).balanceOf(address(this));
-        uint256 the_nft_0 =  balance * theNFTShare / PRECISION;
-        gauge0 = balance - the_nft_0;
+        uint256 treasury_0 =  balance * treasuryShare / PRECISION;
+        gauge0 = balance - treasury_0;
 
         // token1
         address t1 = token1;
         balance = IERC20(t1).balanceOf(address(this));
-        uint256 the_nft_1 =  balance * theNFTShare / PRECISION;
-        gauge1 = balance - the_nft_1;
+        uint256 treasury_1 =  balance * treasuryShare / PRECISION;
+        gauge1 = balance - treasury_1;
 
         if(gauge0 > 0){
-            if(the_nft_0 > 0) IERC20(t0).safeTransfer(theNFT, the_nft_0);
+            if(treasury_0 > 0) IERC20(t0).safeTransfer(treasury, treasury_0);
             IERC20(t0).safeTransfer(msg.sender, gauge0);
         }
         if(gauge1 > 0){
-            if(the_nft_1 > 0) IERC20(t1).safeTransfer(theNFT, the_nft_1);
+            if(treasury_1 > 0) IERC20(t1).safeTransfer(treasury, treasury_1);
             IERC20(t1).safeTransfer(msg.sender, gauge1);
         }
 
-        emit Fees(gauge0, gauge1, the_nft_0, the_nft_1, pool, block.timestamp);
+        emit Fees(gauge0, gauge1, treasury_0, treasury_1, pool, block.timestamp);
 
     }
 
@@ -128,19 +128,19 @@ contract FeeVault is Ownable, IFeeVault {
     --------------------------------------------------------------------------------
     ----------------------------------------------------------------------------- */
 
-    /// @notice Set a theNFT staking reward converter address
-    function setTheNFT(address the_nft) external onlyOwner {
-        if(the_nft == address(0)) revert AddressZero();
-        theNFT = the_nft;
-        emit SetTheNFT(the_nft);
+    /// @notice Set a treasury fee receiver address
+    function setTreasury(address _treasury) external onlyOwner {
+        if(_treasury == address(0)) revert AddressZero();
+        treasury = _treasury;
+        emit SetTreasury(_treasury);
     }
 
-    /// @notice Set theNFT fees share
-    /// @dev Share cant be higher than 100%. Default is 10%
-    function setTheNFTShare(uint256 share) external onlyOwner {
-        if(share > PRECISION) revert TheNFTShareTooHigh();
-        theNFTShare = share;
-        emit SetTheNFTShare(share);
+    /// @notice Set treasury fees share
+    /// @dev Share cant be higher than 100%.
+    function setTreasuryShare(uint256 share) external onlyOwner {
+        if(share > PRECISION) revert TreasuryShareTooHigh();
+        treasuryShare = share;
+        emit SetTreasuryShare(share);
     }
 
 
