@@ -27,6 +27,7 @@
     - Implemented simple tests for BeamToken contract
     - Rename RewardsDistributorV2 to RebaseDistributor for clarity
       - In Minter rename state variable to match
+    - Add Proxy suffix to ignition deployed contracts that are proxies, for clarity
 
 
 - 2025-08-05
@@ -86,7 +87,7 @@
     - Include Algebra fees to AlgebraVault
       - Check with Chase if we also have some treasuryShare ?
     - Adapt IncentiveMaker => rename thena to emissionToken, and wbnb to wrappedGasToken
-    - Rename ignition contract proxy with Proxy at the end for clarity
+    - ~~Add Proxy suffix to ignition deployed contracts that are proxies, for clarity~~
     - Deploy veNFT Art contract
 
 - 2025-08-03
