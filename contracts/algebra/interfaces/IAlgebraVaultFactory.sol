@@ -18,16 +18,14 @@ interface IAlgebraVaultFactory {
 
 
   function getVaultForPool(address pool) external view returns (address);
-  function getFees(uint256 amount) external view returns (uint256 thenftAmount, uint256 thenatreasuryAmount);
-  function getFeesReceivers() external view returns (address thenft, address thenatreasury);
+  function getFees(uint256 amount) external view returns (uint256 treasuryAmount);
+  function getFeesReceivers() external view returns (address treasury);
   function createVaultForPool(address pool) external returns (address _vault);
   function withdrawFromVault(address to, address[] calldata vault, address[][] calldata token, uint256[][] calldata amount) external;
   function withdrawFromVaultWithPools(address to, address[] calldata pools, address[][] calldata token, uint256[][] calldata amount) external;
   function setVoter(address _voter) external;
-  function setThenaTreasury(address _thenaTreasury) external;
-  function setThenaTreasuryShare(uint32 _thenaShare) external;
-  function setTheNftShare(uint16 share) external;
-  function setTheNftFeeReceiver(address _feeReceiver) external;
+  function setTreasury(address _treasury) external;
+  function setTreasuryShare(uint32 _treasuryShare) external;
   function setCommunityFee(address pool, uint16 newCommunityFee) external;
 
 
@@ -49,9 +47,9 @@ interface IAlgebraVaultFactory {
   event VaultWithdrawal(address indexed to, address[] vaults, address[][] tokens, uint256[][] amounts);
   /// @notice Emitted when a gauge is set to a vault
   event SetGauge(address indexed pool, address indexed vault, address indexed gauge);
-  /// @notice Emitted when the thena treasury address is updated
-  event SetThenaTreasury(address indexed oldTreasury, address indexed newTreasury);
-  /// @notice Emitted when the thena share percentage is updated
-  event SetThenaTreasuryShare(uint32 indexed oldShare, uint32 indexed newShare);
+  /// @notice Emitted when the treasury address is updated
+  event SetTreasury(address indexed oldTreasury, address indexed newTreasury);
+  /// @notice Emitted when the treasury share percentage is updated
+  event SetTreasuryShare(uint32 indexed oldShare, uint32 indexed newShare);
 
 }

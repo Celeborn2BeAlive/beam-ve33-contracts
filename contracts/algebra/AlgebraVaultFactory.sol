@@ -21,10 +21,8 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
   /// @notice Decimal precision used for fee calculations
   uint32 public constant PRECISION = 1e6;
 
-  /// @notice TheNFT fee information
-  FeeInfo public feeInfoTheNFT;
-  /// @notice Thena Treasury fee information
-  FeeInfo public feeInfoThenaTreasury;
+  /// @notice Treasury fee information
+  FeeInfo public feeInfoTreasury;
 
   /// @notice The address of the voter contract
   address public voter;
@@ -45,16 +43,10 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
     voter = _voter;
     algebraFactory = _algebraFactory;
 
-    feeInfoTheNFT = FeeInfo({
+    feeInfoTreasury = FeeInfo({
       isActive: true,
-      share: 1e5,
-      receiver: 0x6C1C0Af31E3c59bC3DE10c5CDb0d4AF6a0F2EcCC
-    });
-
-    feeInfoThenaTreasury = FeeInfo({
-      isActive: false,
-      share: 1e5,
-      receiver: 0x46F99291Eedf25fd5c6AE56BbfD6679d0eA3630B
+      share: 0,
+      receiver: address(0)
     });
 
     _grantRole(FEE_VAULT_MANAGER_ROLE, msg.sender);
@@ -77,18 +69,15 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
 
   /// @notice Gets the fees for a given amount
   /// @param amount The amount to get fees for
-  /// @return thenftAmount The amount of theNFT fees
-  /// @return thenatreasuryAmount The amount of thena treasury fees
-  function getFees(uint256 amount) external view returns (uint256 thenftAmount, uint256 thenatreasuryAmount) {
-    if(feeInfoTheNFT.isActive) thenftAmount = amount * feeInfoTheNFT.share / PRECISION;
-    if(feeInfoThenaTreasury.isActive) thenatreasuryAmount = amount * feeInfoThenaTreasury.share / PRECISION;
+  /// @return treasuryAmount The amount of treasury fees
+  function getFees(uint256 amount) external view returns (uint256 treasuryAmount) {
+    if(feeInfoTreasury.isActive) treasuryAmount = amount * feeInfoTreasury.share / PRECISION;
   }
 
   /// @notice Gets the receivers of the fees
-  /// @return thenft The address of the theNFT receiver
-  /// @return thenatreasury The address of the thena treasury receiver
-  function getFeesReceivers() external view returns (address thenft, address thenatreasury) {
-    return (feeInfoTheNFT.receiver, feeInfoThenaTreasury.receiver);
+  /// @return treasury The address of the treasury receiver
+  function getFeesReceivers() external view returns (address treasury) {
+    return feeInfoTreasury.receiver;
   }
 
 
@@ -165,43 +154,23 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
     emit SetVoter(oldVoter, _voter);
   }
 
-  /// @notice Sets the thena treasury address
-  /// @param _thenaTreasury The new thena treasury address
+  /// @notice Sets the treasury address
+  /// @param _treasury The new treasury address
   /// @dev Only callable by accounts with the FACTORY_VAULT_MANAGER_ROLE
-  function setThenaTreasury(address _thenaTreasury) external onlyRole(FACTORY_VAULT_MANAGER_ROLE) {
-    if(_thenaTreasury == address(0)) revert ZeroAddress();
-    address oldReceiver = feeInfoThenaTreasury.receiver;
-    feeInfoThenaTreasury.receiver = _thenaTreasury;
-    emit SetThenaTreasury(oldReceiver, _thenaTreasury);
+  function setTreasury(address _treasury) external onlyRole(FACTORY_VAULT_MANAGER_ROLE) {
+    if(_treasury == address(0)) revert ZeroAddress();
+    address oldReceiver = feeInfoTreasury.receiver;
+    feeInfoTreasury.receiver = _treasury;
+    emit SetTreasury(oldReceiver, _treasury);
   }
 
-  /// @notice Sets the thena share percentage
-  /// @param _thenaShare The new thena share percentage
+  /// @notice Sets the treasury share percentage
+  /// @param _treasuryShare The new treasury share percentage
   /// @dev Only callable by accounts with the FACTORY_VAULT_MANAGER_ROLE
-  function setThenaTreasuryShare(uint32 _thenaShare) external onlyRole(FACTORY_VAULT_MANAGER_ROLE) {
-    uint32 oldShare = feeInfoThenaTreasury.share;
-    feeInfoThenaTreasury.share = _thenaShare;
-    emit SetThenaTreasuryShare(oldShare, _thenaShare);
-  }
-
-
-  /// @notice Sets the theNFT fee share percentage
-  /// @param share The new share percentage with 6 decimals precision
-  /// @dev Only callable by accounts with the FACTORY_VAULT_MANAGER_ROLE
-  function setTheNftShare(uint16 share) external onlyRole(FACTORY_VAULT_MANAGER_ROLE) {
-    uint32 oldShare = feeInfoTheNFT.share;
-    feeInfoTheNFT.share = share;
-    emit SetTheNftShare(oldShare, share);
-  }
-
-  /// @notice Sets the theNFT fee receiver address
-  /// @param _feeReceiver The new fee receiver address
-  /// @dev Only callable by accounts with the FACTORY_VAULT_MANAGER_ROLE
-  function setTheNftFeeReceiver(address _feeReceiver) external onlyRole(FACTORY_VAULT_MANAGER_ROLE) {
-    if(_feeReceiver == address(0)) revert ZeroAddress();
-    address oldReceiver = feeInfoTheNFT.receiver;
-    feeInfoTheNFT.receiver = _feeReceiver;
-    emit SetTheNftFeeReceiver(oldReceiver, _feeReceiver);
+  function setTreasuryShare(uint32 _treasuryShare) external onlyRole(FACTORY_VAULT_MANAGER_ROLE) {
+    uint32 oldShare = feeInfoTreasury.share;
+    feeInfoTreasury.share = _treasuryShare;
+    emit SetTreasuryShare(oldShare, _treasuryShare);
   }
 
 

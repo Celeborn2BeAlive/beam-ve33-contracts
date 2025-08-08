@@ -25,7 +25,7 @@ interface IAlgebraVault {
     /// @dev Only callable by accounts with FEE_VAULT_MANAGER_ROLE
     function withdraw(address to, address[] calldata token, uint256[] calldata amount) external;
 
-    /// @notice Distributes the accumulated fees to the gauge and theNFT receiver
+    /// @notice Distributes the accumulated fees to the gauge and the treasury
     /// @return _claimed0 Amount of token0 sent to gauge
     /// @return _claimed1 Amount of token1 sent to gauge
     /// @dev Only callable by the gauge contract
@@ -47,6 +47,4 @@ interface IAlgebraVault {
     /// @param token0Amount Amount of token0 distributed
     /// @param token1Amount Amount of token1 distributed
     event FeesDistributed(address indexed gauge, uint256 token0Amount, uint256 token1Amount);
-    /// @notice Emitted when the NFT information is updated
-    event UpdateTheNFTInfo();
 }
