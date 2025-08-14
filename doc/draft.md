@@ -1,0 +1,130 @@
+- EmissionToken
+  - `minter` => MinterUpgradeable
+    - Initially => deployer address
+  - `initialMint` mechanics:
+    - Can be called once
+    - TODO Is it required ?
+      - We can mint manually once, then set the MinterUpgradeable
+
+- MinterUpgradeable
+  - `_initialize` mechanics:
+    - `_initializer` => deployer address
+    - Create locks for claimants
+    - TODO Is it required ?
+      - We can initial mint what's required and create locks manually or with another contract
+    - Still important for setting `active_period`
+  - `team` => address
+    - Received team share of minted tokens
+    - Initially set to deployer address
+    - TODO Rename to treasury ?
+  - `_emissionToken` => EmissionToken
+    - minted
+  - `_epochDistributor` => EpochDistributeUpgradeable
+    - receive liquid tokens to be distributed to gauges
+  - `_rebase_distributor` => RebaseDistributor
+    - received tokens to be locked as rebase
+  - `_ve` => VotingEscrow
+    - Used for `_initialize` mechanics
+    - Used to compute `circulating_supply()`
+  - `PRECISION`: 1000
+    - => each rate unit is 0.1%
+  - TODO Inherit from `OwnableUpgradeable` but not used
+  - TODO Maybe better to have non upgradeable minter, but allow to change it at the EmissionToken level
+    - Should be behind a timelock
+    - Depends if Minter is used at many places
+
+- VotingEscrow
+  - `team` => address
+    - Administrator for setter functions
+  - `artProxy` => address
+    - Used to compute `tokenURI`
+  - `voter` => address
+    - Used to guard calls to `voting`, `abstain`, `attach`, `detach`
+  - `token` => address => EmissionToken
+    - Used in `_deposit_for` to transfer tokens and lock them in the contract
+
+- RebaseDistributor
+  - `owner` => address
+    - Initially set to deployer address
+    - Can call checkpoint functions
+    - Can lock / unlock an address from claiming rebase
+    - Can withdraw any token balance from the contract
+    - Can `increaseOrRemoveAllowances` of `token` to the VotingEscrow contract
+  - `voting_escrow` => address => VotingEscrow
+    - Set in constructor
+  - `token` => address => EmissionToken
+    - Read from `.token()` of Voting Escrow in constructor
+  - `depositor` => address
+    - Set to `address(0)` in constructor
+    - TODO Should be set to `MinterUpgradeable` by owner
+
+- Voter
+  - `Ownable` => owner is deployer
+  - `_minter` => MinterUpgradeable
+    - Set in constructor
+    - Used to read `active_period()` in `_epochTimestamp`
+  - `_ve` => VotingEscrow
+    - Set in constructor
+    - Used to retrieve `balanceOfNFT` as voting power
+    - Used to set `voting` or `abstain`
+    - Used to check `isApprovedOrOwner` in voting functions:
+      - `poke`
+      - `reset`
+      - `vote`
+  - `_pool` => address[] => pools to vote for
+    - ` _poolData[pool].gauge` => gauge contract for pool
+    - `_poolData[pool].votingIncentives` => voting incentives contractfor pool
+  - `_isManager` => `mapping(address => bool)`
+    - Owner is set as manager in constructor
+    - Only owner can set manager status in `setManagerStatus`
+    - `_onlyManager` => called in admin functions
+      - `addPoolData`
+      - `removePoolData`
+      - `banPool`
+      - `revivePool`
+      - `setVotingEscrow`
+      - `setMinter`
+
+- EpochDistributorUpgradeable
+  - `Ownable`
+    - Used to control access to admin functions
+  - `minter` => address => `MinterUpgradeable`
+    - Used to compute `active_period`
+    - => `_isMinter()` check function
+      - => used in `notifyRewardAmount`, only the minter can deposit rewards
+  - `emissionToken` => address => `EmissionToken`
+    - Used to transfer tokens in distribution functions
+  - `voter` => address => `Voter`
+    - Used to compute `totalWeights`, `poolsLength`, `pools`, `gaugeForPool`, `poolTotalWeights`
+      - In order to distribute farming rewards according to votes
+      - Use `notifyRewardAmount` on each gauge
+  - `isAutomation` => mapping(address => bool)
+    - => `_isAutomation()` check function
+    - Called in `distributeAll` and `distribute`
+
+- VotingIncentives
+  - Manage accountability of votes
+  - Distribute voting rewards according to votes
+  - `address[] public rewardTokens;      //  list of reward tokens`
+  - `address public voter;               //  voter contract`
+    - Used to check caller in `deposit` and `withdraw`
+  - `address public votingIncentivesFactory;//  Voting Incentives deployer`
+    - Used in `onlyAllowed` modifier
+  - `address public feeDistributor;               //  underlying feeDistributor linked to this.contract`
+    - Used in `notifyRewardAmount` to provide a boolean `isFee` to `_notifyReward`
+      - Then `_notifyReward` increase `rewardData[_token][timestamp].feesAmount` or `rewardData[_token][timestamp].incentivesAmount` based on this boolean
+  - `address public owner;               //  owner of this contract (should be MultiSig)`
+    - TODO Comment is wrong => should be VotingIncentivesFactory
+    - Can be changed with `setOwner`, which can be called from VotingIncentivesFactory
+    - Used in `onlyAllowed` modifier
+  - `address public claimer;             // allow multiple claims`
+    - Only `claimer` can call `getRewardFor...` external functions
+  - `IVotingEscrow public ve;            //  VotingEscrow contract`
+    - Used to get owner of a veNFT and check `isApprovedOrOwner` in `getReward`
+  - `IMinter public minter;              //  EmissionToken minter contract`
+    - Used to get `active_period()`
+
+- VotingIncentivesFactory
+  - `globalFactory` => address => GlobalFactory
+  - `_votingIncentives` => address[] => VotingIncentives[]
+  - `defaultRewardToken` => address[] => ERC20[]
