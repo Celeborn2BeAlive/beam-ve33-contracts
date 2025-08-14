@@ -21,6 +21,15 @@
 
 **Dev Log**
 
+- 2025-08-14
+  - DONE:
+    - Made another overview of all contracts with connections between them and notes about contracts logic
+    - Made an excalidraw figure to draw all connections
+    - Managed to run an integration test with local fork of Zetachain, where we connect the AlgebraVaultFactory (from our codebase, forked and adapted from Thena) to the AlgebraFactory, checked that when a pool is created then it also creates a fee vault and connect it to the pool
+      - => required step to distribute swap fees to voters
+  - TODO:
+    - Implement full integration tests for the whole protocol, check routing of swap fees to voters, check ve(3,3) complete logic
+
 - 2025-08-08
   - DONE:
     - Investigated how to run automated tests on hardhat and localhost networks + use of ignition to deploy
