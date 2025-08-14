@@ -1,5 +1,5 @@
 import hre, { ignition } from "hardhat";
-import { beamAlgebraFactory, beamMultisigAddress } from "../ignition/modules/constants";
+import { beamAlgebraFactory, beamMultisigAddress, ZERO_ADDRESS } from "../ignition/modules/constants";
 import { expect } from "chai";
 import { impersonateAccount } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { Voter } from "../ignition/modules/Beam.Core";
@@ -42,7 +42,7 @@ describe("AlgebraFactory", function() {
 
     const { voter } = await ignition.deploy(Voter);
 
-    // // Let's deploy a VaultFactory
+    // Let's deploy a AlgebraVaultFactory
     const vaultFactory = await hre.viem.deployContract(
       "AlgebraVaultFactory",
       [voter.address, beamAlgebraFactory],
@@ -50,22 +50,30 @@ describe("AlgebraFactory", function() {
 
     const algebraFactory = await hre.viem.getContractAt("IAlgebraFactory", beamAlgebraFactory);
 
+    // Set the AlgebraVaultFactory as vault factory of the AlgebraFactory
     await algebraFactory.write.setVaultFactory([vaultFactory.address], {
       account: beamMultisigAddress,
     });
 
+    // Create a pool with our 2 tokens
     await algebraFactory.write.createPool([
       token1.address,
       token2.address,
     ])
 
+    // Initialize the pool with a price, it will create the fee vault and set it as communityVault of the pool
     const poolAddr = await algebraFactory.read.poolByPair([
       token1.address,
       token2.address,
     ]);
     const pool = await hre.viem.getContractAt("IAlgebraPool", poolAddr);
-    await pool.write.initialize([4295128739n]); // Pool should be initialized for communityVault to be set
-    // 4295128739 == MIN_SQRT_RATIO
-    expect(await pool.read.communityVault()).to.equals(vaultFactory.address) // TODO: test is wrong, we need to test with the AlgebraVault address that should exist in the vault factory now
+    await pool.write.initialize([4295128739n]); // 4295128739 == MIN_SQRT_RATIO
+
+    // Get the vault which should have been created now
+    const algebraVaultAddr = await vaultFactory.read.getVaultForPool([poolAddr]);
+
+    // Expect the communityVault of the pool to be our vault
+    expect(algebraVaultAddr).to.not.equals(ZERO_ADDRESS);
+    expect(await pool.read.communityVault()).to.equals(algebraVaultAddr);
   });
 })
