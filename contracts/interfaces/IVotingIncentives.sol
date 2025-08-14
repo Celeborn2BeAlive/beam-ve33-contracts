@@ -44,7 +44,7 @@ interface IVotingIncentives {
     function setOwner(address _Voter) external;
     function setClaimer(address _claimer) external;
     function emergencyRecoverERC20(address tokenAddress, uint256 tokenAmount) external;
-    function recoverERC20AndUpdateLastIncetive(address _rewardsToken, uint256 tokenAmount) external;
+    function recoverERC20AndUpdateLastIncentive(address _rewardsToken, uint256 tokenAmount) external;
     function pause(bool status) external;
 
     // Errors

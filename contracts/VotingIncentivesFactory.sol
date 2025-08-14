@@ -215,7 +215,7 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
         require(_tokens.length == _amounts.length, 'mismatch len');
 
         for(i; i< _vi.length; i++){
-            if(_amounts[i] > 0) IVotingIncentives(_vi[i]).recoverERC20AndUpdateLastIncetive(_tokens[i], _amounts[i]);
+            if(_amounts[i] > 0) IVotingIncentives(_vi[i]).recoverERC20AndUpdateLastIncentive(_tokens[i], _amounts[i]);
         }
     }
 

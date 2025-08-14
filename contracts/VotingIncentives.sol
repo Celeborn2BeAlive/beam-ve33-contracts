@@ -428,7 +428,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
 
     /// @notice Recover ERC20 from last bribe
-    function recoverERC20AndUpdateLastIncetive(address _token, uint256 tokenAmount) external onlyAllowed {
+    function recoverERC20AndUpdateLastIncentive(address _token, uint256 tokenAmount) external onlyAllowed {
         require(tokenAmount <= IERC20(_token).balanceOf(address(this)));
         uint timestamp = IMinter(minter).active_period();
         rewardData[_token][timestamp].incentivesAmount -= tokenAmount;
