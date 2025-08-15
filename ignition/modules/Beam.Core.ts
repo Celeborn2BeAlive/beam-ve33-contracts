@@ -71,7 +71,6 @@ const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
     encodedInitializeCall,
   ]);
 
-  m.call(beamToken, "setMinter", [minterTransparentProxy,]);
   m.call(rebaseDistributor, "setDepositor", [minterTransparentProxy,]);
 
   const minterProxy = m.contractAt("MinterUpgradeable", minterTransparentProxy, {

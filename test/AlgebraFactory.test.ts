@@ -3,13 +3,12 @@ import { beamAlgebraFactory, beamMultisigAddress, ZERO_ADDRESS } from "../igniti
 import { expect } from "chai";
 import { impersonateAccount } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { Voter } from "../ignition/modules/Beam.Core";
+import { isLocalhostNetwork } from "./constants";
 
-const isLocalhost = hre.network.name == "localhost";
-// Tutorial: https://medium.com/@lee.marreros/the-complete-hardhat-testing-guide-for-secure-smart-contracts-a8271893606c#fa46
 
 describe("AlgebraFactory", function() {
   before(async function () {
-    if (!isLocalhost) {
+    if (!isLocalhostNetwork) {
       this.skip();
     }
     await impersonateAccount(beamMultisigAddress);
