@@ -51,7 +51,6 @@ const RebaseDistributor = buildModule("RebaseDistributor", (m) => {
 
 
 const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
-  const { beamToken } = m.useModule(BeamToken);
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { rebaseDistributor } = m.useModule(RebaseDistributor);
   const epochDistributor = ZERO_ADDRESS;

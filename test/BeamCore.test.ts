@@ -107,5 +107,93 @@ describe("BeamCore", () => {
         expect(await minterProxy.read._ve()).to.equal(votingEscrow.address);
       });
     });
+
+    describe("RebaseDistributor", () => {
+      it("Should set `owner` as the deployer address", async () => {
+        const { rebaseDistributor, deployerAddress } = await loadFixture(deployFixture);
+        expect(await rebaseDistributor.read.owner()).to.equal(deployerAddress);
+      });
+
+      it("Should set `voting_escrow` as the VotingEscrow contract address", async () => {
+        const { rebaseDistributor, votingEscrow } = await loadFixture(deployFixture);
+        expect(await rebaseDistributor.read.voting_escrow()).to.equal(votingEscrow.address);
+      });
+
+      it("Should set `token` as the Beam token contract address", async () => {
+        const { rebaseDistributor, beamToken } = await loadFixture(deployFixture);
+        expect(await rebaseDistributor.read.token()).to.equal(beamToken.address);
+      });
+
+      it("Should set `depositor` as the Minter proxy contract address", async () => {
+        const { rebaseDistributor, minterProxy } = await loadFixture(deployFixture);
+        expect(await rebaseDistributor.read.depositor()).to.equal(minterProxy.address);
+      });
+    });
+
+    describe("Voter", () => {
+      it("Should set `owner` as the deployer address", async () => {
+        const { voter, deployerAddress } = await loadFixture(deployFixture);
+        expect(await voter.read.owner()).to.equal(deployerAddress);
+      });
+
+      it("Should set `minter` as the Minter proxy address", async () => {
+        const { voter, minterProxy } = await loadFixture(deployFixture);
+        expect(await voter.read.minter()).to.equal(minterProxy.address);
+      });
+
+      it("Should set `ve` as the VotingEscrow address", async () => {
+        const { voter, votingEscrow } = await loadFixture(deployFixture);
+        expect(await voter.read.ve()).to.equal(votingEscrow.address);
+      });
+
+      it("Should have empty pools array", async () => {
+        const { voter } = await loadFixture(deployFixture);
+        expect(await voter.read.poolsLength()).to.equal(0n);
+      });
+
+      it("Should set deployer address as manager", async () => {
+        const { voter, deployerAddress } = await loadFixture(deployFixture);
+        expect(await voter.read.isManager([deployerAddress])).to.equal(true);
+      });
+    });
+
+    describe("EpochDistributor", () => {
+      it("Should set `owner` as the deployer address", async () => {
+        const { epochDistributorProxy, deployerAddress } = await loadFixture(deployFixture);
+        expect(await epochDistributorProxy.read.owner()).to.equal(deployerAddress);
+      });
+
+      it("Should set `minter` as the Minter proxy address", async () => {
+        const { epochDistributorProxy, minterProxy } = await loadFixture(deployFixture);
+        expect(await epochDistributorProxy.read.minter()).to.equal(minterProxy.address);
+      });
+
+      it("Should set `emissionToken` as the Minter proxy address", async () => {
+        const { epochDistributorProxy, beamToken } = await loadFixture(deployFixture);
+        expect(await epochDistributorProxy.read.emissionToken()).to.equal(beamToken.address);
+      });
+
+      it("Should set `voter` as the Voter address", async () => {
+        const { epochDistributorProxy, voter } = await loadFixture(deployFixture);
+        expect(await epochDistributorProxy.read.voter()).to.equal(voter.address);
+      });
+
+      it("Should set `lastPool` to 0", async () => {
+        const { epochDistributorProxy } = await loadFixture(deployFixture);
+        expect(await epochDistributorProxy.read.lastPool()).to.equal(0n);
+      });
+    });
+
+    describe("Claimer", () => {
+      it("Should set `owner` as the deployer address", async () => {
+        const { claimer, deployerAddress } = await loadFixture(deployFixture);
+        expect(await claimer.read.owner()).to.equal(deployerAddress);
+      });
+
+      it("Should set `ve` as the VotingEscrow contract address", async () => {
+        const { claimer, votingEscrow } = await loadFixture(deployFixture);
+        expect(await claimer.read.ve()).to.equal(votingEscrow.address);
+      });
+    });
   });
 });

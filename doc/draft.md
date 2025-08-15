@@ -1,3 +1,5 @@
+# Core
+
 - EmissionToken
   - `minter` => MinterUpgradeable
     - Initially => deployer address
@@ -101,6 +103,14 @@
   - `isAutomation` => mapping(address => bool)
     - => `_isAutomation()` check function
     - Called in `distributeAll` and `distribute`
+
+- Claimer
+  - `IVotingEscrow public ve;`
+    - Used to check if `isApprovedOrOwner`
+
+- ProxyAdmin
+
+---
 
 - VotingIncentives
   - Manage accountability of votes
