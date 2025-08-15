@@ -27,6 +27,43 @@ describe("BeamCore", () => {
   };
 
   describe("Deployment", () => {
+    describe("ProxyAdmin", () => {
+      it("Should set `owner` as the deployer address", async () => {
+        const { proxyAdmin, deployerAddress } = await loadFixture(deployFixture);
+        expect(await proxyAdmin.read.owner()).to.equal(deployerAddress);
+      });
+
+      it("Should set proxy admin for Minter", async () => {
+        const { proxyAdmin, minterProxy } = await loadFixture(deployFixture);
+        expect(await proxyAdmin.read.getProxyAdmin([minterProxy.address])).to.equal(proxyAdmin.address);
+      });
+
+      it("Should set implementation for Minter", async () => {
+        const { proxyAdmin, minterImplementation, minterProxy } = await loadFixture(deployFixture);
+        expect(await proxyAdmin.read.getProxyImplementation([minterProxy.address])).to.equal(minterImplementation.address);
+      });
+
+      it("Should set proxy admin for VeArtProxy", async () => {
+        const { proxyAdmin, veArtProxyProxy } = await loadFixture(deployFixture);
+        expect(await proxyAdmin.read.getProxyAdmin([veArtProxyProxy.address])).to.equal(proxyAdmin.address);
+      });
+
+      it("Should set implementation for VeArtProxy", async () => {
+        const { proxyAdmin, veArtProxyProxy, veArtProxyImplementation } = await loadFixture(deployFixture);
+        expect(await proxyAdmin.read.getProxyImplementation([veArtProxyProxy.address])).to.equal(veArtProxyImplementation.address);
+      });
+
+      it("Should set proxy admin for EpochDistributor", async () => {
+        const { proxyAdmin, epochDistributorProxy } = await loadFixture(deployFixture);
+        expect(await proxyAdmin.read.getProxyAdmin([epochDistributorProxy.address])).to.equal(proxyAdmin.address);
+      });
+
+      it("Should set implementation for EpochDistributor", async () => {
+        const { proxyAdmin, epochDistributorProxy, epochDistributorImplementation } = await loadFixture(deployFixture);
+        expect(await proxyAdmin.read.getProxyImplementation([epochDistributorProxy.address])).to.equal(epochDistributorImplementation.address);
+      });
+    });
+
     describe("BeamToken", () => {
       it("Should set the right token name", async () => {
         const { beamToken } = await loadFixture(deployFixture);

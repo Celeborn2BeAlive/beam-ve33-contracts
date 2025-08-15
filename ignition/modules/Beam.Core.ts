@@ -128,7 +128,7 @@ const Claimer = buildModule("Claimer", (m) => {
 
 export default buildModule("BeamCore", (m) => {
   const { beamToken } = m.useModule(BeamToken);
-  const { veArtProxyProxy } = m.useModule(VeArtProxyUpgradeable);
+  const { veArtProxyProxy, veArtProxyImplementation } = m.useModule(VeArtProxyUpgradeable);
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { rebaseDistributor } = m.useModule(RebaseDistributor);
   const { proxyAdmin } = m.useModule(ProxyAdmin)
@@ -140,6 +140,7 @@ export default buildModule("BeamCore", (m) => {
   return {
     proxyAdmin,
     beamToken,
+    veArtProxyImplementation,
     veArtProxyProxy,
     votingEscrow,
     rebaseDistributor,
