@@ -1,5 +1,4 @@
-import { BeamToken } from "../ignition/modules/Beam.Core";
-import hre, { ignition } from "hardhat";
+import hre from "hardhat";
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { getAddress, parseEther } from "viem";
@@ -13,8 +12,6 @@ describe("BeamToken", () => {
     const deployerAddress = getAddress(deployer.account.address);
     const otherAccountAddress = getAddress(otherAccount.account.address);
     const publicClient = await hre.viem.getPublicClient();
-
-    // const { beamToken } = await ignition.deploy(BeamToken);
 
     const beamToken = await hre.viem.deployContract(
       "EmissionToken",
