@@ -16,6 +16,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
 
     bool public isFirstMint;
 
+    uint public constant STARTING_EMISSION = 2_600_000 * 1e18; // represents a starting weekly emission of 2.6M tokens (EmissionToken has 18 decimals)
     uint public EMISSION;
     uint public TAIL_EMISSION;
     uint public REBASEMAX;
@@ -62,8 +63,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
         _ve = IVotingEscrow(__ve);
         _rebase_distributor = IRebaseDistributor(__rebase_distributor);
 
-        active_period = ((block.timestamp + (2 * WEEK)) / WEEK) * WEEK;
-        weekly = 2_600_000 * 1e18; // represents a starting weekly emission of 2.6M tokens (EmissionToken has 18 decimals)
+        weekly = STARTING_EMISSION;
         isFirstMint = true;
 
     }
