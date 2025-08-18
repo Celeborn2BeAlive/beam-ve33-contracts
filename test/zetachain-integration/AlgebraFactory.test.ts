@@ -3,15 +3,17 @@ import { beamAlgebraFactory, beamMultisigAddress, ZERO_ADDRESS } from "../../ign
 import { expect } from "chai";
 import { impersonateAccount, loadFixture, time, mine } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import BeamCore, { Voter } from "../../ignition/modules/Beam.Core";
-import { IGNITION_DEPLOYMENTS_ROOT, isLocalhostNetwork } from "../constants";
+import { IGNITION_DEPLOYMENTS_ROOT, isLocalhostNetwork, MAX_LOCKTIME, WEEK } from "../constants";
 import fs from "node:fs";
 import BeamVe33Factories from "../../ignition/modules/Beam.Ve33Factories";
-import { formatEther, getAddress, parseEther, getContract } from "viem";
+import { formatEther, getAddress, parseEther, getContract, Address } from "viem";
 import { ABI_WZETA } from "../abi/WZETA";
+import { ABI_AlgebraFactory } from "../abi/AlgebraFactory";
 
 const deploymentId = "test";
 
 const algebraSwapRouterAddress = getAddress("0x84A5509Dce0b68C73B89e67454C30912293c7ea0");
+const algebraEternalFarmingAddress = getAddress("0xe310Ce3A6382E522e4d988735b2De13b35E30149");
 
 const WZETA = getAddress("0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf");
 const SOL_SOL = getAddress("0x4bc32034caccc9b7e02536945edbc286bacba073");
@@ -19,6 +21,9 @@ const ETH_ETH = getAddress("0xd97b1de3619ed2c6beb3860147e30ca8a7dc9891");
 const BTC_BTC = getAddress("0x13a0c5930c028511dc02665e7285134b6d11a5f4");
 
 const COMMUNITY_FEE_TRANSFER_FREQUENCY = 8n * 24n * 3600n; // 8 hours
+
+const INITIAL_BEAM_TOKEN_SUPPLY = parseEther("50000000");
+const POOL_TYPE_ALGEBRA = 2;
 
 describe("AlgebraFactory", function() {
   before(async function () {
@@ -43,6 +48,51 @@ describe("AlgebraFactory", function() {
     });
 
     const algebraFactory = await hre.viem.getContractAt("IAlgebraFactory", beamAlgebraFactory);
+    const algebraEternalFarming = await hre.viem.getContractAt("IAlgebraEternalFarming", algebraEternalFarmingAddress);
+
+    const { beamToken, minterProxy, epochDistributorProxy, voter, claimer, votingEscrow } = beamCore;
+    const { globalFactory, incentiveMakerProxy } = ve33Factories;
+
+    // Initialize Beam protocol and link it to Algebra Farming:
+
+    // Allow to create gauges for AlgebraPool using the deployer address
+    await globalFactory.write.setPoolType([POOL_TYPE_ALGEBRA, true]);
+    await globalFactory.write.setPoolTypeCreator([POOL_TYPE_ALGEBRA, true, deployerAddress]);
+
+    // Assign INCENTIVE_MAKER_ROLE to our IncentiveMaker contract instance,
+    // which is required for it to be able to create Algebra Eternal Farming campaigns
+    const incentiveMakerRole = await algebraEternalFarming.read.INCENTIVE_MAKER_ROLE();
+    await deployer.writeContract(
+      {
+        address: algebraFactory.address,
+        abi: ABI_AlgebraFactory,
+        functionName: "grantRole",
+        args: [incentiveMakerRole, incentiveMakerProxy.address],
+        account: beamMultisigAddress,
+      },
+    );
+
+    // Initialize the IncentiveMaker so it's connected to Algebra farming
+    await incentiveMakerProxy.write._initialize([algebraEternalFarming.address, voter.address]);
+
+    // Mint initial tokens and set minter
+    await beamToken.write.mint([deployerAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
+    await beamToken.write.setMinter([minterProxy.address]);
+
+    // Set minter config and initialize it
+    await minterProxy.write.setRebase([0n]);
+    await minterProxy.write.setTeamRate([0n]);
+    await minterProxy.write._initialize([[], [], 0n]);
+    const activePeriod = await minterProxy.read.active_period();
+
+    // Lock 10% of total supply
+    const totalSupply = await beamToken.read.totalSupply();
+    const depositAmount = totalSupply / 10n;
+    await beamToken.write.approve([votingEscrow.address, depositAmount]);
+
+    await votingEscrow.write.create_lock([depositAmount, MAX_LOCKTIME]);
+    const events = await votingEscrow.getEvents.Transfer();
+    const veNFTId = events[0].args.tokenId as bigint;
 
     return {
       deployer,
@@ -52,7 +102,16 @@ describe("AlgebraFactory", function() {
       ...beamCore,
       ...ve33Factories,
       algebraFactory,
+      algebraEternalFarming,
+      activePeriod,
+      veNFTId,
     }
+  };
+
+  const simulateOneWeek = async (activePeriod: bigint) => {
+    const nextPeriod = activePeriod + WEEK;
+    await time.setNextBlockTimestamp(activePeriod + WEEK);
+    return { nextPeriod };
   };
 
   it("Should have Beam multisig has owner", async () => {
@@ -224,5 +283,58 @@ describe("AlgebraFactory", function() {
       const btcBalanceOfVault = await btc_btc.read.balanceOf([vault]);
       expect(btcBalanceOfVault > 0n).to.be.true;
     }
+  });
+
+  it.only("Should distribute farming rewards as Algebra eternal farming incentives", async () => {
+    const { deployer, deployerAddress, algebraVaultFactory, algebraFactory, publicClient, globalFactory, voter, veNFTId, activePeriod, minterProxy, incentiveMakerProxy, algebraEternalFarming, epochDistributorProxy, beamToken } = await loadFixture(deployFixture);
+
+    const pool_WZETA_BTC_BTC = await hre.viem.getContractAt("IAlgebraPool",await algebraFactory.read.poolByPair([WZETA, BTC_BTC]));
+    const pool_SOL_ETH = await hre.viem.getContractAt("IAlgebraPool",await algebraFactory.read.poolByPair([SOL_SOL, ETH_ETH]));
+
+    // Whitelist tokens for gauge creation
+    await globalFactory.write.addToken([[WZETA, BTC_BTC, SOL_SOL, ETH_ETH]]);
+
+    for (const pool of [pool_WZETA_BTC_BTC, pool_SOL_ETH]) {
+      await algebraVaultFactory.write.createVaultForPool([pool.address]);
+      const vault = await algebraVaultFactory.read.poolToVault([pool.address]);
+
+      await pool.write.setCommunityVault([vault], {
+        account: beamMultisigAddress,
+      });
+      const poolGlobalState = await pool.read.globalState();
+      const communityFee = poolGlobalState[4];
+
+      if (communityFee != 1e3) {
+        await pool.write.setCommunityFee([1e3], {
+          account: beamMultisigAddress,
+        });
+      }
+
+      // Create gauge for the pool
+      await globalFactory.write.create([pool.address, POOL_TYPE_ALGEBRA]);
+    }
+
+    const votes = {
+      [pool_WZETA_BTC_BTC.address]: 75n,
+      [pool_SOL_ETH.address]: 25n,
+    } as {[key: Address]: bigint};
+
+    await voter.write.vote([veNFTId, Object.keys(votes) as [Address], Object.values(votes)]);
+
+    let { nextPeriod } = await simulateOneWeek(activePeriod);
+    await minterProxy.write.update_period();
+
+    const expectedEmission = await minterProxy.read.weekly();
+
+    await epochDistributorProxy.write.setAutomation([deployerAddress, true]);
+    // TODO: cannot run twice: only once incentive can be enabled for each pool, need to disable first
+    await epochDistributorProxy.write.distributeAll();
+
+    const lefthoverAmount = await beamToken.read.balanceOf([epochDistributorProxy.address]);
+    const distributedAmount = await beamToken.read.balanceOf([algebraEternalFarming.address]);
+    expect(expectedEmission).to.equals(distributedAmount + lefthoverAmount);
+    expect(lefthoverAmount < distributedAmount * 10n / 1000n).to.be.true; // Arbitrary check: less than 0.1% lefthover
+
+    expect(distributedAmount > 0n).to.be.true;
   });
 })

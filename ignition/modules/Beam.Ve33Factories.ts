@@ -95,6 +95,10 @@ const GlobalFactory = buildModule("GlobalFactory", (m) => {
     incentiveMakerProxy,
   ]);
 
+  m.call(votingIncentivesFactory, "setGlobalFactory", [globalFactory,]);
+  m.call(gaugeFactory, "setGlobalFactory", [globalFactory,]);
+  m.call(voter, "setManagerStatus", [globalFactory, true,]);
+
   return { globalFactory };
 });
 
