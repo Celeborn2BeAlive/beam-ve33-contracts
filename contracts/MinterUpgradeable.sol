@@ -22,7 +22,6 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
     uint public REBASEMAX;
     uint public constant PRECISION = 1000;
     uint public teamRate;
-    uint public constant MAX_TEAM_RATE = 50; // 5%
 
     uint public constant WEEK = 86400 * 7; // allows minting once per week (reset every Thursday 00:00 UTC)
     uint public weekly; // represents a starting weekly emission of 2.6M EmissionToken (EmissionToken has 18 decimals)
@@ -54,8 +53,8 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
 
         teamRate = 25; // 25 bps = 2.5%
 
-        EMISSION = 980; //2% decay
-        TAIL_EMISSION = 2;
+        EMISSION = 980; // 2% decay
+        TAIL_EMISSION = 2; // 0.2% weekly increase after tail emissions starts => ~2.8% annual inflation
         REBASEMAX = 300;
 
         _emissionToken = IEmissionToken(IVotingEscrow(__ve).token());
@@ -104,7 +103,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
 
     function setTeamRate(uint _teamRate) external {
         require(msg.sender == team, "not team");
-        require(_teamRate <= 2000, "rate too high");
+        require(_teamRate <= PRECISION, "rate too high");
         teamRate = _teamRate;
     }
 
@@ -112,6 +111,12 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
         require(msg.sender == team, "not team");
         require(_emission <= PRECISION, "rate too high");
         EMISSION = _emission;
+    }
+
+    function setTailEmission(uint _tailEmission) external {
+        require(msg.sender == team, "not team");
+        require(_tailEmission <= PRECISION, "rate too high");
+        TAIL_EMISSION = _tailEmission;
     }
 
 
