@@ -55,7 +55,7 @@ describe("AlgebraFactory", function() {
     }
   };
 
-  it("should have Beam multisig has owner", async () => {
+  it("Should have Beam multisig has owner", async () => {
     const algebraFactory = await hre.viem.getContractAt("IAlgebraFactory", beamAlgebraFactory);
     expect(await algebraFactory.read.owner()).to.equal(beamMultisigAddress)
 
@@ -68,7 +68,7 @@ describe("AlgebraFactory", function() {
     })
   });
 
-  it("experiment with vault factory", async () => {
+  it("Should deploy AlgebraVault and set it as communityVault for new created pools", async () => {
     const { voter, algebraFactory } = await loadFixture(deployFixture);
 
     // Let's deploy 2 tokens
@@ -115,7 +115,7 @@ describe("AlgebraFactory", function() {
     expect(await pool.read.communityVault()).to.equals(algebraVaultAddr);
   });
 
-  it.only("Should transfer swap fees to our AlgebraVault instances", async () => {
+  it("Should transfer swap fees to our AlgebraVault instances", async () => {
     const { deployer, deployerAddress, algebraVaultFactory, algebraFactory, publicClient } = await loadFixture(deployFixture);
 
     const btc_btc = await hre.viem.getContractAt("ERC20", BTC_BTC);
