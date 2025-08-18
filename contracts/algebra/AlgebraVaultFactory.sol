@@ -90,7 +90,8 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
   /// @param pool The address of the pool to create a vault for
   /// @return _vault The address of the newly created vault
   function createVaultForPool(address pool) external returns (address _vault) {
-    if(msg.sender != algebraFactory) revert NotAlgebraFactory();
+    bool access = hasRole(FACTORY_VAULT_MANAGER_ROLE, msg.sender);
+    if (!access && msg.sender != algebraFactory) revert NotAlgebraFactory();
     if(pool == address(0)) revert ZeroAddress();
 
     _vault = address(new AlgebraVault(pool, voter, address(this)));
