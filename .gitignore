@@ -21,9 +21,9 @@ tasks/
 # Hardhat plugin files
 typechain-types/
 
-abi
 build
 ignition/deployments/chain-31337/
+ignition/deployments/test/
 
 # flattened contract file
 contracts/flatten.sol
