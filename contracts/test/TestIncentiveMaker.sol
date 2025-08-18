@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity >=0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+contract TestIncentiveMaker {
+    using SafeERC20 for IERC20;
+    IERC20 public token;
+    mapping(address pool => uint256 amount) public poolAmount;
+
+    constructor(IERC20 _token) {
+        token = _token;
+    }
+
+    function updateIncentive(address pool, uint256 amount) external {
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        poolAmount[pool] += amount;
+    }
+}
