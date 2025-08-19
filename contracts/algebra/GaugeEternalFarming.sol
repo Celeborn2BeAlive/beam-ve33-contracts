@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import '@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol';
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "contracts/interfaces/IVotingIncentives.sol";
+import "contracts/interfaces/IPairInfo.sol";
 import "contracts/interfaces/IFeeVault.sol";
 import "./interfaces/IIncentiveMaker.sol";
 
@@ -24,8 +24,8 @@ contract GaugeEternalFarming is ReentrancyGuard, Ownable {
     /// @notice Fee vault contract address
     address public feeVault;
 
-    /// @notice The underlying LP token to deposit
-    IAlgebraPool public immutable TOKEN;
+    /// @notice The underlying pool
+    IPairInfo public immutable pool;
     /// @notice Contract that manages farm updates
     IIncentiveMaker public incentiveMaker;
     /// @notice The voting incentives contract
@@ -56,7 +56,7 @@ contract GaugeEternalFarming is ReentrancyGuard, Ownable {
         DISTRIBUTION = _distribution;
         feeVault = _feeVault;
         incentiveMaker = IIncentiveMaker(_incentiveMaker);
-        TOKEN = IAlgebraPool(_pool);
+        pool = IPairInfo(_pool);
 
         if(_votingIncentives != address(0)) votingIncentives = IVotingIncentives(_votingIncentives);
     }
@@ -100,7 +100,7 @@ contract GaugeEternalFarming is ReentrancyGuard, Ownable {
     /// @dev In this case _token is always emissionToken. Keep compatibility with IGauge.sol
     function notifyRewardAmount(address _token, uint _amount) external nonReentrant onlyDistribution {
         IERC20(_token).safeIncreaseAllowance(address(incentiveMaker), _amount);
-        incentiveMaker.updateIncentive(address(TOKEN), _amount);
+        incentiveMaker.updateIncentive(address(pool), _amount);
     }
 
     /// @notice Claim the fees earned by the underlying strategy or LP
@@ -116,8 +116,8 @@ contract GaugeEternalFarming is ReentrancyGuard, Ownable {
     /// @return _claimed1 Amount of token1 claimed
     function _claimFees() internal returns (uint _claimed0, uint _claimed1) {
 
-        address _token0 = TOKEN.token0();
-        address _token1 = TOKEN.token1();
+        address _token0 = pool.token0();
+        address _token1 = pool.token1();
 
         (_claimed0, _claimed1) = IFeeVault(feeVault).claimFees();
 
