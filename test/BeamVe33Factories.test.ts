@@ -1,13 +1,9 @@
 import hre, { ignition } from "hardhat";
-import BeamCore, { Voter } from "../ignition/modules/Beam.Core";
-import { Address, getAddress, parseEther } from "viem";
-import { isHardhatNetwork, MAX_LOCKTIME, WEEK } from "./constants";
+import { getAddress } from "viem";
+import { isHardhatNetwork } from "./constants";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
-import { time } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
-import BeamSolidyDEX from "../ignition/modules/Beam.SolidyDEX";
-import BeamVe33Factories from "../ignition/modules/Beam.Ve33Factories";
-import { ZERO_ADDRESS } from "../ignition/modules/constants";
+import BeamProtocol from "../ignition/modules/BeamProtocol";
 
 describe("BeamVe33Factories", () => {
   before(async function () {
@@ -21,16 +17,14 @@ describe("BeamVe33Factories", () => {
     const deployerAddress = getAddress(deployer.account.address);
     const publicClient = await hre.viem.getPublicClient();
 
-    const beamCore = await ignition.deploy(BeamCore);
-    const ve33Factories = await ignition.deploy(BeamVe33Factories);
+    const beam = await ignition.deploy(BeamProtocol);
 
     return {
       publicClient,
       deployer,
       user,
       deployerAddress,
-      ...beamCore,
-      ...ve33Factories,
+      ...beam,
     };
   };
 
@@ -47,8 +41,7 @@ describe("BeamVe33Factories", () => {
       expect(await gaugeFactory.read.globalFactory()).to.equals(globalFactory.address);
     });
 
-    // TODO the following test fails but I don't know why as the deployment script is doing the call...
-    it.skip("Should be manager of Voter", async () => {
+    it("Should be manager of Voter", async () => {
       const { globalFactory, voter } = await loadFixture(deployFixture);
       expect(await voter.read.isManager([globalFactory.address])).to.equals(true);
     });

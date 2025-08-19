@@ -1,13 +1,11 @@
 import hre, { ignition } from "hardhat";
-import BeamCore from "../ignition/modules/Beam.Core";
 import { Address, getAddress } from "viem";
 import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork } from "./constants";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
-import BeamSolidyDEX from "../ignition/modules/Beam.SolidyDEX";
-import BeamVe33Factories from "../ignition/modules/Beam.Ve33Factories";
 import { ZERO_ADDRESS } from "../ignition/modules/constants";
 import { create10PercentOfTotalSupplyLock, simulateOneWeekAndFlipEpoch } from "./utils";
+import BeamProtocol from "../ignition/modules/BeamProtocol";
 
 // This test demonstrates a setup where we use SolidyDEX pools as if they were AlgebraPool
 // and create EternalFarmingGauge for them externally (i.e. without the GlobalFactory).
@@ -30,11 +28,9 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     const deployerAddress = getAddress(deployer.account.address);
     const publicClient = await hre.viem.getPublicClient();
 
-    const beamCore = await ignition.deploy(BeamCore);
-    const solidlyDex = await ignition.deploy(BeamSolidyDEX);
-    const ve33Factories = await ignition.deploy(BeamVe33Factories);
+    const beam = await ignition.deploy(BeamProtocol);
 
-    const { beamToken, minterProxy, epochDistributorProxy, voter, claimer, votingEscrow } = beamCore;
+    const { beamToken, minterProxy, epochDistributorProxy, voter, claimer, votingEscrow } = beam;
 
     // The Minter requires a non zero total supply or division by zero occurs in `calculate_rebase`:
     await beamToken.write.mint([deployerAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
@@ -49,7 +45,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     const WETH = await hre.viem.deployContract("ERC20PresetMinterPauser", ["Wrapped Ether", "WETH"]);
     await WETH.write.mint([deployerAddress, 42_000_000n]);
 
-    const { solidlyPairFactoryProxy } = solidlyDex;
+    const { solidlyPairFactoryProxy } = beam;
     await solidlyPairFactoryProxy.write.createPair([USDC.address, beamToken.address, false]);
     await solidlyPairFactoryProxy.write.createPair([WETH.address, beamToken.address, false]);
     await solidlyPairFactoryProxy.write.createPair([WETH.address, USDC.address, false]);
@@ -57,7 +53,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     const WETH_BEAM = await solidlyPairFactoryProxy.read.getPair([WETH.address, beamToken.address, false]);
     const WETH_USDC = await solidlyPairFactoryProxy.read.getPair([USDC.address, WETH.address, false]);
 
-    const { algebraVaultFactory, gaugeFactory, votingIncentivesFactory } = ve33Factories;
+    const { algebraVaultFactory, gaugeFactory, votingIncentivesFactory } = beam;
     const testIncentiveMaker = await hre.viem.deployContract("TestIncentiveMaker", [beamToken.address]);
 
     const createGaugeForPool = async (poolAddr: Address) => {
@@ -98,8 +94,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
       veNFTId,
       USDC,
       WETH,
-      ...beamCore,
-      ...solidlyDex,
+      ...beam,
       pools: {
         USDC_BEAM,
         WETH_BEAM,

@@ -2,13 +2,12 @@ import hre, { ignition } from "hardhat";
 import { beamAlgebraFactory, beamMultisigAddress, ZERO_ADDRESS } from "../../ignition/modules/constants";
 import { expect } from "chai";
 import { impersonateAccount, loadFixture, time, mine } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
-import BeamCore, { Voter } from "../../ignition/modules/Beam.Core";
-import { IGNITION_DEPLOYMENTS_ROOT, isLocalhostNetwork, MAX_LOCKTIME, WEEK } from "../constants";
+import { IGNITION_DEPLOYMENTS_ROOT, isLocalhostNetwork, MAX_LOCKTIME, POOL_TYPE_ALGEBRA, WEEK } from "../constants";
 import fs from "node:fs";
-import BeamVe33Factories from "../../ignition/modules/Beam.Ve33Factories";
-import { formatEther, getAddress, parseEther, getContract, Address } from "viem";
+import { getAddress, parseEther, getContract, Address } from "viem";
 import { ABI_WZETA } from "../abi/WZETA";
 import { ABI_AlgebraFactory } from "../abi/AlgebraFactory";
+import BeamProtocol from "../../ignition/modules/BeamProtocol";
 
 const deploymentId = "test";
 
@@ -23,7 +22,6 @@ const BTC_BTC = getAddress("0x13a0c5930c028511dc02665e7285134b6d11a5f4");
 const COMMUNITY_FEE_TRANSFER_FREQUENCY = 8n * 24n * 3600n; // 8 hours
 
 const INITIAL_BEAM_TOKEN_SUPPLY = parseEther("50000000");
-const POOL_TYPE_ALGEBRA = 2;
 
 describe("AlgebraFactory", function() {
   before(async function () {
@@ -40,18 +38,15 @@ describe("AlgebraFactory", function() {
 
     fs.rmSync(`${IGNITION_DEPLOYMENTS_ROOT}/${deploymentId}`, { recursive: true, force: true });
 
-    const beamCore = await ignition.deploy(BeamCore, {
-      deploymentId
-    });
-    const ve33Factories = await ignition.deploy(BeamVe33Factories, {
+    const beam = await ignition.deploy(BeamProtocol, {
       deploymentId
     });
 
     const algebraFactory = await hre.viem.getContractAt("IAlgebraFactory", beamAlgebraFactory);
     const algebraEternalFarming = await hre.viem.getContractAt("IAlgebraEternalFarming", algebraEternalFarmingAddress);
 
-    const { beamToken, minterProxy, epochDistributorProxy, voter, claimer, votingEscrow } = beamCore;
-    const { globalFactory, incentiveMakerProxy } = ve33Factories;
+    const { beamToken, minterProxy, epochDistributorProxy, voter, claimer, votingEscrow } = beam;
+    const { globalFactory, incentiveMakerProxy } = beam;
 
     // Initialize Beam protocol and link it to Algebra Farming:
 
@@ -99,8 +94,7 @@ describe("AlgebraFactory", function() {
       deployerAddress,
       user,
       publicClient,
-      ...beamCore,
-      ...ve33Factories,
+      ...beam,
       algebraFactory,
       algebraEternalFarming,
       activePeriod,
