@@ -195,7 +195,7 @@ describe("BeamCore.EpochDistributor", () => {
       const rewardAmount = await incentiveMaker.read.poolAmount([poolAddr as Address]);
       const expectedRewardAmount = distributedAmount * vote / 100n;
       const delta = (rewardAmount >= expectedRewardAmount) ? rewardAmount - expectedRewardAmount : expectedRewardAmount - rewardAmount;
-      expect(delta < 10).to.be.true; // 10 wei delta check
+      expect(delta < 10n).to.be.true; // 10 wei delta check
     }
   });
 });
