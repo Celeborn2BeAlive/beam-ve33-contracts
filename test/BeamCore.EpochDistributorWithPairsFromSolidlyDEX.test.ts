@@ -1,17 +1,24 @@
 import hre, { ignition } from "hardhat";
-import BeamCore, { Voter } from "../ignition/modules/Beam.Core";
-import { Address, getAddress, parseEther } from "viem";
-import { isHardhatNetwork, MAX_LOCKTIME, WEEK } from "./constants";
+import BeamCore from "../ignition/modules/Beam.Core";
+import { Address, getAddress } from "viem";
+import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork } from "./constants";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
-import { time } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import BeamSolidyDEX from "../ignition/modules/Beam.SolidyDEX";
 import BeamVe33Factories from "../ignition/modules/Beam.Ve33Factories";
 import { ZERO_ADDRESS } from "../ignition/modules/constants";
+import { create10PercentOfTotalSupplyLock, simulateOneWeekAndFlipEpoch } from "./utils";
 
-const INITIAL_TOKEN_SUPPLY = parseEther("50000000");
+// This test demonstrates a setup where we use SolidyDEX pools as if they were AlgebraPool
+// and create EternalFarmingGauge for them externally (i.e. without the GlobalFactory).
+// We feed the gauges with a TestIncentiveMaker providing the `updateIncentive()` function
+// which is called by the gauges to distribute farming rewards.
 
-describe("BeamCore.EpochDistributor", () => {
+// While this test works, the system is not supposed to be used that way in production.
+// See BeamCore.EpochDistributor.test.ts for a test where we mock AlgebraFactory and AlgebraPool
+// in order to use the GlobalFactory to create gauges and voting incentives.
+
+describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
   before(async function () {
     if (!isHardhatNetwork) {
       this.skip();
@@ -30,7 +37,7 @@ describe("BeamCore.EpochDistributor", () => {
     const { beamToken, minterProxy, epochDistributorProxy, voter, claimer, votingEscrow } = beamCore;
 
     // The Minter requires a non zero total supply or division by zero occurs in `calculate_rebase`:
-    await beamToken.write.mint([deployerAddress, INITIAL_TOKEN_SUPPLY]);
+    await beamToken.write.mint([deployerAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
     await beamToken.write.setMinter([minterProxy.address]);
 
     // Set 0% emission to rebase and team to ease computation
@@ -79,14 +86,7 @@ describe("BeamCore.EpochDistributor", () => {
     await minterProxy.write._initialize([[], [], 0n]);
     const activePeriod = await minterProxy.read.active_period();
 
-    // Lock 10% of total supply
-    const totalSupply = await beamToken.read.totalSupply();
-    const depositAmount = totalSupply / 10n;
-    await beamToken.write.approve([votingEscrow.address, depositAmount]);
-
-    await votingEscrow.write.create_lock([depositAmount, MAX_LOCKTIME]);
-    const events = await votingEscrow.getEvents.Transfer();
-    const veNFTId = events[0].args.tokenId as bigint;
+    const veNFTId = await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
 
     return {
       publicClient,
@@ -108,12 +108,6 @@ describe("BeamCore.EpochDistributor", () => {
     };
   };
 
-  const simulateOneWeek = async (activePeriod: bigint) => {
-    const nextPeriod = activePeriod + WEEK;
-    await time.setNextBlockTimestamp(activePeriod + WEEK);
-    return { nextPeriod };
-  };
-
   it("Should distribute farming rewards to gauges", async () => {
     const { deployerAddress, minterProxy, activePeriod, beamToken, epochDistributorProxy, testIncentiveMaker, voter, veNFTId, pools } = await loadFixture(deployFixture);
 
@@ -125,8 +119,7 @@ describe("BeamCore.EpochDistributor", () => {
 
     await voter.write.vote([veNFTId, Object.keys(votes) as [Address], Object.values(votes)]);
 
-    await simulateOneWeek(activePeriod);
-    await minterProxy.write.update_period();
+    await simulateOneWeekAndFlipEpoch(minterProxy);
 
     const expectedEmission = await minterProxy.read.weekly();
 
