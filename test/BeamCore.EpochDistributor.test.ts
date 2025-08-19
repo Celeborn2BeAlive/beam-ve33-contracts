@@ -153,8 +153,10 @@ describe("BeamCore.EpochDistributor", () => {
     await voter.write.vote([veNFTId, Object.keys(votes) as [Address], Object.values(votes)]);
 
     const balanceOfDistributorBeforeEpochFlip = await beamToken.read.balanceOf([epochDistributorProxy.address]);
-    await epochDistributorProxy.write.emergencyRecoverERC20([beamToken.address, balanceOfDistributorBeforeEpochFlip]);
-    expect(await beamToken.read.balanceOf([epochDistributorProxy.address])).to.equals(0n);
+    if (balanceOfDistributorBeforeEpochFlip > 0n) {
+      await epochDistributorProxy.write.emergencyRecoverERC20([beamToken.address, balanceOfDistributorBeforeEpochFlip]);
+      expect(await beamToken.read.balanceOf([epochDistributorProxy.address])).to.equals(0n);
+    }
 
     await simulateOneWeekAndFlipEpoch(minterProxy);
 
