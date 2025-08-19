@@ -285,7 +285,7 @@ describe("AlgebraFactory", function() {
     }
   });
 
-  it.only("Should distribute farming rewards as Algebra eternal farming incentives", async () => {
+  it("Should distribute farming rewards as Algebra eternal farming incentives", async () => {
     const { deployer, deployerAddress, algebraVaultFactory, algebraFactory, publicClient, globalFactory, voter, veNFTId, activePeriod, minterProxy, incentiveMakerProxy, algebraEternalFarming, epochDistributorProxy, beamToken } = await loadFixture(deployFixture);
 
     const pool_WZETA_BTC_BTC = await hre.viem.getContractAt("IAlgebraPool",await algebraFactory.read.poolByPair([WZETA, BTC_BTC]));

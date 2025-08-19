@@ -1,13 +1,10 @@
 import hre, { ignition } from "hardhat";
 import BeamCore from "../ignition/modules/Beam.Core";
-import { getAddress, parseEther } from "viem";
-import { isHardhatNetwork, MAX_LOCKTIME, WEEK } from "./constants";
+import { getAddress, parseUnits } from "viem";
+import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork, MINTER_PRECISION, WEEK } from "./constants";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
-import { time } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
-
-const TOKEN_AMOUNT_MULTIPLIER = parseEther("1");
-const INITIAL_TOKEN_SUPPLY = parseEther("50000000")
+import { create10PercentOfTotalSupplyLock, simulateOneWeek, simulateOneWeekAndFlipEpoch } from "./utils";
 
 describe("BeamCore.Minter", () => {
   before(async function () {
@@ -26,7 +23,7 @@ describe("BeamCore.Minter", () => {
     const { beamToken, minterProxy } = beamCore;
 
     // The Minter requires a non zero total supply or division by zero occurs in `calculate_rebase`:
-    await beamToken.write.mint([deployerAddress, INITIAL_TOKEN_SUPPLY]);
+    await beamToken.write.mint([deployerAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
     // Set Minter for the tests:
     await beamToken.write.setMinter([minterProxy.address]);
 
@@ -44,7 +41,7 @@ describe("BeamCore.Minter", () => {
       const { minterProxy, user } = await loadFixture(deployFixture);
 
       // User can't call _initialize
-      await expect(minterProxy.write._initialize([[], [], 0n], {account: user.account})).to.be.rejectedWith("");
+      await expect(minterProxy.write._initialize([[], [], 0n], { account: user.account })).to.be.rejectedWith("");
 
       // Deployer can call initialize
       await minterProxy.write._initialize([[], [], 0n]);
@@ -61,8 +58,8 @@ describe("BeamCore.Minter", () => {
     it("Should have `active_period` set to thursday timestamp when initialized", async () => {
       const { publicClient, minterProxy } = await loadFixture(deployFixture);
       const hash = await minterProxy.write._initialize([[], [], 0n]);
-      const tx = await publicClient.waitForTransactionReceipt({hash});
-      const block = await publicClient.getBlock({blockNumber: tx.blockNumber});
+      const tx = await publicClient.waitForTransactionReceipt({ hash });
+      const block = await publicClient.getBlock({ blockNumber: tx.blockNumber });
 
       // This is thursdayTimestamp because timestamp = 0 means 1970/1/1 which was a thursday
       const thursdayTimestamp = (block.timestamp / WEEK) * WEEK;
@@ -78,12 +75,6 @@ describe("BeamCore.Minter", () => {
       const activePeriod = await minterProxy.read.active_period();
 
       return { minterProxy, activePeriod, ...deploy };
-    };
-
-    const simulateOneWeek = async (activePeriod: bigint) => {
-      const nextPeriod = activePeriod + WEEK;
-      await time.setNextBlockTimestamp(activePeriod + WEEK);
-      return { nextPeriod };
     };
 
     it("Should not update epoch when not initialized", async () => {
@@ -122,93 +113,85 @@ describe("BeamCore.Minter", () => {
       const { minterProxy, activePeriod, beamToken } = await loadFixture(initializeMinterFixture);
 
       const totalSupply = await beamToken.read.totalSupply();
+      const decimals = await beamToken.read.decimals();
 
       // Try to run epoch flip after 1 week
       await simulateOneWeek(activePeriod);
       await minterProxy.write.update_period();
 
       // Explicit check that we mint 2_600_000 tokens first epoch, test should be updated with tokenomics
-      const expectedEmission = 2_600_000n * TOKEN_AMOUNT_MULTIPLIER;
+      const expectedEmission = 2_600_000n * parseUnits("1", decimals);
       expect(await beamToken.read.totalSupply()).to.equals(totalSupply + expectedEmission);
     });
 
     it("Should distribute rebase as locked share", async () => {
-      const { minterProxy, activePeriod, beamToken, votingEscrow, rebaseDistributor } = await loadFixture(initializeMinterFixture);
+      // Rebase should be distributed min(lock_share, max_rebase) * totalEmission tokens
+      // Here we check that it matches lock_share when lock_share < max_rebase
 
-      // Lock 10% of total supply
-      const totalSupply = await beamToken.read.totalSupply();
-      const depositAmount = totalSupply / 10n;
-      await beamToken.write.approve([votingEscrow.address, depositAmount]);
-      await votingEscrow.write.create_lock([depositAmount, MAX_LOCKTIME]);
+      // 1. Arrange
+      const { minterProxy, beamToken, votingEscrow, rebaseDistributor } = await loadFixture(initializeMinterFixture);
+      // Create lock such that lock_share = 10%
+      await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
+      // Ensure max_rebase is set higher than lock_share
+      await minterProxy.write.setRebase([101n]); // 10.1%
 
-      // Ensure rebase rate is set higher than 10% (here 10.1%)
-      await minterProxy.write.setRebase([101n]);
+      // 2. Act
+      await simulateOneWeekAndFlipEpoch(minterProxy);
 
-      const expectedEmission = await minterProxy.read.STARTING_EMISSION();
-
-      // Try to run epoch flip after 1 week
-      await simulateOneWeek(activePeriod);
-      await minterProxy.write.update_period();
+      // 3. Assert
+      const expectedEmission = await minterProxy.read.weekly();
+      const expectedDistributionToRebase = expectedEmission / 10n; // 10%
+      const distributedToRebase = await beamToken.read.balanceOf([rebaseDistributor.address]);
 
       // When 10% of total supply is locked, rebase should receive 10% of emissions
-      expect(await beamToken.read.balanceOf([rebaseDistributor.address])).to.equals(
-        expectedEmission / 10n,
-      );
+      expect(distributedToRebase).to.equals(expectedDistributionToRebase);
     });
 
     it("Should distribute rebase not higher that config share", async () => {
-      const { minterProxy, activePeriod, beamToken, votingEscrow, rebaseDistributor } = await loadFixture(initializeMinterFixture);
+      // 1. Arrange
+      const { minterProxy, beamToken, votingEscrow, rebaseDistributor } = await loadFixture(initializeMinterFixture);
 
-      // Lock 10% of total supply
-      const totalSupply = await beamToken.read.totalSupply();
-      const depositAmount = totalSupply / 10n;
-      await beamToken.write.approve([votingEscrow.address, depositAmount]);
-      await votingEscrow.write.create_lock([depositAmount, MAX_LOCKTIME]);
-
-      // Set rebase to 5% max
+      // Create lock such that lock_share = 10%
+      await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
+      // Set max_rebase to 5%
       await minterProxy.write.setRebase([50n]);
 
-      const expectedEmission = await minterProxy.read.STARTING_EMISSION();
+      // 2. Act
+      await simulateOneWeekAndFlipEpoch(minterProxy);
 
-      // Try to run epoch flip after 1 week
-      await simulateOneWeek(activePeriod);
-      await minterProxy.write.update_period();
+      // 3. Assert
+      const expectedEmission = await minterProxy.read.weekly();
+      const expectedDistributionToRebase = expectedEmission / 20n; // 5%
+      const distributedToRebase = await beamToken.read.balanceOf([rebaseDistributor.address]);
 
-      // Rebase should receive 5% of emission as specified by config
-      expect(await beamToken.read.balanceOf([rebaseDistributor.address])).to.equals(
-        expectedEmission / 20n,
-      );
+      expect(distributedToRebase).to.equals(expectedDistributionToRebase);
     });
 
     it("Should distribute team tokens according to config", async () => {
-      const { minterProxy, activePeriod, beamToken, user } = await loadFixture(initializeMinterFixture);
+      // 1. Arrange
+      const { minterProxy, beamToken, user } = await loadFixture(initializeMinterFixture);
 
       // Set team rate of 4.2%
       await minterProxy.write.setTeamRate([42n]);
       // Set user as team to isolate tokens
       await minterProxy.write.setTeam([user.account.address]);
-      await minterProxy.write.acceptTeam({account: user.account});
+      await minterProxy.write.acceptTeam({ account: user.account });
 
-      const expectedEmission = await minterProxy.read.STARTING_EMISSION();
+      // 2. Act
+      await simulateOneWeekAndFlipEpoch(minterProxy);
 
-      // Try to run epoch flip after 1 week
-      await simulateOneWeek(activePeriod);
-      await minterProxy.write.update_period();
+      // 3. Assert
+      const expectedEmission = await minterProxy.read.weekly();
+      const expectedDistributionToTeam = (expectedEmission * 42n) / 1000n; // 4.2%
+      const distributedToTeam = await beamToken.read.balanceOf([user.account.address]);
 
-      // Team should received 10.42% of token emissions
-      expect(await beamToken.read.balanceOf([user.account.address])).to.equals(
-        expectedEmission * 42n / 1000n,
-      );
+      expect(distributedToTeam).to.equals(expectedDistributionToTeam);
     });
 
     it("Should distribute gauge emissions", async () => {
-      const { minterProxy, activePeriod, beamToken, votingEscrow, epochDistributorProxy } = await loadFixture(initializeMinterFixture);
+      const { minterProxy, beamToken, votingEscrow, epochDistributorProxy } = await loadFixture(initializeMinterFixture);
 
-      // Lock 10% of total supply
-      const totalSupply = await beamToken.read.totalSupply();
-      const depositAmount = totalSupply / 10n;
-      await beamToken.write.approve([votingEscrow.address, depositAmount]);
-      await votingEscrow.write.create_lock([depositAmount, MAX_LOCKTIME]);
+      await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
 
       // Ensure rebase rate is set higher than 10% (here 10.1%)
       await minterProxy.write.setRebase([101n]);
@@ -216,37 +199,27 @@ describe("BeamCore.Minter", () => {
       // Set team rate of 4.2%
       await minterProxy.write.setTeamRate([42n]);
 
-      const expectedEmission = await minterProxy.read.STARTING_EMISSION();
+      await simulateOneWeekAndFlipEpoch(minterProxy);
 
-      // Try to run epoch flip after 1 week
-      await simulateOneWeek(activePeriod);
-      await minterProxy.write.update_period();
-
+      const expectedEmission = await minterProxy.read.weekly();
       const rebaseEmission = expectedEmission / 10n;
-      const teamEmission = expectedEmission * 42n / 1000n;
+      const teamEmission = (expectedEmission * 42n) / 1000n;
 
       // Gauge should receive the delta between all emissions and (rebase + team) emissions
       const expectedGaugeEmission = expectedEmission - rebaseEmission - teamEmission;
-      expect(await beamToken.read.balanceOf([epochDistributorProxy.address])).to.equals(
-        expectedGaugeEmission,
-      );
+      expect(await beamToken.read.balanceOf([epochDistributorProxy.address])).to.equals(expectedGaugeEmission);
     });
 
     it("Should decrease emissions each week then increase after tail period", async () => {
-      const { minterProxy, activePeriod, beamToken, votingEscrow, epochDistributorProxy } = await loadFixture(initializeMinterFixture);
+      const { minterProxy, activePeriod, beamToken, votingEscrow } = await loadFixture(initializeMinterFixture);
 
-      // Lock 10% of total supply
-      const totalSupply = await beamToken.read.totalSupply();
-      const depositAmount = totalSupply / 10n;
-      await beamToken.write.approve([votingEscrow.address, depositAmount]);
-      await votingEscrow.write.create_lock([depositAmount, MAX_LOCKTIME]);
+      await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
 
       await minterProxy.write.setRebase([200n]); // 20% max going to rebase
       await minterProxy.write.setTeamRate([150n]); // 15% going to team
 
       // Setup emission rates config:
-      const PRECISION = 1000n;
-      const EMISSION = PRECISION - 200n; // 20% decay
+      const EMISSION = MINTER_PRECISION - 200n; // 20% decay
       await minterProxy.write.setEmission([EMISSION]);
       expect(await minterProxy.read.EMISSION()).to.equals(EMISSION);
       const TAIL_EMISSION = 5n; // 0.5% weekly inflation on circulating supply after tail starts
@@ -258,20 +231,18 @@ describe("BeamCore.Minter", () => {
 
       await minterProxy.write.setEmission([EMISSION]);
 
-      let { nextPeriod } = await simulateOneWeek(activePeriod);
-      await minterProxy.write.update_period();
+      await simulateOneWeekAndFlipEpoch(minterProxy);
 
       // During initial emission epochs, they are decrease each week by a factor of EMISSION / PRECISION
       for (let i = 1; i < tailEmissionStartEpoch; ++i) {
         const totalSupplyBefore = await beamToken.read.totalSupply();
         const weeklyBefore = await minterProxy.read.weekly();
 
-        nextPeriod = (await simulateOneWeek(nextPeriod)).nextPeriod;
-        await minterProxy.write.update_period();
+        await simulateOneWeekAndFlipEpoch(minterProxy);
 
         const weekly = await minterProxy.read.weekly();
         // Check emission update:
-        expect(weekly).to.equals(weeklyBefore * EMISSION / PRECISION);
+        expect(weekly).to.equals((weeklyBefore * EMISSION) / MINTER_PRECISION);
 
         // Check increase of total supply:
         expect(await beamToken.read.totalSupply()).to.equals(totalSupplyBefore + weekly);
@@ -286,12 +257,11 @@ describe("BeamCore.Minter", () => {
         // takes into account circulating supply and not total supply (10% of tokens have been locked initially)
         expect(circulatingSupplyBefore < totalSupplyBefore).to.be.true;
 
-        nextPeriod = (await simulateOneWeek(nextPeriod)).nextPeriod;
-        await minterProxy.write.update_period();
+        await simulateOneWeekAndFlipEpoch(minterProxy);
 
         const weekly = await minterProxy.read.weekly();
         // Check emission update:
-        expect(weekly).to.equals(circulatingSupplyBefore * TAIL_EMISSION / PRECISION);
+        expect(weekly).to.equals((circulatingSupplyBefore * TAIL_EMISSION) / MINTER_PRECISION);
 
         // Check increase of total supply:
         expect(await beamToken.read.totalSupply()).to.equals(totalSupplyBefore + weekly);
