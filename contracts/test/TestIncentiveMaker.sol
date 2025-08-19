@@ -16,4 +16,12 @@ contract TestIncentiveMaker {
         token.safeTransferFrom(msg.sender, address(this), amount);
         poolAmount[pool] += amount;
     }
+
+    function resetIncentive(address pool) external {
+        poolAmount[pool] = 0;
+    }
+
+    function recoverTokens() external {
+        token.safeTransfer(msg.sender, token.balanceOf(address(this)));
+    }
 }
