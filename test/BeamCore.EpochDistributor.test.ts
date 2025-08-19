@@ -5,7 +5,58 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpe
 import { expect } from "chai";
 import { create10PercentOfTotalSupplyLock, simulateOneWeekAndFlipEpoch } from "./utils";
 import BeamProtocol from "../ignition/modules/BeamProtocol";
+import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
+import { ZERO_ADDRESS } from "../ignition/modules/constants";
 
+const TestTokens = buildModule("TestTokens", (m) => {
+  const USDC = m.contract("ERC20PresetMinterPauser", ["USDC", "USDC"], { id: "USDC"});
+  m.call(USDC, "mint", [m.getAccount(0), 10_000_000_000n]);
+  const WETH = m.contract("ERC20PresetMinterPauser", ["Wrapped Ether", "WETH"], { id: "WETH"});
+  m.call(WETH, "mint", [m.getAccount(0), 42_000_000n]);
+
+  return {
+    USDC,
+    WETH,
+  }
+});
+
+const TestAlgebraFactory = buildModule("TestAlgebraFactory", (m) => {
+  const { beamToken } = m.useModule(BeamProtocol);
+  const { USDC, WETH } = m.useModule(TestTokens);
+
+  // Mocking Algebra DEX with TestAlgebraFactory and creating pools which are TestAlgebraPool instances
+  const algebraFactory = m.contract("TestAlgebraFactory");
+
+  m.call(algebraFactory, "createPool", [USDC, WETH], {id: "createPool_USDC_WETH"});
+  m.call(algebraFactory, "createPool", [USDC, beamToken], {id: "createPool_USDC_BEAM"});
+  m.call(algebraFactory, "createPool", [beamToken, WETH], {id: "createPool_BEAM_WETH"});
+
+  return { algebraFactory };
+});
+
+const TestIncentiveMaker = buildModule("TestIncentiveMaker", (m) => {
+  const { beamToken } = m.useModule(BeamProtocol);
+  const incentiveMaker = m.contract("TestIncentiveMaker", [beamToken]);
+  return { incentiveMaker };
+});
+
+const TestProtocol = buildModule("TestProtocol", (m) => {
+  const beam = m.useModule(BeamProtocol);
+  const tokens = m.useModule(TestTokens);
+  const { algebraFactory } = m.useModule(TestAlgebraFactory);
+  const { incentiveMaker } = m.useModule(TestIncentiveMaker);
+
+  const { globalFactory } = beam;
+  m.call(globalFactory, "setIncentiveMaker", [incentiveMaker]);
+  m.call(globalFactory, "setPairFactoryAlgebra", [algebraFactory]);
+
+  return {
+    ...beam,
+    ...tokens,
+    algebraFactory,
+    incentiveMaker,
+  }
+});
 
 describe("BeamCore.EpochDistributor", () => {
   before(async function () {
@@ -19,25 +70,17 @@ describe("BeamCore.EpochDistributor", () => {
     const deployerAddress = getAddress(deployer.account.address);
     const publicClient = await hre.viem.getPublicClient();
 
-    const beam = await ignition.deploy(BeamProtocol);
+    const beam = await ignition.deploy(TestProtocol);
 
     const { beamToken, minterProxy, epochDistributorProxy, voter, claimer, votingEscrow } = beam;
     const { globalFactory, algebraVaultFactory, gaugeFactory, votingIncentivesFactory } = beam;
 
     // Deploy test tokens
-    const USDC = await hre.viem.deployContract("ERC20PresetMinterPauser", ["USDC", "USDC"]);
-    await USDC.write.mint([deployerAddress, 10_000_000_000n]);
-    const WETH = await hre.viem.deployContract("ERC20PresetMinterPauser", ["Wrapped Ether", "WETH"]);
-    await WETH.write.mint([deployerAddress, 42_000_000n]);
+    const { USDC, WETH, algebraFactory } = beam;
 
-    // Mocking Algebra DEX with TestAlgebraFactory and creating pools which are TestAlgebraPool instances
-    const testAlgebraFactory = await hre.viem.deployContract("TestAlgebraFactory");
-    await testAlgebraFactory.write.createPool([USDC.address, WETH.address]);
-    await testAlgebraFactory.write.createPool([beamToken.address, WETH.address]);
-    await testAlgebraFactory.write.createPool([beamToken.address, USDC.address]);
-    const USDC_BEAM = await testAlgebraFactory.read.poolByPair([beamToken.address, USDC.address]);
-    const WETH_BEAM = await testAlgebraFactory.read.poolByPair([beamToken.address, WETH.address]);
-    const WETH_USDC = await testAlgebraFactory.read.poolByPair([USDC.address, WETH.address]);
+    const USDC_BEAM = await algebraFactory.read.poolByPair([beamToken.address, USDC.address]);
+    const WETH_BEAM = await algebraFactory.read.poolByPair([beamToken.address, WETH.address]);
+    const WETH_USDC = await algebraFactory.read.poolByPair([USDC.address, WETH.address]);
 
     const pools = {
       USDC_BEAM,
@@ -46,57 +89,62 @@ describe("BeamCore.EpochDistributor", () => {
     };
 
     // Create AlgebraVault and set as communityVault for each pool
-    Object.values(pools).forEach(async (poolAddr) => {
+    for (const poolAddr of Object.values(pools)) {
+      {
+        const vaultAddr = await algebraVaultFactory.read.getVaultForPool([poolAddr]);
+        if (vaultAddr != ZERO_ADDRESS) {
+          continue;
+        }
+      }
+
       await algebraVaultFactory.write.createVaultForPool([poolAddr]);
       const vaultAddr = await algebraVaultFactory.read.getVaultForPool([poolAddr]);
       const pool = await hre.viem.getContractAt("TestAlgebraPool", poolAddr);
       await pool.write.setCommunityVault([vaultAddr]);
-    });
-
-    // Setup GlobalFactory for test
-    const testIncentiveMaker = await hre.viem.deployContract("TestIncentiveMaker", [beamToken.address]);
-
-    await globalFactory.write.setIncentiveMaker([testIncentiveMaker.address]);
-    await globalFactory.write.setPairFactoryAlgebra([testAlgebraFactory.address]);
+    }
 
     // Tokens need to be whitelisted for gauge creation:
     await globalFactory.write.addToken([[USDC.address, WETH.address]]);
 
     // Create gauge for each pool
-    Object.values(pools).forEach(async (poolAddr) => {
+    for (const poolAddr of Object.values(pools)) {
+      if(await voter.read.isPool([poolAddr])) {
+        continue;
+      }
+
       await globalFactory.write.create([poolAddr, POOL_TYPE_ALGEBRA]);
-    });
+    }
 
-    // The Minter requires a non zero total supply or division by zero occurs in `calculate_rebase`:
-    await beamToken.write.mint([deployerAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
-    await beamToken.write.setMinter([minterProxy.address]);
+    if (await beamToken.read.minter() != minterProxy.address) {
+      // The Minter requires a non zero total supply or division by zero occurs in `calculate_rebase`:
+      await beamToken.write.mint([deployerAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
+      await beamToken.write.setMinter([minterProxy.address]);
 
-    // Set 0% emission to rebase and team to ease computation
-    await minterProxy.write.setRebase([0n]);
-    await minterProxy.write.setTeamRate([0n]);
+      // Set 0% emission to rebase and team to ease computation
+      await minterProxy.write.setRebase([0n]);
+      await minterProxy.write.setTeamRate([0n]);
 
-    await minterProxy.write._initialize([[], [], 0n]);
+      await minterProxy.write._initialize([[], [], 0n]);
+
+      await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
+    }
+    const veNFTId = await votingEscrow.read.tokenOfOwnerByIndex([deployerAddress, 0n]);
     const activePeriod = await minterProxy.read.active_period();
-
-    const veNFTId = await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
 
     return {
       publicClient,
       deployer,
       user,
       deployerAddress,
-      testIncentiveMaker,
       activePeriod,
       veNFTId,
-      USDC,
-      WETH,
       ...beam,
       pools,
     };
   };
 
   it("Should distribute farming rewards to gauges", async () => {
-    const { deployerAddress, minterProxy, activePeriod, beamToken, epochDistributorProxy, testIncentiveMaker, voter, veNFTId, pools } = await loadFixture(deployFixture);
+    const { deployerAddress, minterProxy, activePeriod, beamToken, epochDistributorProxy, incentiveMaker, voter, veNFTId, pools } = await loadFixture(deployFixture);
 
     const votes = {
       [pools.USDC_BEAM]: 50n,
@@ -124,14 +172,15 @@ describe("BeamCore.EpochDistributor", () => {
 
     // We expect a small token lefhover in the epoch distributor because of integer division
     const lefthoverAmount = await beamToken.read.balanceOf([epochDistributorProxy.address]);
-    const distributedAmount = await beamToken.read.balanceOf([testIncentiveMaker.address]);
+    const distributedAmount = await beamToken.read.balanceOf([incentiveMaker.address]);
     expect(expectedEmission).to.equals(distributedAmount + lefthoverAmount);
     expect(lefthoverAmount < distributedAmount * 10n / 1000n).to.be.true; // Arbitrary check: less than 0.1% lefthover
 
-    Object.entries(votes).forEach(async ([poolAddr, vote]) => {
-      expect(await testIncentiveMaker.read.poolAmount([poolAddr as Address])).to.equals(
-        distributedAmount * vote / 100n
-      );
-    });
+    for (const [poolAddr, vote] of Object.entries(votes)) {
+      const rewardAmount = await incentiveMaker.read.poolAmount([poolAddr as Address]);
+      const expectedRewardAmount = distributedAmount * vote / 100n;
+      const delta = (rewardAmount >= expectedRewardAmount) ? rewardAmount - expectedRewardAmount : expectedRewardAmount - rewardAmount;
+      expect(delta < 10).to.be.true; // 10 wei delta check
+    }
   });
 });

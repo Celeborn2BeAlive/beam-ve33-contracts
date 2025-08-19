@@ -136,10 +136,10 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     expect(expectedEmission).to.equals(distributedAmount + lefthoverAmount);
     expect(lefthoverAmount < distributedAmount * 10n / 1000n).to.be.true; // Arbitrary check: less than 0.1% lefthover
 
-    Object.entries(votes).forEach(async ([poolAddr, vote]) => {
+    for (const [poolAddr, vote] of Object.entries(votes)) {
       expect(await testIncentiveMaker.read.poolAmount([poolAddr as Address])).to.equals(
         distributedAmount * vote / 100n
       );
-    });
+    }
   });
 });
