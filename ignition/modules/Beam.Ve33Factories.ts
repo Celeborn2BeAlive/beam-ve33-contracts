@@ -1,7 +1,7 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import BeamCore from "./Beam.Core";
 import BeamSolidyDEX from "./Beam.SolidyDEX";
-import { beamAlgebraFactory, beamMultisigAddress, wzetaAddress, ZERO_ADDRESS } from "./constants";
+import { beamAlgebraFactory, beamMultisigAddress, POOL_TYPE_ALGEBRA, wzetaAddress, ZERO_ADDRESS } from "./constants";
 
 const VotingIncentivesFactory = buildModule("VotingIncentivesFactory", (m) => {
   const { beamToken } = m.useModule(BeamCore);
@@ -98,6 +98,9 @@ const GlobalFactory = buildModule("GlobalFactory", (m) => {
   m.call(votingIncentivesFactory, "setGlobalFactory", [globalFactory,]);
   m.call(gaugeFactory, "setGlobalFactory", [globalFactory,]);
   m.call(voter, "setManagerStatus", [globalFactory, true,]);
+  m.call(globalFactory, "setPoolType", [POOL_TYPE_ALGEBRA, true,]);
+  m.call(globalFactory, "setPoolTypeCreator", [POOL_TYPE_ALGEBRA, true, m.getAccount(0),]);
+  m.call(globalFactory, "addToken", [[beamToken],]);
 
   return { globalFactory };
 });

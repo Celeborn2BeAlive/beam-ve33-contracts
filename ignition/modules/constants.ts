@@ -8,3 +8,4 @@ export const beamAlgebraFactory = getAddress("0x28b5244B6CA7Cb07f2f7F40edE944c07
 export const wzetaAddress = getAddress("0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf");
 export const veBeamTokenName = `ve${beamTokenName}`
 export const veBeamTokenSymbol = `ve${beamTokenSymbol}`
+export const POOL_TYPE_ALGEBRA = 2;

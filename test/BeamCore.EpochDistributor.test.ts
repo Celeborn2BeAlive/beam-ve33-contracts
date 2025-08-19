@@ -60,11 +60,7 @@ describe("BeamCore.EpochDistributor", () => {
     await globalFactory.write.setPairFactoryAlgebra([testAlgebraFactory.address]);
 
     // Tokens need to be whitelisted for gauge creation:
-    await globalFactory.write.addToken([[USDC.address, WETH.address, beamToken.address]]);
-    // Algebra pool type should be enabled:
-    await globalFactory.write.setPoolType([POOL_TYPE_ALGEBRA, true]);
-    // Only allowed addresses can create gauges:
-    await globalFactory.write.setPoolTypeCreator([POOL_TYPE_ALGEBRA, true, deployerAddress]);
+    await globalFactory.write.addToken([[USDC.address, WETH.address]]);
 
     // Create gauge for each pool
     Object.values(pools).forEach(async (poolAddr) => {

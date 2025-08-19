@@ -8,6 +8,7 @@ import { getAddress, parseEther, getContract, Address } from "viem";
 import { ABI_WZETA } from "../abi/WZETA";
 import { ABI_AlgebraFactory } from "../abi/AlgebraFactory";
 import BeamProtocol from "../../ignition/modules/BeamProtocol";
+import { create10PercentOfTotalSupplyLock, simulateOneWeekAndFlipEpoch } from "../utils";
 
 const deploymentId = "test";
 
@@ -50,10 +51,6 @@ describe("AlgebraFactory", function() {
 
     // Initialize Beam protocol and link it to Algebra Farming:
 
-    // Allow to create gauges for AlgebraPool using the deployer address
-    await globalFactory.write.setPoolType([POOL_TYPE_ALGEBRA, true]);
-    await globalFactory.write.setPoolTypeCreator([POOL_TYPE_ALGEBRA, true, deployerAddress]);
-
     // Assign INCENTIVE_MAKER_ROLE to our IncentiveMaker contract instance,
     // which is required for it to be able to create Algebra Eternal Farming campaigns
     const incentiveMakerRole = await algebraEternalFarming.read.INCENTIVE_MAKER_ROLE();
@@ -80,14 +77,7 @@ describe("AlgebraFactory", function() {
     await minterProxy.write._initialize([[], [], 0n]);
     const activePeriod = await minterProxy.read.active_period();
 
-    // Lock 10% of total supply
-    const totalSupply = await beamToken.read.totalSupply();
-    const depositAmount = totalSupply / 10n;
-    await beamToken.write.approve([votingEscrow.address, depositAmount]);
-
-    await votingEscrow.write.create_lock([depositAmount, MAX_LOCKTIME]);
-    const events = await votingEscrow.getEvents.Transfer();
-    const veNFTId = events[0].args.tokenId as bigint;
+    const veNFTId = await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
 
     return {
       deployer,
@@ -100,12 +90,6 @@ describe("AlgebraFactory", function() {
       activePeriod,
       veNFTId,
     }
-  };
-
-  const simulateOneWeek = async (activePeriod: bigint) => {
-    const nextPeriod = activePeriod + WEEK;
-    await time.setNextBlockTimestamp(activePeriod + WEEK);
-    return { nextPeriod };
   };
 
   it("Should have Beam multisig has owner", async () => {
@@ -315,8 +299,7 @@ describe("AlgebraFactory", function() {
 
     await voter.write.vote([veNFTId, Object.keys(votes) as [Address], Object.values(votes)]);
 
-    let { nextPeriod } = await simulateOneWeek(activePeriod);
-    await minterProxy.write.update_period();
+    await simulateOneWeekAndFlipEpoch(minterProxy);
 
     const expectedEmission = await minterProxy.read.weekly();
 

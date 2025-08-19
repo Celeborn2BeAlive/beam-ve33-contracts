@@ -64,7 +64,7 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
     mapping(uint8 => bool) public poolType;
 
     /// @notice Mapping of who can create type N pools (type 0 is permissionless)
-    mapping(uint8 => mapping(address => bool)) internal canCreatePoolType;
+    mapping(uint8 => mapping(address => bool)) public canCreatePoolType;
 
     /// @notice Constructor for GlobalFactory
     /// @param _voter Voter contract
