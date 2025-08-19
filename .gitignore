@@ -23,6 +23,7 @@ typechain-types/
 
 build
 ignition/deployments/chain-31337/
+ignition/deployments/chain-31337-zetachain-fork/
 ignition/deployments/test/
 
 # flattened contract file

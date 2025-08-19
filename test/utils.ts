@@ -1,3 +1,4 @@
+import hre from "hardhat";
 import { time } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { MAX_LOCKTIME, WEEK } from "./constants";
 import { EmissionTokenContract, MinterContract, VotingEscrowContract } from "./types";
@@ -9,10 +10,14 @@ export const simulateOneWeek = async (activePeriod: bigint) => {
 };
 
 export const simulateOneWeekAndFlipEpoch = async (minter: MinterContract) => {
+  const publicClient = await hre.viem.getPublicClient();
+  const timestamp = (await publicClient.getBlock()).timestamp;
   const activePeriod = await minter.read.active_period();
-  const returnValue = await simulateOneWeek(activePeriod);
+  if (timestamp < activePeriod + WEEK) {
+    await simulateOneWeek(activePeriod);
+  }
   await minter.write.update_period();
-  return returnValue;
+  return { nextPeriod: await minter.read.active_period() };
 }
 
 export const create10PercentOfTotalSupplyLock = async (
