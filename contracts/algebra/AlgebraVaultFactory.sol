@@ -11,10 +11,6 @@ import "./interfaces/IAlgebraVaultFactory.sol";
 /// @notice This contract is used to deploy and manage AlgebraVault contracts for Algebra pools
 contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
 
-
-
-  /// @notice Role identifier for fee vault managers
-  bytes32 public constant FEE_VAULT_MANAGER_ROLE = keccak256("FEE_VAULT_MANAGER_ROLE");
   /// @notice Role identifier for factory vault managers
   bytes32 public constant FACTORY_VAULT_MANAGER_ROLE = keccak256("FACTORY_VAULT_MANAGER_ROLE");
 
@@ -49,12 +45,9 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
       receiver: address(0)
     });
 
-    _grantRole(FEE_VAULT_MANAGER_ROLE, msg.sender);
+    _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _grantRole(FACTORY_VAULT_MANAGER_ROLE, msg.sender);
   }
-
-
-
 
   /***************************/
   /********** VIEWS **********/
@@ -80,8 +73,6 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
     return feeInfoTreasury.receiver;
   }
 
-
-
   /*******************************/
   /********** CREATIONS **********/
   /*******************************/
@@ -98,8 +89,6 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
     poolToVault[pool] = _vault;
     emit VaultCreated(pool, _vault);
   }
-
-
 
   /*********************************/
   /********** WITHDRAWALS **********/
@@ -135,12 +124,6 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
     emit VaultWithdrawal(to, vaults, token, amount);
   }
 
-
-
-
-
-
-
   /******************************/
   /********** SETTINGS **********/
   /******************************/
@@ -174,7 +157,6 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
     emit SetTreasuryShare(oldShare, _treasuryShare);
   }
 
-
   /// @notice Sets the community fee for a pool
   /// @param pool The address of the pool
   /// @param newCommunityFee The new community fee value
@@ -186,6 +168,4 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
     IAlgebraPool(pool).setCommunityFee(newCommunityFee);
     emit SetCommunityFee(pool, newCommunityFee);
   }
-
-
 }
