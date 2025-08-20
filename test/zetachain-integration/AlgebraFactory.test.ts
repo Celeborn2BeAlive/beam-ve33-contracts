@@ -74,7 +74,7 @@ describe("AlgebraFactory", function() {
     // Note: The AlgebraFactory already has a default vaultFactory so we need to check if our own is set
     if (algebraVaultFactory.address != await algebraFactory.read.vaultFactory()) {
       await algebraFactory.write.setVaultFactory([algebraVaultFactory.address], {
-        account: beamMultisigAddress,
+        account: await algebraFactory.read.owner(),
       });
     }
 
@@ -121,16 +121,19 @@ describe("AlgebraFactory", function() {
     }
   };
 
-  it("Should have Beam multisig has owner", async () => {
+  it("Should have Beam multisig as owner()", async () => {
     const algebraFactory = await hre.viem.getContractAt("IAlgebraFactory", beamAlgebraFactory);
     expect(await algebraFactory.read.owner()).to.equal(beamMultisigAddress)
+  });
 
+  it("Should allow impersonate as owner()", async () => {
+    const algebraFactory = await hre.viem.getContractAt("IAlgebraFactory", beamAlgebraFactory);
     await algebraFactory.write.startRenounceOwnership({
-      account: beamMultisigAddress,
+      account: await algebraFactory.read.owner(),
     })
 
     await algebraFactory.write.stopRenounceOwnership({
-      account: beamMultisigAddress,
+      account: await algebraFactory.read.owner(),
     })
   });
 
@@ -200,7 +203,7 @@ describe("AlgebraFactory", function() {
     const vault = await algebraVaultFactory.read.poolToVault([pool_WZETA_BTC_BTC.address]);
     if (vault != await pool_WZETA_BTC_BTC.read.communityVault()) {
       await pool_WZETA_BTC_BTC.write.setCommunityVault([vault], {
-        account: beamMultisigAddress,
+        account: await algebraFactory.read.owner(),
       });
     }
     // struct GlobalState {
@@ -216,7 +219,7 @@ describe("AlgebraFactory", function() {
 
     if (communityFee != 1e3) {
       await pool_WZETA_BTC_BTC.write.setCommunityFee([1e3], {
-        account: beamMultisigAddress,
+        account: await algebraFactory.read.owner(),
       });
     }
     const communityFeeLastTimestamp = BigInt(await pool_WZETA_BTC_BTC.read.communityFeeLastTimestamp());
@@ -311,7 +314,7 @@ describe("AlgebraFactory", function() {
       const vault = await algebraVaultFactory.read.poolToVault([pool.address]);
       if (vault != await pool.read.communityVault()) {
         await pool.write.setCommunityVault([vault], {
-          account: beamMultisigAddress,
+          account: await algebraFactory.read.owner(),
         });
       }
 
@@ -319,7 +322,7 @@ describe("AlgebraFactory", function() {
       const communityFee = poolGlobalState[4];
       if (communityFee != 1e3) {
         await pool.write.setCommunityFee([1e3], {
-          account: beamMultisigAddress,
+          account: await algebraFactory.read.owner(),
         });
       }
       const isVotable = await voter.read.isPool([pool.address]);
