@@ -48,11 +48,6 @@ describe("BeamToken", () => {
       expect(await beamToken.read.totalSupply()).to.equal(0n);
     });
 
-    it("Should not be initial minted", async () => {
-      const { beamToken } = await loadFixture(deployFixture);
-      expect(await beamToken.read.initialMinted()).to.equal(false);
-    });
-
     it("Should have deployer has minter", async () => {
       const { beamToken, deployerAddress } = await loadFixture(deployFixture);
       expect(getAddress(await beamToken.read.minter())).to.equal(deployerAddress);

@@ -13,7 +13,6 @@ contract EmissionToken is IEmissionToken {
     mapping(address => uint) public balanceOf;
     mapping(address => mapping(address => uint)) public allowance;
 
-    bool public initialMinted;
     address public minter;
 
     event Transfer(address indexed from, address indexed to, uint value);
