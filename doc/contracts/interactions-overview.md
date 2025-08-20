@@ -1,3 +1,5 @@
+This document lists all contracts and their reference to other contracts / addresses, + notes about the interactions between them.
+
 # Core
 
 - EmissionToken
