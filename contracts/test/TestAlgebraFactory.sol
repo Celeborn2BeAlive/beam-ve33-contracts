@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
 
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./TestAlgebraPool.sol";
 
-contract TestAlgebraFactory {
+contract TestAlgebraFactory is AccessControl, Ownable {
     mapping(address token0 => mapping(address token1 => address pool)) public poolByPair;
+
+    function hasRoleOrOwner(bytes32 role, address account) public view returns (bool) {
+        return (owner() == account || super.hasRole(role, account));
+    }
 
     function createPool(address tokenA, address tokenB) external returns (address pool) {
         require(tokenA != tokenB);

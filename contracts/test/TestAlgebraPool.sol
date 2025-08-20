@@ -12,9 +12,12 @@ contract TestAlgebraPool is IPairInfo {
     constructor(address _token0, address _token1) {
         token0 = _token0;
         token1 = _token1;
+        plugin = address(new TestAlgebraPlugin());
     }
 
     function setCommunityVault(address _communityVault) external {
         communityVault = _communityVault;
     }
 }
+
+contract TestAlgebraPlugin {}
