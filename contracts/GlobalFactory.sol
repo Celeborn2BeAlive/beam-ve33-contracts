@@ -5,7 +5,7 @@ import '@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol';
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IGlobalFactory.sol";
-import "./FeeVault.sol";
+import "./alms/ALMFeeVault.sol";
 
 interface IALMStrategy {
     function pool() external view returns(address);
@@ -169,7 +169,7 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
     function _deploy(address[] memory _tokens,address _pool, uint8 pool_type) internal returns(address feeVault, address gauge, address votingIncentives) {
         // Step 1: Get Fee Vault
         if(pool_type == 0) feeVault = _pool;
-        else if(pool_type == 1) feeVault = address( new FeeVault(_pool, ADDR_0, treasury) );
+        else if(pool_type == 1) feeVault = address( new ALMFeeVault(_pool, ADDR_0, treasury) );
         else if(pool_type == 3) feeVault = IWeightedPoolsSimple(_pool).feesContract();
         else {
             feeVault =  IAlgebraPool(_pool).communityVault();
