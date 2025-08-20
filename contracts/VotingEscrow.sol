@@ -526,8 +526,8 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
     mapping(uint => int128) public slope_changes; // time -> signed slope change
     uint public supply;
 
-    uint internal constant WEEK = 1 weeks;
-    uint internal constant MAXTIME = 2 * 365 * 86400;
+    uint public constant WEEK = 1 weeks;
+    uint public constant MAXTIME = 2 * 365 * 86400;
     int128 internal constant iMAXTIME = 2 * 365 * 86400;
     uint internal constant MULTIPLIER = 1 ether;
 

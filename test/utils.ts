@@ -1,6 +1,6 @@
 import hre from "hardhat";
 import { time } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
-import { MAX_LOCKTIME, WEEK } from "./constants";
+import { WEEK } from "./constants";
 import { EmissionTokenContract, MinterContract, VotingEscrowContract } from "./types";
 
 export const simulateOneWeek = async (activePeriod: bigint) => {
@@ -28,7 +28,7 @@ export const create10PercentOfTotalSupplyLock = async (
   const totalSupply = await beamToken.read.totalSupply();
   const depositAmount = totalSupply / 10n;
   await beamToken.write.approve([votingEscrow.address, depositAmount]);
-  await votingEscrow.write.create_lock([depositAmount, MAX_LOCKTIME]);
+  await votingEscrow.write.create_lock([depositAmount, await votingEscrow.read.MAXTIME()]);
   const events = await votingEscrow.getEvents.Transfer();
   return events[0].args.tokenId as bigint;
 };

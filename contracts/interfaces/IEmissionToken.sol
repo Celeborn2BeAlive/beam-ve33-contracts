@@ -2,6 +2,9 @@
 pragma solidity >=0.8.0;
 
 interface IEmissionToken {
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function decimals() external view returns (uint8);
     function totalSupply() external view returns (uint);
     function balanceOf(address) external view returns (uint);
     function approve(address spender, uint value) external returns (bool);

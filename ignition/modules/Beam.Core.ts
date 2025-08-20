@@ -1,7 +1,7 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { beamTokenName, beamTokenSymbol, ZERO_ADDRESS } from "./constants";
 
-const ProxyAdmin = buildModule("ProxyAdmin", (m) => {
+export const ProxyAdmin = buildModule("ProxyAdmin", (m) => {
   const proxyAdmin = m.contract("ProxyAdmin");
   return { proxyAdmin };
 });
@@ -11,7 +11,7 @@ export const BeamToken = buildModule("BeamToken", (m) => {
   return { beamToken };
 });
 
-const VeArtProxyUpgradeable = buildModule("VeArtProxyUpgradeable", (m) => {
+export const VeArtProxyUpgradeable = buildModule("VeArtProxyUpgradeable", (m) => {
   const { proxyAdmin } = m.useModule(ProxyAdmin);
 
   const veArtProxyImplementation = m.contract("VeArtProxyUpgradeable", undefined, {
@@ -32,7 +32,7 @@ const VeArtProxyUpgradeable = buildModule("VeArtProxyUpgradeable", (m) => {
   return { veArtProxyImplementation, veArtProxyProxy, proxyAdmin };
 });
 
-const VotingEscrow = buildModule("VotingEscrow", (m) => {
+export const VotingEscrow = buildModule("VotingEscrow", (m) => {
   const { beamToken } = m.useModule(BeamToken);
   const { veArtProxyProxy } = m.useModule(VeArtProxyUpgradeable);
 
@@ -41,7 +41,15 @@ const VotingEscrow = buildModule("VotingEscrow", (m) => {
   return { votingEscrow };
 });
 
-const RebaseDistributor = buildModule("RebaseDistributor", (m) => {
+export const VotingEscrowERC20 = buildModule("VotingEscrowERC20", (m) => {
+  const { votingEscrow } = m.useModule(VotingEscrow);
+
+  const bveBeamToken = m.contract("VotingEscrowERC20", [ votingEscrow ]);
+
+  return { bveBeamToken };
+})
+
+export const RebaseDistributor = buildModule("RebaseDistributor", (m) => {
   const { votingEscrow } = m.useModule(VotingEscrow);
 
   const rebaseDistributor = m.contract("RebaseDistributor", [votingEscrow,]);
@@ -49,8 +57,7 @@ const RebaseDistributor = buildModule("RebaseDistributor", (m) => {
   return { rebaseDistributor };
 });
 
-
-const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
+export const MinterUpgradeable = buildModule("MinterUpgradeable", (m) => {
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { rebaseDistributor } = m.useModule(RebaseDistributor);
   const epochDistributor = ZERO_ADDRESS;
@@ -90,7 +97,7 @@ export const Voter = buildModule("Voter", (m) => {
   return { voter };
 });
 
-const EpochDistributorUpgradeable = buildModule("EpochDistributorUpgradeable", (m) => {
+export const EpochDistributorUpgradeable = buildModule("EpochDistributorUpgradeable", (m) => {
   const { minterProxy } = m.useModule(MinterUpgradeable);
   const { beamToken } = m.useModule(BeamToken);
   const { voter } = m.useModule(Voter);
@@ -119,12 +126,11 @@ const EpochDistributorUpgradeable = buildModule("EpochDistributorUpgradeable", (
   return { epochDistributorImplementation, epochDistributorProxy, proxyAdmin }
 });
 
-const Claimer = buildModule("Claimer", (m) => {
+export const Claimer = buildModule("Claimer", (m) => {
   const { votingEscrow } = m.useModule(VotingEscrow);
   const claimer = m.contract("Claimer", [votingEscrow,]);
   return { claimer };
 });
-
 
 export default buildModule("BeamCore", (m) => {
   const { beamToken } = m.useModule(BeamToken);

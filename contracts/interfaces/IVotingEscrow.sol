@@ -48,7 +48,9 @@ interface IVotingEscrow {
     function balanceOfNFTAt(uint _tokenId, uint _t) external view returns (uint);
     function balanceOfAtNFT(uint _tokenId, uint _t) external view returns (uint);
 
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function decimals() external view returns (uint8);
 
-
-    function decimals() external view returns(uint8);
+    function MAXTIME() external view returns (uint);
 }
