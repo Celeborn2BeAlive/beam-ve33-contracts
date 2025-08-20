@@ -120,7 +120,7 @@ describe("BeamCore.EpochDistributor", () => {
       await minterProxy.write.setRebase([0n]);
       await minterProxy.write.setTeamRate([0n]);
 
-      await minterProxy.write._initialize([[], [], 0n]);
+      await minterProxy.write._initialize();
 
       await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
     } else {

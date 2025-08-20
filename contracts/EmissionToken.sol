@@ -32,14 +32,6 @@ contract EmissionToken is IEmissionToken {
         minter = _minter;
     }
 
-
-    // Initial mint: total 50M
-    function initialMint(address _recipient) external {
-        require(msg.sender == minter && !initialMinted);
-        initialMinted = true;
-        _mint(_recipient, 50 * 1e6 * 1e18);
-    }
-
     function approve(address _spender, uint _value) external returns (bool) {
         allowance[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
@@ -81,5 +73,4 @@ contract EmissionToken is IEmissionToken {
         _mint(account, amount);
         return true;
     }
-
 }

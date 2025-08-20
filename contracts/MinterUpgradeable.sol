@@ -14,24 +14,27 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract MinterUpgradeable is IMinter, OwnableUpgradeable {
 
-    bool public isFirstMint;
-
+    uint public constant PRECISION = 1000;
     uint public constant STARTING_EMISSION = 2_600_000 * 1e18; // represents a starting weekly emission of 2.6M tokens (EmissionToken has 18 decimals)
+    uint public constant WEEK = 86400 * 7; // allows minting once per week (reset every Thursday 00:00 UTC)
+
+    // Configuration, can be set by team:
     uint public EMISSION;
     uint public TAIL_EMISSION;
     uint public REBASEMAX;
-    uint public constant PRECISION = 1000;
     uint public teamRate;
 
-    uint public constant WEEK = 86400 * 7; // allows minting once per week (reset every Thursday 00:00 UTC)
-    uint public weekly; // represents a starting weekly emission of 2.6M EmissionToken (EmissionToken has 18 decimals)
-    uint public active_period;
-    uint public constant LOCK = 86400 * 7 * 52 * 2;
+    // Epoch state:
+    bool public isFirstMint;
+    uint public weekly; // track the amount of tokens that was minted last epoch flip
+    uint public active_period; // track the timestamp of the start of the current epoch
 
+    // Admin addresses:
     address internal _initializer;
     address public team;
     address public pendingTeam;
 
+    // External contracts the Minter interact with:
     IEmissionToken public _emissionToken;
     IEpochDistributor public _epochDistributor;
     IVotingEscrow public _ve;
@@ -55,7 +58,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
 
         EMISSION = 980; // 2% decay
         TAIL_EMISSION = 2; // 0.2% weekly increase after tail emissions starts => ~2.8% annual inflation
-        REBASEMAX = 300;
+        REBASEMAX = 300; // 30% max to rebase
 
         _emissionToken = IEmissionToken(IVotingEscrow(__ve).token());
         _epochDistributor = IEpochDistributor(__epoch_distributor);
@@ -64,25 +67,14 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
 
         weekly = STARTING_EMISSION;
         isFirstMint = true;
-
     }
 
-    function _initialize(
-        address[] memory claimants,
-        uint[] memory amounts,
-        uint max // sum amounts / max = % ownership of top protocols, so if initial 20m is distributed, and target is 25% protocol ownership, then max - 4 x 20m = 80m
-    ) external {
+    // Should be called once by the deployer address to initialize the Minter
+    // Allow minter.update_period() to mint new emissions starting next Thursday
+    function _initialize() external {
         require(_initializer == msg.sender);
-        if(max > 0){
-            _emissionToken.mint(address(this), max);
-            _emissionToken.approve(address(_ve), type(uint).max);
-            for (uint i = 0; i < claimants.length; i++) {
-                _ve.create_lock_for(amounts[i], LOCK, claimants[i]);
-            }
-        }
-
         _initializer = address(0);
-        active_period = ((block.timestamp) / WEEK) * WEEK; // allow minter.update_period() to mint new emissions THIS Thursday
+        active_period = ((block.timestamp) / WEEK) * WEEK;
     }
 
     function setTeam(address _team) external {
@@ -205,6 +197,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
     function period() external view returns(uint){
         return(block.timestamp / WEEK) * WEEK;
     }
+
     function setRewardDistributor(address _rebaseDistro) external {
         require(msg.sender == team);
         _rebase_distributor = IRebaseDistributor(_rebaseDistro);

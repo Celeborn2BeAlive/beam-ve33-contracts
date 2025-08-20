@@ -101,7 +101,7 @@ describe("AlgebraFactory", function() {
       // Set minter config and initialize it
       await minterProxy.write.setRebase([0n]);
       await minterProxy.write.setTeamRate([0n]);
-      await minterProxy.write._initialize([[], [], 0n]);
+      await minterProxy.write._initialize();
 
       await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
     }

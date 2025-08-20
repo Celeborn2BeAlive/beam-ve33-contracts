@@ -79,7 +79,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     await createGaugeForPool(WETH_BEAM);
     await createGaugeForPool(WETH_USDC);
 
-    await minterProxy.write._initialize([[], [], 0n]);
+    await minterProxy.write._initialize();
     const activePeriod = await minterProxy.read.active_period();
 
     const veNFTId = await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);

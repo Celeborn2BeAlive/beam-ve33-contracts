@@ -41,13 +41,13 @@ describe("BeamCore.Minter", () => {
       const { minterProxy, user } = await loadFixture(deployFixture);
 
       // User can't call _initialize
-      await expect(minterProxy.write._initialize([[], [], 0n], { account: user.account })).to.be.rejectedWith("");
+      await expect(minterProxy.write._initialize({ account: user.account })).to.be.rejectedWith("");
 
       // Deployer can call initialize
-      await minterProxy.write._initialize([[], [], 0n]);
+      await minterProxy.write._initialize();
 
       // But not twice
-      await expect(minterProxy.write._initialize([[], [], 0n])).to.be.rejectedWith("");
+      await expect(minterProxy.write._initialize()).to.be.rejectedWith("");
     });
 
     it("Should have `active_period` set to 0 when not initialized", async () => {
@@ -57,7 +57,7 @@ describe("BeamCore.Minter", () => {
 
     it("Should have `active_period` set to thursday timestamp when initialized", async () => {
       const { publicClient, minterProxy } = await loadFixture(deployFixture);
-      const hash = await minterProxy.write._initialize([[], [], 0n]);
+      const hash = await minterProxy.write._initialize();
       const tx = await publicClient.waitForTransactionReceipt({ hash });
       const block = await publicClient.getBlock({ blockNumber: tx.blockNumber });
 
@@ -71,7 +71,7 @@ describe("BeamCore.Minter", () => {
   describe("Epoch distribution", async () => {
     const initializeMinterFixture = async () => {
       const { minterProxy, ...deploy } = await loadFixture(deployFixture);
-      await minterProxy.write._initialize([[], [], 0n]);
+      await minterProxy.write._initialize();
       const activePeriod = await minterProxy.read.active_period();
 
       return { minterProxy, activePeriod, ...deploy };

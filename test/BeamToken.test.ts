@@ -1,10 +1,9 @@
 import hre from "hardhat";
 import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
-import { getAddress, parseEther } from "viem";
+import { getAddress } from "viem";
 import { beamTokenName, beamTokenSymbol } from "../ignition/modules/constants";
-
-const EXPECTED_INITIAL_MINT_AMOUNT = parseEther("50000000");
+import { INITIAL_BEAM_TOKEN_SUPPLY } from "./constants";
 
 describe("BeamToken", () => {
   const deployFixture = async () => {
@@ -60,26 +59,6 @@ describe("BeamToken", () => {
     });
   });
 
-  describe("Initial mint", () => {
-    it("Should only initial mint only once", async () => {
-      const { beamToken, deployerAddress } = await loadFixture(deployFixture);
-      await beamToken.write.initialMint([deployerAddress]);
-      await expect(beamToken.write.initialMint([deployerAddress])).to.be.rejectedWith("");
-    });
-
-    it("Should initial mint 50M to specified address", async () => {
-      const { beamToken, otherAccountAddress } = await loadFixture(deployFixture);
-      await beamToken.write.initialMint([otherAccountAddress]);
-      expect(await beamToken.read.balanceOf([otherAccountAddress])).to.equal(EXPECTED_INITIAL_MINT_AMOUNT);
-      expect(await beamToken.read.totalSupply()).to.equal(EXPECTED_INITIAL_MINT_AMOUNT);
-    });
-
-    it("Should prevent initial mint from other account", async () => {
-      const { beamToken, otherAccount, otherAccountAddress } = await loadFixture(deployFixture);
-      await expect(beamToken.write.initialMint([otherAccountAddress], { account: otherAccount.account })).to.be.rejectedWith("");
-    });
-  });
-
   describe("Mint", () => {
     it("Should allow minter to mint to specified account", async () => {
       const { beamToken, deployerAddress, otherAccountAddress } = await loadFixture(deployFixture);
@@ -115,7 +94,7 @@ describe("BeamToken", () => {
   describe("Events", () => {
     const initialMintFixture = async () => {
       const { beamToken, deployerAddress } = await loadFixture(deployFixture);
-      await beamToken.write.initialMint([deployerAddress]);
+      await beamToken.write.mint([deployerAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
     };
 
     it("Should emit an event on approvals", async () => {
