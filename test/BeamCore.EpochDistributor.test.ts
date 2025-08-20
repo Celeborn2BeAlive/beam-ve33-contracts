@@ -34,27 +34,28 @@ const TestAlgebraFactory = buildModule("TestAlgebraFactory", (m) => {
   return { algebraFactory };
 });
 
-const TestIncentiveMaker = buildModule("TestIncentiveMaker", (m) => {
-  const { beamToken } = m.useModule(BeamProtocol);
-  const incentiveMaker = m.contract("TestIncentiveMaker", [beamToken]);
-  return { incentiveMaker };
+const TestAlgebraEternalFarming = buildModule("TestAlgebraEternalFarming", (m) => {
+  const { algebraFactory } = m.useModule(TestAlgebraFactory);
+
+  const algebraEternalFarming = m.contract("TestAlgebraEternalFarming", [algebraFactory]);
+
+  return { algebraEternalFarming };
 });
 
 const TestProtocol = buildModule("TestProtocol", (m) => {
   const beam = m.useModule(BeamProtocol);
   const tokens = m.useModule(TestTokens);
   const { algebraFactory } = m.useModule(TestAlgebraFactory);
-  const { incentiveMaker } = m.useModule(TestIncentiveMaker);
+  const { algebraEternalFarming } = m.useModule(TestAlgebraEternalFarming);
 
   const { globalFactory } = beam;
-  m.call(globalFactory, "setIncentiveMaker", [incentiveMaker]);
   m.call(globalFactory, "setPairFactoryAlgebra", [algebraFactory]);
 
   return {
     ...beam,
     ...tokens,
     algebraFactory,
-    incentiveMaker,
+    algebraEternalFarming,
   }
 });
 
@@ -66,11 +67,19 @@ describe("BeamCore.EpochDistributor", () => {
 
     const beam = await ignition.deploy(TestProtocol);
 
-    const { beamToken, minterProxy, epochDistributorProxy, voter, claimer, votingEscrow } = beam;
-    const { globalFactory, algebraVaultFactory, gaugeFactory, votingIncentivesFactory } = beam;
-
-    // Deploy test tokens
-    const { USDC, WETH, algebraFactory } = beam;
+    const {
+      beamToken,
+      minterProxy,
+      voter,
+      votingEscrow,
+      globalFactory,
+      algebraVaultFactory,
+      incentiveMakerProxy,
+      algebraEternalFarming,
+      USDC,
+      WETH,
+      algebraFactory
+   } = beam;
 
     const USDC_BEAM = await algebraFactory.read.poolByPair([beamToken.address, USDC.address]);
     const WETH_BEAM = await algebraFactory.read.poolByPair([beamToken.address, WETH.address]);
@@ -111,6 +120,21 @@ describe("BeamCore.EpochDistributor", () => {
       await globalFactory.write.create([poolAddr, POOL_TYPE_ALGEBRA]);
     }
 
+    // Assign INCENTIVE_MAKER_ROLE to our IncentiveMaker contract instance,
+    // which is required for it to be able to create Algebra Eternal Farming campaigns
+    const incentiveMakerRole = await algebraEternalFarming.read.INCENTIVE_MAKER_ROLE();
+    const hasIncentiveMakerRole = await algebraFactory.read.hasRole([incentiveMakerRole, incentiveMakerProxy.address]);
+    if (!hasIncentiveMakerRole) {
+      await algebraFactory.write.grantRole([incentiveMakerRole, incentiveMakerProxy.address], {
+        account: await algebraFactory.read.owner(),
+      });
+    }
+
+    // Initialize the IncentiveMaker so it's connected to Algebra farming
+    if (ZERO_ADDRESS == await incentiveMakerProxy.read.algebraEternalFarming()) {
+      await incentiveMakerProxy.write._initialize([algebraEternalFarming.address, voter.address]);
+    }
+
     if (await beamToken.read.minter() != minterProxy.address) {
       // The Minter requires a non zero total supply or division by zero occurs in `calculate_rebase`:
       await beamToken.write.mint([deployerAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
@@ -142,13 +166,14 @@ describe("BeamCore.EpochDistributor", () => {
   };
 
   it("Should distribute farming rewards to gauges", async () => {
-    const { deployerAddress, minterProxy, activePeriod, beamToken, epochDistributorProxy, incentiveMaker, voter, veNFTId, pools } = await loadFixture(deployFixture);
+    const { deployerAddress, minterProxy, activePeriod, beamToken, epochDistributorProxy, algebraEternalFarming, voter, veNFTId, pools, incentiveMakerProxy } = await loadFixture(deployFixture);
 
     const votes = {
       [pools.USDC_BEAM]: 50n,
       [pools.WETH_BEAM]: 35n,
       [pools.WETH_USDC]: 15n,
     } as {[key: Address]: bigint};
+    const voteCount = Object.keys(votes).length;
 
     await voter.write.vote([veNFTId, Object.keys(votes) as [Address], Object.values(votes)]);
 
@@ -173,26 +198,37 @@ describe("BeamCore.EpochDistributor", () => {
     expect(amountEpoch0).to.equals(expectedEmission);
     expect(timestampEpoch0).to.equals(activePeriod);
     expect(totalWeightsEpoch0).to.equals(await voter.read.totalWeights([activePeriod]));
-    expect(poolsLengthEpoch0).to.equals(3n);
+    expect(poolsLengthEpoch0).to.equals(await voter.read.poolsLength());
 
-    for (const poolAddr of Object.values(pools)) {
-      await incentiveMaker.write.resetIncentive([poolAddr]);
-    }
-    await incentiveMaker.write.recoverTokens();
-    expect(await beamToken.read.balanceOf([incentiveMaker.address])).to.equals(0n);
+    const algebraEternalFarmingRewardAmountBeforeDistribute = await beamToken.read.balanceOf([algebraEternalFarming.address]);
 
     await epochDistributorProxy.write.setAutomation([deployerAddress, true]);
     await epochDistributorProxy.write.distributeAll();
 
     // We expect a small token lefhover in the epoch distributor because of integer division
     const lefthoverAmount = await beamToken.read.balanceOf([epochDistributorProxy.address]);
-    const distributedAmount = await beamToken.read.balanceOf([incentiveMaker.address]);
-
+    const algebraEternalFarmingRewardAmountAfterDistribute = await beamToken.read.balanceOf([algebraEternalFarming.address]);
+    const distributedAmount = algebraEternalFarmingRewardAmountAfterDistribute - algebraEternalFarmingRewardAmountBeforeDistribute;
+    expect(distributedAmount > 0n).to.be.true;
     expect(expectedEmission).to.equals(distributedAmount + lefthoverAmount);
     expect(lefthoverAmount < distributedAmount * 10n / 1000n).to.be.true; // Arbitrary check: less than 0.1% lefthover
 
+    // Check amount of rewards added for each pool, using events emitted by algebraEternalFarming
+    const rewardsAddedEvents = await algebraEternalFarming.getEvents.RewardsAdded();
+    expect(rewardsAddedEvents.length).to.equals(voteCount);
+
+    const virtualPoolAddrToEvent: Record<Address, typeof rewardsAddedEvents[0]> = {};
+    for (const rewardAdded of rewardsAddedEvents) {
+      const incentive = await algebraEternalFarming.read.incentives([rewardAdded.args.incentiveId as `0x${string}`]);
+      const virtualPoolAddr = incentive[2];
+      virtualPoolAddrToEvent[virtualPoolAddr] = rewardAdded;
+    }
+
     for (const [poolAddr, vote] of Object.entries(votes)) {
-      const rewardAmount = await incentiveMaker.read.poolAmount([poolAddr as Address]);
+      const virtualPoolAddr = await incentiveMakerProxy.read.poolToVirtualPool([poolAddr as Address]);
+      const rewardAdded = virtualPoolAddrToEvent[virtualPoolAddr];
+      expect(rewardAdded.args.bonusRewardAmount).to.equals(0n);
+      const rewardAmount = rewardAdded.args.rewardAmount as bigint;
       const expectedRewardAmount = distributedAmount * vote / 100n;
       const delta = (rewardAmount >= expectedRewardAmount) ? rewardAmount - expectedRewardAmount : expectedRewardAmount - rewardAmount;
       expect(delta < 10n).to.be.true; // 10 wei delta check

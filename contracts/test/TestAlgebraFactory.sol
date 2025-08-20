@@ -8,6 +8,10 @@ import "./TestAlgebraPool.sol";
 contract TestAlgebraFactory is AccessControl, Ownable {
     mapping(address token0 => mapping(address token1 => address pool)) public poolByPair;
 
+    constructor() {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
     function hasRoleOrOwner(bytes32 role, address account) public view returns (bool) {
         return (owner() == account || super.hasRole(role, account));
     }

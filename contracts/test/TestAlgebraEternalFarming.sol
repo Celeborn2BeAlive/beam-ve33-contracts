@@ -217,7 +217,7 @@ contract TestEternalVirtualPool {
     uint128 public amount1;
 
     constructor(address _eternalFarming, address _connectedPlugin) {
-        require(msg.sender == eternalFarming, "Not Eternal Farming");
+        require(msg.sender == _eternalFarming, "Not Eternal Farming");
 
         eternalFarming = _eternalFarming;
         connectedPlugin = _connectedPlugin;

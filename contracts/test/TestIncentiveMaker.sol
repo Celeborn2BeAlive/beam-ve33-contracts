@@ -3,6 +3,10 @@ pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+// Basic IncentiveMaker mock used in tests that don't need to test deep integration with
+// Algebra Eternal Farming.
+// We prefer testing with the real IncentiveMaker contract and mocking Algebra Eternal Farming with
+// TestAlgebraEternalFarming contract.
 contract TestIncentiveMaker {
     using SafeERC20 for IERC20;
     IERC20 public token;
