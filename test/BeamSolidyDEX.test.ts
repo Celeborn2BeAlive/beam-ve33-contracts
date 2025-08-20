@@ -1,12 +1,9 @@
 import hre, { ignition } from "hardhat";
-import BeamCore, { Voter } from "../ignition/modules/Beam.Core";
-import { Address, getAddress, parseEther } from "viem";
-import { isHardhatNetwork, MAX_LOCKTIME, WEEK } from "./constants";
+import { getAddress } from "viem";
+import { isHardhatNetwork } from "./constants";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
-import { time } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import BeamSolidyDEX from "../ignition/modules/Beam.SolidyDEX";
-import BeamVe33Factories from "../ignition/modules/Beam.Ve33Factories";
 import { ZERO_ADDRESS } from "../ignition/modules/constants";
 
 describe("BeamSolidlyDEX", () => {
