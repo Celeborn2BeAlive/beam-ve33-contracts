@@ -10,8 +10,6 @@ const VotingIncentivesFactory = buildModule("VotingIncentivesFactory", (m) => {
   const defaultTokens = [beamToken];
   const votingIncentivesFactory = m.contract("VotingIncentivesFactory", [globalFactory, defaultTokens]);
 
-  // TODO votingIncentivesFactory.setGlobalFactory
-
   return { votingIncentivesFactory };
 });
 
@@ -19,8 +17,6 @@ const GaugeFactory = buildModule("GaugeFactory", (m) => {
   const globalFactory = ZERO_ADDRESS; // Set after deployment of GlobalFactory
 
   const gaugeFactory = m.contract("GaugeFactory", [globalFactory,]);
-
-  // TODO gaugeFactory.setGlobalFactory
 
   return { gaugeFactory };
 });
