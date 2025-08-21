@@ -84,10 +84,9 @@ describe("VotingEscrowERC20", () => {
 
       const mintEvents = await bveBeamToken.getEvents.Mint();
       expect(mintEvents.length).to.equals(1);
-      const [mintEvent, ..._] = mintEvents;
-      expect(mintEvent.args.account).to.equals(getAddress(deployer.account.address));
-      expect(mintEvent.args.amount).to.equals(amount);
-      expect(mintEvent.args.recipient).to.equals(getAddress(user.account.address));
+      expect(mintEvents[0].args.account).to.equals(getAddress(deployer.account.address));
+      expect(mintEvents[0].args.amount).to.equals(amount);
+      expect(mintEvents[0].args.recipient).to.equals(getAddress(user.account.address));
     });
 
     it("Should fail when user don't have enough BEAM", async () => {
@@ -113,18 +112,22 @@ describe("VotingEscrowERC20", () => {
 
       const amountToExerciseToUser = parseEther("16000");
       await bveBeamToken.write.exerciseVe([amountToExerciseToUser, user.account.address]);
+      const exerciseVeEventsForUser = await bveBeamToken.getEvents.ExerciseVe();
+
       const amountToExerciseToDeployer = parseEther("8000");
       await bveBeamToken.write.exerciseVe([amountToExerciseToDeployer, deployer.account.address]);
+      const exerciseVeEventsForDeployer = await bveBeamToken.getEvents.ExerciseVe();
 
       const MAXTIME = await votingEscrow.read.MAXTIME();
       const timestamp = (await publicClient.getBlock()).timestamp;
       const expectedUnlockTime = (timestamp + MAXTIME) / WEEK * WEEK; // Round to week
 
-      const expectedNewSupply = amount - amountToExerciseToUser - amountToExerciseToDeployer;
+      const totalExerciseAmount = amountToExerciseToUser + amountToExerciseToDeployer;
+      const expectedNewSupply = amount - totalExerciseAmount;
       expect(await bveBeamToken.read.totalSupply()).to.equals(expectedNewSupply);
       expect(await bveBeamToken.read.balanceOf([deployer.account.address])).to.equals(expectedNewSupply);
       expect(await beamToken.read.balanceOf([bveBeamToken.address])).to.equals(expectedNewSupply);
-      expect(await beamToken.read.balanceOf([votingEscrow.address])).to.equals(amountToExerciseToUser + amountToExerciseToDeployer);
+      expect(await beamToken.read.balanceOf([votingEscrow.address])).to.equals(totalExerciseAmount);
 
       expect(await votingEscrow.read.balanceOf([user.account.address])).to.equals(1n);
       const lockIdOfUser = await votingEscrow.read.tokenOfOwnerByIndex([user.account.address, 0n]);
@@ -132,6 +135,11 @@ describe("VotingEscrowERC20", () => {
       expect(lockAmountOfUser).to.equals(amountToExerciseToUser);
       expect(lockEndOfUser).to.equals(expectedUnlockTime);
       expect(await votingEscrow.read.balanceOfNFT([lockIdOfUser]) > 0n).to.be.true;
+      expect(exerciseVeEventsForUser.length).to.equals(1);
+      expect(exerciseVeEventsForUser[0].args.account).to.equals(getAddress(deployer.account.address));
+      expect(exerciseVeEventsForUser[0].args.amount).to.equals(amountToExerciseToUser);
+      expect(exerciseVeEventsForUser[0].args.recipient).to.equals(getAddress(user.account.address));
+      expect(exerciseVeEventsForUser[0].args.lockId).to.equals(lockIdOfUser);
 
       expect(await votingEscrow.read.balanceOf([deployer.account.address])).to.equals(1n);
       const lockIdOfDeployer = await votingEscrow.read.tokenOfOwnerByIndex([deployer.account.address, 0n]);
@@ -139,14 +147,17 @@ describe("VotingEscrowERC20", () => {
       expect(lockAmountOfDeployer).to.equals(amountToExerciseToDeployer);
       expect(lockEndOfDeployer).to.equals(expectedUnlockTime);
       expect(await votingEscrow.read.balanceOfNFT([lockIdOfDeployer]) > 0n).to.be.true;
-
-      // TODO tests events
+      expect(exerciseVeEventsForDeployer.length).to.equals(1);
+      expect(exerciseVeEventsForDeployer[0].args.account).to.equals(getAddress(deployer.account.address));
+      expect(exerciseVeEventsForDeployer[0].args.amount).to.equals(amountToExerciseToDeployer);
+      expect(exerciseVeEventsForDeployer[0].args.recipient).to.equals(getAddress(deployer.account.address));
+      expect(exerciseVeEventsForDeployer[0].args.lockId).to.equals(lockIdOfDeployer);
     });
 
     it("Should fail when user don't have enough bveBEAM", async () => {
-      const { beamToken, bveBeamToken } = await loadFixture(deployFixture);
+      const { deployer, bveBeamToken } = await loadFixture(deployFixture);
 
-      // TODO
+      await expect(bveBeamToken.write.exerciseVe([parseEther("64000"), deployer.account.address])).to.be.rejectedWith("");
     });
   });
 });
