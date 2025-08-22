@@ -1,13 +1,11 @@
 import hre from "hardhat";
 import { expect } from "chai";
-import { loadFixture, mine, time } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
-import { getAddress, parseEther, parseUnits } from "viem";
+import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
+import { getAddress, parseEther } from "viem";
 import { beamTokenName, beamTokenSymbol } from "../ignition/modules/constants";
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { BeamToken, VotingEscrow, VotingEscrowERC20 } from "../ignition/modules/Beam.Core";
-import { INITIAL_BEAM_TOKEN_SUPPLY, WEEK } from "./constants";
-import { create10PercentOfTotalSupplyLock } from "./utils";
-import BeamProtocol from "../ignition/modules/BeamProtocol";
+import { isHardhatNetwork, WEEK } from "./constants";
 
 const DeploymentSetup = buildModule("VotingEscrowERC20_Setup", (m) => {
   const { beamToken } = m.useModule(BeamToken);
@@ -22,6 +20,12 @@ const DeploymentSetup = buildModule("VotingEscrowERC20_Setup", (m) => {
 });
 
 describe("VotingEscrowERC20", () => {
+  before(async function () {
+    if (!isHardhatNetwork) {
+      this.skip();
+    }
+  });
+
   const deployFixture = async () => {
     const [deployer, user] = await hre.viem.getWalletClients();
     const publicClient = await hre.viem.getPublicClient();
