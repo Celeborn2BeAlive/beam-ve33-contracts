@@ -26,7 +26,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     address public voter;               //  voter contract
     address public votingIncentivesFactory;//  Voting Incentives deployer
     address public feeDistributor;               //  underlying feeDistributor linked to this.contract
-    address public owner;               //  owner of this contract (should be MultiSig)
+    address public owner;               //  owner of this contract (should be VotingIncentivesFactory when deployed from it)
     address public claimer;             // allow multiple claims
 
     string public constant version = "1.0.0";
