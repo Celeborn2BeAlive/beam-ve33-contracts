@@ -22,8 +22,6 @@ contract AlgebraVault is IAlgebraVault, AccessControl {
     address public immutable factory;
     /// @inheritdoc IAlgebraVault
     address public immutable pool;
-    /// @inheritdoc IAlgebraVault
-    address public immutable voter;
     /// @notice The first token of the pool pair
     IERC20 private token0;
     /// @notice The second token of the pool pair
@@ -31,17 +29,14 @@ contract AlgebraVault is IAlgebraVault, AccessControl {
 
     /// @notice Constructs the AlgebraVault contract
     /// @param _pool The address of the associated Algebra pool
-    /// @param _voter The address of the voter contract
-    constructor(address _pool, address _voter, address _factory) {
+    constructor(address _pool, address _factory) {
         if(_pool == address(0)) revert ZeroAddress();
-        if(_voter == address(0)) revert ZeroAddress();
         if(_factory == address(0)) revert ZeroAddress();
 
         pool = _pool;
         token0 = IERC20(IPairInfo(_pool).token0());
         token1 = IERC20(IPairInfo(_pool).token1());
 
-        voter = _voter;
         factory = _factory;
 
         _grantRole(FEE_VAULT_MANAGER_ROLE, _factory);
@@ -58,7 +53,7 @@ contract AlgebraVault is IAlgebraVault, AccessControl {
     /// @inheritdoc IAlgebraVault
     function claimFees() external returns(uint256 _claimed0, uint256 _claimed1) {
 
-        if(msg.sender != IVoter(voter).gaugeForPool(pool)) revert MsgSenderNotGauge();
+        if(msg.sender != IVoter(IAlgebraVaultFactory(factory).voter()).gaugeForPool(pool)) revert MsgSenderNotGauge();
 
         _claimed0 = token0.balanceOf(address(this));
         _claimed1 = token1.balanceOf(address(this));

@@ -16,6 +16,9 @@ interface IAlgebraVaultFactory {
     address receiver;
   }
 
+  /// @notice Returns the current Voter address recorded in the factory
+  /// @return The address of the Voter
+  function voter() external view returns (address);
 
   function getVaultForPool(address pool) external view returns (address);
   function getFees(uint256 amount) external view returns (uint256 treasuryAmount);

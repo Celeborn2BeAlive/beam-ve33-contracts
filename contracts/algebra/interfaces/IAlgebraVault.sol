@@ -14,9 +14,6 @@ interface IAlgebraVault {
     /// @notice The address of the associated Algebra pool
     function pool() external view returns (address);
 
-    /// @notice The address of the voter contract
-    function voter() external view returns (address);
-
 
     /// @notice Withdraws tokens from the vault
     /// @param to The address to receive the withdrawn tokens

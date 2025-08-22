@@ -85,7 +85,7 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
     if (!access && msg.sender != algebraFactory) revert NotAlgebraFactory();
     if(pool == address(0)) revert ZeroAddress();
 
-    _vault = address(new AlgebraVault(pool, voter, address(this)));
+    _vault = address(new AlgebraVault(pool, address(this)));
     poolToVault[pool] = _vault;
     emit VaultCreated(pool, _vault);
   }
