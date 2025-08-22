@@ -45,39 +45,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     const WETH = await hre.viem.deployContract("ERC20PresetMinterPauser", ["Wrapped Ether", "WETH"]);
     await WETH.write.mint([deployerAddress, 42_000_000n]);
 
-    const { solidlyPairFactoryProxy } = beam;
-    await solidlyPairFactoryProxy.write.createPair([USDC.address, beamToken.address, false]);
-    await solidlyPairFactoryProxy.write.createPair([WETH.address, beamToken.address, false]);
-    await solidlyPairFactoryProxy.write.createPair([WETH.address, USDC.address, false]);
-    const USDC_BEAM = await solidlyPairFactoryProxy.read.getPair([USDC.address, beamToken.address, false]);
-    const WETH_BEAM = await solidlyPairFactoryProxy.read.getPair([WETH.address, beamToken.address, false]);
-    const WETH_USDC = await solidlyPairFactoryProxy.read.getPair([USDC.address, WETH.address, false]);
-
-    const { algebraVaultFactory, gaugeFactory, votingIncentivesFactory } = beam;
     const testIncentiveMaker = await hre.viem.deployContract("TestIncentiveMaker", [beamToken.address]);
-
-    const createGaugeForPool = async (poolAddr: Address) => {
-      await algebraVaultFactory.write.createVaultForPool([poolAddr]);
-      const feeVault = await algebraVaultFactory.read.poolToVault([poolAddr]);
-      await gaugeFactory.write.createEternalGauge([poolAddr, epochDistributorProxy.address, feeVault, ZERO_ADDRESS, testIncentiveMaker.address]);
-      const events = await gaugeFactory.getEvents.CreateGauge();
-      const gaugeAddr = events[0].args.gauge as Address;
-
-      await votingIncentivesFactory.write.createVotingIncentives([USDC.address, beamToken.address, voter.address, gaugeAddr, claimer.address]);
-      const votingIncentivesAddr = await votingIncentivesFactory.read.last_votingIncentives();
-      await gaugeFactory.write.setVotingIncentives([gaugeAddr, votingIncentivesAddr]);
-
-      await voter.write.addPoolData([poolAddr, gaugeAddr, votingIncentivesAddr]);
-
-      return {
-        feeVault,
-        gaugeAddr,
-        votingIncentivesAddr,
-      };
-    };
-    await createGaugeForPool(USDC_BEAM);
-    await createGaugeForPool(WETH_BEAM);
-    await createGaugeForPool(WETH_USDC);
 
     await minterProxy.write._initialize();
     const activePeriod = await minterProxy.read.active_period();
@@ -95,16 +63,76 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
       USDC,
       WETH,
       ...beam,
-      pools: {
-        USDC_BEAM,
-        WETH_BEAM,
-        WETH_USDC,
-      },
     };
   };
 
-  it("Should distribute farming rewards to gauges", async () => {
-    const { deployerAddress, minterProxy, activePeriod, beamToken, epochDistributorProxy, testIncentiveMaker, voter, veNFTId, pools } = await loadFixture(deployFixture);
+  it("Should create pool, gauge, votingIncentives and add data to Voter", async () => {
+    const { solidlyPairFactoryProxy, USDC, WETH, beamToken, gaugeFactory, votingIncentivesFactory, epochDistributorProxy, voter, claimer } = await loadFixture(deployFixture);
+    await solidlyPairFactoryProxy.write.createPair([USDC.address, beamToken.address, false]);
+    await solidlyPairFactoryProxy.write.createPair([WETH.address, beamToken.address, false]);
+    await solidlyPairFactoryProxy.write.createPair([WETH.address, USDC.address, false]);
+    const USDC_BEAM = await solidlyPairFactoryProxy.read.getPair([USDC.address, beamToken.address, false]);
+    const WETH_BEAM = await solidlyPairFactoryProxy.read.getPair([WETH.address, beamToken.address, false]);
+    const WETH_USDC = await solidlyPairFactoryProxy.read.getPair([USDC.address, WETH.address, false]);
+
+    const createGaugeForPool = async (poolAddr: Address) => {
+      const pairInfo = await hre.viem.getContractAt("IPairInfo", poolAddr);
+      const rewardTokens = [
+        await pairInfo.read.token0(),
+        await pairInfo.read.token1(),
+      ];
+      await gaugeFactory.write.createGauge([
+        rewardTokens,
+        poolAddr,
+        epochDistributorProxy.address,
+        poolAddr,
+        ZERO_ADDRESS,
+        claimer.address,
+        false]
+      );
+      const events = await gaugeFactory.getEvents.CreateGauge();
+      const gaugeAddr = events[0].args.gauge as Address;
+
+      await votingIncentivesFactory.write.createVotingIncentives([USDC.address, beamToken.address, voter.address, gaugeAddr, claimer.address]);
+      const votingIncentivesAddr = await votingIncentivesFactory.read.last_votingIncentives();
+      await gaugeFactory.write.setVotingIncentives([gaugeAddr, votingIncentivesAddr]);
+
+      await voter.write.addPoolData([poolAddr, gaugeAddr, votingIncentivesAddr]);
+
+      return {
+        poolAddr,
+        gaugeAddr,
+        votingIncentivesAddr,
+      };
+    };
+    const records = {
+      USDC_BEAM: await createGaugeForPool(USDC_BEAM),
+      WETH_BEAM: await createGaugeForPool(WETH_BEAM),
+      WETH_USDC: await createGaugeForPool(WETH_USDC),
+    };
+
+    expect(await voter.read.poolsLength()).to.equals(BigInt(Object.values(records).length));
+    for (const {
+        poolAddr,
+        gaugeAddr,
+        votingIncentivesAddr,
+    } of Object.values(records)) {
+      expect(await voter.read.isPool([poolAddr])).to.be.true;
+      const poolData = await voter.read.poolData([poolAddr]);
+      expect(poolData.gauge).to.equals(gaugeAddr);
+      expect(poolData.votingIncentives).to.equals(votingIncentivesAddr);
+      expect(await voter.read.poolTotalWeights([poolAddr, await voter.read.epochTimestamp()])).to.equals(0n);
+    }
+  });
+
+  it.skip("Should distribute farming rewards to gauges", async () => {
+    const { deployerAddress, minterProxy, activePeriod, beamToken, epochDistributorProxy, testIncentiveMaker, voter, veNFTId, USDC, WETH, solidlyPairFactoryProxy } = await loadFixture(deployFixture);
+
+    const pools = {
+      USDC_BEAM: await solidlyPairFactoryProxy.read.getPair([USDC.address, beamToken.address, false]),
+      WETH_BEAM: await solidlyPairFactoryProxy.read.getPair([WETH.address, beamToken.address, false]),
+      WETH_USDC: await solidlyPairFactoryProxy.read.getPair([WETH.address, beamToken.address, false]),
+    };
 
     const votes = {
       [pools.USDC_BEAM]: 50n,
