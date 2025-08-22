@@ -40,6 +40,8 @@ describe("AlgebraFactory", function() {
     }
     await impersonateAccount(beamMultisigAddress); // For admin on AlgebraFactory
     await impersonateAccount(holderOfCLNFTs); // For staking of CL NFTs in farming center
+
+    await mine(); // Workaround for error "No known hardfork for execution on historical block ..." when forking
   });
 
   const deployFixture = async () => {
