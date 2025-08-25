@@ -43,7 +43,7 @@ This document lists all contracts and their reference to other contracts / addre
   - `artProxy` => address
     - Used to compute `tokenURI`
   - `voter` => address
-    - Used to guard calls to `voting`, `abstain`, `attach`, `detach`
+    - Used to guard calls to `voting` and `abstain`
   - `token` => address => EmissionToken
     - Used in `_deposit_for` to transfer tokens and lock them in the contract
 

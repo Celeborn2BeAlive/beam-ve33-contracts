@@ -289,7 +289,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         uint _tokenId,
         address _sender
     ) internal {
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], "attached");
+        require(!voted[_tokenId], "voted");
         // Check requirements
         require(_isApprovedOrOwner(_sender, _tokenId));
         // Clear approval. Throws if `_from` is not the current owner
@@ -832,7 +832,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
     /// @dev Only possible if the lock has expired
     function withdraw(uint _tokenId) external nonreentrant {
         assert(_isApprovedOrOwner(msg.sender, _tokenId));
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], "attached");
+        require(!voted[_tokenId], "voted");
 
         LockedBalance memory _locked = locked[_tokenId];
         require(block.timestamp >= _locked.end, "The lock didn't expire");
@@ -1043,7 +1043,6 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
                             GAUGE VOTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    mapping(uint => uint) public attachments;
     mapping(uint => bool) public voted;
 
     function setVoter(address _voter) external {
@@ -1061,18 +1060,8 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         voted[_tokenId] = false;
     }
 
-    function attach(uint _tokenId) external {
-        require(msg.sender == voter);
-        attachments[_tokenId] = attachments[_tokenId] + 1;
-    }
-
-    function detach(uint _tokenId) external {
-        require(msg.sender == voter);
-        attachments[_tokenId] = attachments[_tokenId] - 1;
-    }
-
     function merge(uint _from, uint _to) external {
-        require(attachments[_from] == 0 && !voted[_from], "attached");
+        require(!voted[_from], "voted");
         require(_from != _to);
         require(_isApprovedOrOwner(msg.sender, _from));
         require(_isApprovedOrOwner(msg.sender, _to));
@@ -1097,7 +1086,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
     function split(uint[] memory amounts, uint _tokenId) external {
 
         // check permission and vote
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], "attached");
+        require(!voted[_tokenId], "voted");
         require(_isApprovedOrOwner(msg.sender, _tokenId));
 
         // save old data and totalWeight
