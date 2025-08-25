@@ -21,6 +21,52 @@
 
 **Dev Log**
 
+- 2025-08-25
+  - DONE:
+    - Remove unused attachment mechanic from VotingEscrow
+    - Add complete farming test with Solidly pairs & staking
+    - Remove old Retro V1 / Thena V1 contracts
+
+- 2025-08-21/22
+  - DONE:
+    - Implement VotingEscrowERC20 contract with tests, to support an ERC20 wrapper of locked position, for bribing and bonding
+    - Add more documentation as excalidraw figures, for better explanation of Voter and its interactions in the system
+    - More cleanup
+    - Refactor tests
+
+- 2025-08-20
+  - DONE:
+    - Improve mocking of some Algebra contracts (Farming Center, Eternal Farming, Factory, pools, roles for security) so we can test integration locally at a deeper level (no more mock for IncentiveMaker, we directly test the real one, but we mock its interactions with Algebra)
+    - Rename FeeVault => ALMFeeVault for clarity of usage in the infrastructure
+    - Cleanup repository, remove unused files, to start preparing for audit
+    - Write more technical documentation
+
+- 2025-08-19
+  - DONE:
+    - Refactor tests to extract utility functions
+    - Minor refactor to some forked contracts (naming, comments)
+    - Add tests for Solidly DEX
+    - Fix tests to make them runnable several times in a persistent environment where the protocol is already deployed
+    - Add complete zetachain integration test, simulating farming on a CL position, checking farming rewards are distributed to farmer on Algebra Farming Center
+      - This is the more important test, it validates that we can integrate with our currently deployed Algebra DEX
+    - Refactor EmissionToken & Minter to remove initialMint and initial creation of lock
+      - This process can be done before initializing the protocol in prod, so it's better to remove unused features to simplify contracts logic
+
+- 2025-08-18
+  - DONE:
+    - Upgrade AlgebraVaultFactory to support creation of vaults for already existing pools
+      - Required for us because the DEX is already deployed and active
+    - Add complete test for EpochDistributor, simulating epoch flip and distribution of farming rewards
+      - This test moch some parts such as IncentiveMaker to be used locally
+      - This DEX used the Solidly pools as if they were AlgebraPool, to check GaugeEternalFarming -> to be changed later
+    - Add test for integration with our AlgebraFactory deployed on Zetachain, simulate swaps and ensure swap fees ends up in our VotingIncentives instances
+
+- 2025-08-15/16
+  - DONE:
+    - Add tests for deployment & security
+    - Add tests for Minter
+    - Write some technical documentation
+
 - 2025-08-14
   - DONE:
     - Made another overview of all contracts with connections between them and notes about contracts logic
