@@ -19,12 +19,21 @@ async function main () {
     "0x05ba149a7bd6dc1f937fa9046a9e05c05f3b18b0",
     "0x91d4f0d54090df2d81e834c3c8ce71c6c865e79f",
     "0xdbff6471a79e5374d771922f2194eccc42210b9f",
+    "0x4bc32034caccc9b7e02536945edbc286bacba073",
+    "0xe8d7796535f1cd63f0fe8d631e68eace6839869b",
+    "0xcba2aeec821b0b119857a9ab39e09b034249681a",
+    "0x0ca762fa958194795320635c11ff0c45c6412958",
+    "0xe102f20347d601c08e9f998475b7c9998b498dee",
+    "0x0327f0660525b15cdb8f1f5fbf0dd7cd5ba182ad",
+    "0x48f80608b672dc30dc7e3dbbd0343c5f02c738eb",
+    "0xd97b1de3619ed2c6beb3860147e30ca8a7dc9891",
   ];
   const beamAlgebraCommunityVault = getContract({
     address: getAddress("0xDe3b76539271E2c634f0c41F5261855234d05879"),
     abi: ABI_AlgebraCommunityVault,
     client: {public: publicClient, wallet: walletClient},
   })
+  const tokenNames: {[key: Address]: string} = {}
 
   let claimList: {token: Address, amount: bigint}[] = [];
   for await (const tokenAddress of tokenAddresses) {
@@ -32,18 +41,33 @@ async function main () {
       abi: ABI_ERC20, client: publicClient
     });
     const name = await token.read.name();
+    tokenNames[token.address] = name
     const balance = await token.read.balanceOf([beamAlgebraCommunityVault.address,]);
-    claimList.push({token: token.address, amount: balance});
+    if (balance > 0) {
+      claimList.push({token: token.address, amount: balance});
+    }
     console.log(`Balance for token ${name} ${token.address}: ${balance}`);
   }
-  const rawTx = encodeFunctionData({
-    abi: ABI_AlgebraCommunityVault,
-    functionName: "withdrawTokens",
-    args: [claimList,],
-  })
-  console.log(rawTx);
-  const hash = await beamAlgebraCommunityVault.write.withdrawTokens([claimList,]);
-  await publicClient.waitForTransactionReceipt({ hash });
+  for await (const claim of claimList) {
+    const rawTx = encodeFunctionData({
+      abi: ABI_AlgebraCommunityVault,
+      functionName: "withdrawTokens",
+      args: [[claim],],
+    })
+    console.log(rawTx);
+    console.log(`Claiming ${claim.token} ${tokenNames[claim.token]}`)
+    const hash = await beamAlgebraCommunityVault.write.withdrawTokens([[claim],]);
+    await publicClient.waitForTransactionReceipt({ hash });
+  }
+
+  // const rawTx = encodeFunctionData({
+  //   abi: ABI_AlgebraCommunityVault,
+  //   functionName: "withdrawTokens",
+  //   args: [claimList,],
+  // })
+  // console.log(rawTx);
+  // const hash = await beamAlgebraCommunityVault.write.withdrawTokens([claimList,]);
+  // await publicClient.waitForTransactionReceipt({ hash });
 }
 
 const ABI_ERC20 = [{
