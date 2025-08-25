@@ -153,6 +153,16 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
         return reward;
     }
 
+    /// @notice read earned amounts given a tokenID and the reward token, at a specific epoch timestamp
+    function earnedAtEpochTimestamp(uint256 tokenId, address _token, uint256 _timestamp) external view returns(uint256){
+        address _owner = IVotingEscrow(ve).ownerOf(tokenId);
+        return _earned(_owner, _token, _timestamp);
+    }
+
+    /// @notice read earned amounts given an address and the reward token, at a specific epoch timestamp
+    function earnedAtEpochTimestamp(address _owner, address _token, uint256 _timestamp) external view returns(uint256){
+        return _earned(_owner, _token, _timestamp);
+    }
 
     /// @notice get the rewards for token
     /// @param _token token to use
