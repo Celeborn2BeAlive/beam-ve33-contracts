@@ -1,11 +1,33 @@
 import hre, { ignition } from "hardhat";
-import { Address, getAddress, PublicClient } from "viem";
+import { Address, getAddress, parseUnits, PublicClient } from "viem";
 import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork } from "./constants";
 import { loadFixture, mine } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
 import { create10PercentOfTotalSupplyLock, createGaugeForSolidlyPoolWithoutGlobalFactory, simulateOneWeek, simulateOneWeekAndFlipEpoch } from "./utils";
 import BeamProtocol from "../ignition/modules/BeamProtocol";
-import { EmissionTokenContract, ERC20Contract, ERC20PresetMinterPauserContract, SolidlyRouterContract } from "./types";
+import { EmissionTokenContract, ERC20PresetMinterPauserContract, SolidlyRouterContract } from "./types";
+import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
+
+const TestTokens = buildModule("TestTokens", (m) => {
+  const USDC = m.contract("ERC20PresetMinterPauser", ["USDC", "USDC"], { id: "USDC"});
+  m.call(USDC, "mint", [m.getAccount(0), 10_000_000_000n]);
+  const WETH = m.contract("ERC20PresetMinterPauser", ["Wrapped Ether", "WETH"], { id: "WETH"});
+  m.call(WETH, "mint", [m.getAccount(0), 42_000_000n]);
+
+  return {
+    USDC,
+    WETH,
+  }
+});
+
+const TestProtocol = buildModule("TestProtocol", (m) => {
+  const beam = m.useModule(BeamProtocol);
+  const tokens = m.useModule(TestTokens);
+  return {
+    ...beam,
+    ...tokens,
+  }
+});
 
 describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
   before(async function () {
@@ -20,9 +42,9 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     const farmerAddress = getAddress(farmer.account.address);
     const publicClient = await hre.viem.getPublicClient();
 
-    const beam = await ignition.deploy(BeamProtocol);
+    const beam = await ignition.deploy(TestProtocol);
 
-    const { beamToken, minterProxy, votingEscrow } = beam;
+    const { beamToken, minterProxy, votingEscrow, USDC, WETH } = beam;
 
     // The Minter requires a non zero total supply or division by zero occurs in `calculate_rebase`:
     await beamToken.write.mint([deployerAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
@@ -31,11 +53,6 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     // Set 0% emission to rebase and team to ease computation
     await minterProxy.write.setRebase([0n]);
     await minterProxy.write.setTeamRate([0n]);
-
-    const USDC = await hre.viem.deployContract("ERC20PresetMinterPauser", ["USDC", "USDC"]);
-    await USDC.write.mint([deployerAddress, 10_000_000_000n]);
-    const WETH = await hre.viem.deployContract("ERC20PresetMinterPauser", ["Wrapped Ether", "WETH"]);
-    await WETH.write.mint([deployerAddress, 42_000_000n]);
 
     await minterProxy.write._initialize();
     const activePeriod = await minterProxy.read.active_period();
@@ -162,11 +179,54 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     }
   }
 
+  type AddVotingIncentivesArgs = {
+    pools: Record<string, {
+      poolAddr: Address,
+      votingIncentivesAddr: Address,
+    }>,
+    beamToken: EmissionTokenContract,
+    deployerAddress: Address,
+  };
+
+  const addVotingIncentives = async ({
+    pools,
+    beamToken,
+    deployerAddress,
+  }: AddVotingIncentivesArgs) => {
+    const addedIncentives = {
+      [beamToken.address]: 0n
+    };
+    for (const {poolAddr, votingIncentivesAddr} of Object.values(pools)) {
+      const votingIncentives = await hre.viem.getContractAt("VotingIncentives", votingIncentivesAddr);
+      const beamRewardAmount = parseUnits("1000000", 18); // 1M BEAM tokens
+      await beamToken.write.approve([votingIncentives.address, beamRewardAmount]);
+      await votingIncentives.write.notifyRewardAmount([beamToken.address, beamRewardAmount]);
+      addedIncentives[beamToken.address] += beamRewardAmount;
+      const pairInfo = await hre.viem.getContractAt("IPairInfo", poolAddr);
+      const pairTokens = [await pairInfo.read.token0(), await pairInfo.read.token1()];
+      for (const tokenAddr of pairTokens) {
+        if (tokenAddr == beamToken.address) continue;
+        if (!(tokenAddr in addedIncentives)) {
+          addedIncentives[tokenAddr] = 0n;
+        }
+        const token = await hre.viem.getContractAt("ERC20", tokenAddr);
+        const balance = await token.read.balanceOf([deployerAddress]);
+        const rewardAmount = balance * 10n / 100n; // 10% of balance
+        await token.write.approve([votingIncentives.address, rewardAmount]);
+        await votingIncentives.write.notifyRewardAmount([tokenAddr, rewardAmount]);
+        addedIncentives[tokenAddr] += rewardAmount;
+      }
+    }
+    return addedIncentives;
+  }
+
   it("Should distribute farming rewards to gauges", async () => {
     const { deployerAddress, farmerAddress, publicClient, minterProxy, activePeriod, beamToken, epochDistributorProxy, voter, veNFTId, pools, tokens, solidlyRouter, claimer } = await loadFixture(createGaugesFixture);
     const { WETH, USDC } = tokens;
 
     await addLiquidityAndStakeForFarming({WETH, USDC, beamToken, deployerAddress, farmerAddress, solidlyRouter, publicClient, pools});
+
+    const addedVotingIncentives = await addVotingIncentives({pools, beamToken, deployerAddress});
 
     const votes: Record<Address, bigint> = {
       [pools.USDC_BEAM.poolAddr]: 50n,
@@ -196,7 +256,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
 
     let distributedAmount = 0n;
     const poolAddrToRewardAmount: Record<Address, bigint> = {}
-    for (const {poolAddr, gaugeAddr, ..._} of Object.values(pools)) {
+    for (const {poolAddr, gaugeAddr} of Object.values(pools)) {
       const rewardAmount = await beamToken.read.balanceOf([gaugeAddr]);
       distributedAmount += rewardAmount
       poolAddrToRewardAmount[poolAddr] = rewardAmount;
@@ -231,5 +291,30 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     await claimer.write.claimRewards([Object.values(pools).map(({gaugeAddr}) => gaugeAddr)], { account: farmerAddress });
     const delta = distributedAmount - await beamToken.read.balanceOf([farmerAddress]);
     expect(delta < distributedAmount * 10n / 1000n).to.be.true; // 1% difference check
+
+    const balanceBeforeVotingIncentiveClaim = {
+      [beamToken.address]: await beamToken.read.balanceOf([deployerAddress]),
+      [WETH.address]: await WETH.read.balanceOf([deployerAddress]),
+      [USDC.address]: await USDC.read.balanceOf([deployerAddress]),
+    };
+
+    const allTokens = [beamToken.address, WETH.address, USDC.address];
+    await claimer.write.claimVotingIncentivesAddress([
+      Object.values(pools).map(({votingIncentivesAddr}) => votingIncentivesAddr),
+      [allTokens, allTokens, allTokens]
+    ])
+
+    const balanceAfterVotingIncentiveClaim = {
+      [beamToken.address]: await beamToken.read.balanceOf([deployerAddress]),
+      [WETH.address]: await WETH.read.balanceOf([deployerAddress]),
+      [USDC.address]: await USDC.read.balanceOf([deployerAddress]),
+    };
+
+    for (const tokenAddr of allTokens) {
+      const claimedReward = balanceAfterVotingIncentiveClaim[tokenAddr] - balanceBeforeVotingIncentiveClaim[tokenAddr];
+      const delta = addedVotingIncentives[tokenAddr] - claimedReward;
+
+      expect(delta < 100n).to.be.true; // 100 wei check
+    }
   });
 });
