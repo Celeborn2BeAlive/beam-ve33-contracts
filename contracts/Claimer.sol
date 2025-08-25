@@ -37,17 +37,17 @@ contract Claimer is Ownable {
 
     /// @notice Claim Voting Incentives given a tokenID
     /// @dev since we use tokenId, checks the msg.sender is allowed to do operations
-    function claimVotingIncentivesTokenId(address[] calldata _fees, address[][] calldata _tokens, uint _tokenId) external {
+    function claimVotingIncentivesTokenId(address[] calldata _votingIncentives, address[][] calldata _tokens, uint _tokenId) external {
         require(ve.isApprovedOrOwner(msg.sender, _tokenId));
-        for (uint i = 0; i < _fees.length; i++) {
-            IVotingIncentives(_fees[i]).getRewardForOwner(_tokenId, _tokens[i]);
+        for (uint i = 0; i < _votingIncentives.length; i++) {
+            IVotingIncentives(_votingIncentives[i]).getRewardForOwner(_tokenId, _tokens[i]);
         }
     }
 
     /// @notice Claim Voting Incentives given msg.sender
-    function claimVotingIncentivesAddress(address[] calldata _bribes, address[][] calldata _tokens) external {
-        for (uint i = 0; i < _bribes.length; i++) {
-            IVotingIncentives(_bribes[i]).getRewardForAddress(msg.sender, _tokens[i]);
+    function claimVotingIncentivesAddress(address[] calldata _votingIncentives, address[][] calldata _tokens) external {
+        for (uint i = 0; i < _votingIncentives.length; i++) {
+            IVotingIncentives(_votingIncentives[i]).getRewardForAddress(msg.sender, _tokens[i]);
         }
     }
 
