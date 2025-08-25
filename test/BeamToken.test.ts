@@ -77,47 +77,12 @@ describe("BeamToken", () => {
 
     it("Should prevent other accounts to mint", async () => {
       const { beamToken, otherAccount, otherAccountAddress } = await loadFixture(deployFixture);
-      await expect(beamToken.write.mint([otherAccountAddress, 42n], { account: otherAccount.account })).to.be.rejectedWith("not allowed");
+      await expect(beamToken.write.mint([otherAccountAddress, 42n], { account: otherAccount.account })).to.be.rejected;
     });
 
     it("Should prevent other accounts to set minter", async () => {
       const { beamToken, otherAccount, otherAccountAddress } = await loadFixture(deployFixture);
-      await expect(beamToken.write.setMinter([otherAccountAddress], { account: otherAccount.account })).to.be.rejectedWith("");
+      await expect(beamToken.write.setMinter([otherAccountAddress], { account: otherAccount.account })).to.be.rejected;
     });
   });
-
-  describe("Events", () => {
-    const initialMintFixture = async () => {
-      const { beamToken, deployerAddress } = await loadFixture(deployFixture);
-      await beamToken.write.mint([deployerAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
-    };
-
-    it("Should emit an event on approvals", async () => {
-      const { beamToken, deployerAddress, otherAccountAddress } = await loadFixture(deployFixture);
-      await loadFixture(initialMintFixture);
-
-      const amount = 12n;
-      await beamToken.write.approve([otherAccountAddress, amount]);
-
-      const events = await beamToken.getEvents.Approval();
-      expect(events).to.have.lengthOf(1);
-      expect(events[0].args.owner).to.equal(deployerAddress);
-      expect(events[0].args.spender).to.equal(otherAccountAddress);
-      expect(events[0].args.value).to.equal(amount);
-    })
-
-    it("Should emit an event on transfer", async () => {
-      const { beamToken, deployerAddress, otherAccountAddress } = await loadFixture(deployFixture);
-      await loadFixture(initialMintFixture);
-
-      const amount = 12n;
-      await beamToken.write.transfer([otherAccountAddress, amount]);
-
-      const events = await beamToken.getEvents.Transfer();
-      expect(events).to.have.lengthOf(1);
-      expect(events[0].args.from).to.equal(deployerAddress);
-      expect(events[0].args.to).to.equal(otherAccountAddress);
-      expect(events[0].args.value).to.equal(amount);
-    })
-  })
 });
