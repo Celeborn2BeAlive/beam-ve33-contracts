@@ -58,20 +58,28 @@ contract AlgebraVault is IAlgebraVault, AccessControl {
         _claimed0 = token0.balanceOf(address(this));
         _claimed1 = token1.balanceOf(address(this));
 
-        address treasury = IAlgebraVaultFactory(factory).getFeesReceivers();
+        address treasury = IAlgebraVaultFactory(factory).getTreasuryReceiver();
         uint256 _treasuryAmount;
 
         // handle token 0 fees
         if(_claimed0 > 0) {
-            _treasuryAmount = IAlgebraVaultFactory(factory).getFees(_claimed0);
-            if(_treasuryAmount > 0) token0.safeTransfer(treasury, _treasuryAmount);
+            if (treasury != address(0)) {
+                _treasuryAmount = IAlgebraVaultFactory(factory).getTreasuryFees(_claimed0);
+            }
+            if(_treasuryAmount > 0) {
+                token0.safeTransfer(treasury, _treasuryAmount);
+            }
             _claimed0 = _claimed0 - _treasuryAmount;
             token0.safeTransfer(msg.sender, _claimed0);
         }
         // handle token 1 fees
         if(_claimed1 > 0) {
-            _treasuryAmount = IAlgebraVaultFactory(factory).getFees(_claimed1);
-            if(_treasuryAmount > 0) token1.safeTransfer(treasury, _treasuryAmount);
+            if (treasury != address(0)) {
+                _treasuryAmount = IAlgebraVaultFactory(factory).getTreasuryFees(_claimed1);
+            }
+            if(_treasuryAmount > 0) {
+                token1.safeTransfer(treasury, _treasuryAmount);
+            }
             _claimed1 = _claimed1 - _treasuryAmount;
             token1.safeTransfer(msg.sender, _claimed1);
         }

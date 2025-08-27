@@ -7,6 +7,7 @@ import '@cryptoalgebra/integral-core/contracts/interfaces/IAlgebraPool.sol';
 
 import "./AlgebraVault.sol";
 import "./interfaces/IAlgebraVaultFactory.sol";
+
 /// @title Algebra vault factory
 /// @notice This contract is used to deploy and manage AlgebraVault contracts for Algebra pools
 contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
@@ -63,13 +64,13 @@ contract AlgebraVaultFactory is IAlgebraVaultFactory, AccessControl {
   /// @notice Gets the fees for a given amount
   /// @param amount The amount to get fees for
   /// @return treasuryAmount The amount of treasury fees
-  function getFees(uint256 amount) external view returns (uint256 treasuryAmount) {
+  function getTreasuryFees(uint256 amount) external view returns (uint256 treasuryAmount) {
     if(feeInfoTreasury.isActive) treasuryAmount = amount * feeInfoTreasury.share / PRECISION;
   }
 
   /// @notice Gets the receivers of the fees
   /// @return treasury The address of the treasury receiver
-  function getFeesReceivers() external view returns (address treasury) {
+  function getTreasuryReceiver() external view returns (address treasury) {
     return feeInfoTreasury.receiver;
   }
 
