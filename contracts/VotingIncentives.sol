@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interfaces/IMinter.sol";
 import "./interfaces/IVoter.sol";
 import "./interfaces/IVotingEscrow.sol";
+import "./interfaces/IVotingIncentivesFactory.sol";
 import "./interfaces/IVotingIncentives.sol";
 
 /// @title Voting Incentives
@@ -23,16 +24,9 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     uint256 public firstBribeTimestamp;
 
     address[] public rewardTokens;      //  list of reward tokens
-    address public voter;               //  voter contract
-    address public votingIncentivesFactory;//  Voting Incentives deployer
     address public feeDistributor;               //  underlying feeDistributor linked to this.contract
-    address public owner;               //  owner of this contract (should be VotingIncentivesFactory when deployed from it)
-    address public claimer;             // allow multiple claims
 
-    string public constant version = "1.0.0";
-
-    IVotingEscrow public ve;            //  VotingEscrow contract
-    IMinter public minter;              //  EmissionToken minter contract
+    address public votingIncentivesFactory;//  Voting Incentives deployer
 
     // owner -> reward token -> lastTime
     mapping(address => mapping(address => uint256)) public userRewardPerTokenPaid;
@@ -54,7 +48,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     /// @param _owner   the owner of this contract, multisig
     /// @param _voter   the voter contract used to interface with this contract
     /// @param _feeDistributor   the feeDistributor linked with this incentive contract (the gauge)
-    constructor(address _owner,address _voter, address _feeDistributor, address _claimer)  {
+    constructor(address _owner, address _feeDistributor)  {
 
         if(msg.sender == address(0)) revert AddressZero();
         if(_voter == address(0)) revert AddressZero();
