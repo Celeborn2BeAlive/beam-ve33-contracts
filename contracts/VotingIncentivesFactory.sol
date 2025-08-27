@@ -14,6 +14,10 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
     /// @notice Role to create voting incentives contracts
     bytes32 public constant CREATE_ROLE = keccak256("CREATE_ROLE");
 
+    address public minter;
+    address public votingEscrow;
+    address public voter;
+    address public claimer;
 
     /// @dev The last voting incentives contract deployed
     address public last_votingIncentives;
@@ -24,7 +28,12 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
     /// @dev the list of deafult reward tokens for external incentives
     address[] public defaultRewardToken;
 
-    constructor(address _globalFactory, address[] memory defaultTokens) {
+    constructor(address _globalFactory, address[] memory defaultTokens, address _minter, address _votingEscrow, address _voter, address _claimer) {
+        minter = _minter;
+        votingEscrow = _votingEscrow;
+        voter = _voter;
+        claimer = _claimer;
+
         if(_globalFactory != address(0)){
             globalFactory = _globalFactory;
             _grantRole(CREATE_ROLE, globalFactory);
@@ -47,16 +56,11 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
     /// @notice create a votingIncentives contract
     /// @param _token0  the token0 of the LP pair
     /// @param _token1  the token1 of the LP pair
-    /// @param voter    the voter contract address
     /// @param gauge    the gauge where to stake LP tokens
-    /// @param claimer  the claim contract that allows multiple claims
-    function createVotingIncentives(address _token0, address _token1, address voter, address gauge, address claimer) external onlyRole(CREATE_ROLE) returns (address) {
-
-        if(voter == address(0)) revert AddressZero();
+    function createVotingIncentives(address _token0, address _token1, address gauge) external onlyRole(CREATE_ROLE) returns (address) {
         if(gauge == address(0)) revert AddressZero();
-        if(claimer == address(0)) revert AddressZero();
 
-        VotingIncentives vi = new VotingIncentives(address(this), voter, gauge, claimer);
+        VotingIncentives vi = new VotingIncentives(gauge);
 
         if(_token0 != address(0)) vi.addReward(_token0);
         if(_token1 != address(0)) vi.addReward(_token1);
@@ -79,7 +83,7 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
     --------------------------------------------------------------------------------
     ----------------------------------------------------------------------------- */
 
-    /// @notice Read all voting incentives contract deployed
+    /// @inheritdoc IVotingIncentivesFactory
     function votingIncentives() external view returns(address[] memory){
         return _votingIncentives;
     }
@@ -98,6 +102,30 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
         _grantRole(CREATE_ROLE, _gf);
         _grantRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE, _gf);
         globalFactory = _gf;
+    }
+
+    /// @notice set a new Minter
+    function setMinter(address _minter) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+        if (_minter == address(0)) revert AddressZero();
+        minter = _minter;
+    }
+
+    /// @notice set a new VotingEscrow
+    function setVotingEscrow(address _votingEscrow) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+        if (_votingEscrow == address(0)) revert AddressZero();
+        votingEscrow = _votingEscrow;
+    }
+
+    /// @notice set a new Voter
+    function setVoter(address _voter) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+        if (_voter == address(0)) revert AddressZero();
+        voter = _voter;
+    }
+
+    /// @notice set a new Claimer
+    function setClaimer(address _claimer) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+        if (_claimer == address(0)) revert AddressZero();
+        claimer = _claimer;
     }
 
 
@@ -150,43 +178,13 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
 
 
 
-    /// @notice set a new voter in given VotingIncentives
+    /// @notice set a new address as VotingIncentivesFactory of deployed VotingIncentives instances
     /// @param _vi     array of voting incentives contract
-    /// @param _voter  new voter contract
-    function setVotingIncentivesVoter(address[] calldata _vi, address _voter) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
+    /// @param _votingIncentivesFactory  new address for VotingIncentivesFactory
+    function setVotingIncentivesFactory(address[] calldata _vi, address _votingIncentivesFactory) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
         uint i;
         for(i; i< _vi.length; i++){
-            IVotingIncentives(_vi[i]).setVoter(_voter);
-        }
-    }
-
-    /// @notice set a new minter in given VotingIncentives
-    /// @param _vi     array of voting incentives contract
-    /// @param _minter  new minter contract
-    function setVotingIncentivesMinter(address[] calldata _vi, address _minter) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
-        uint i;
-        for(i; i< _vi.length; i++){
-            IVotingIncentives(_vi[i]).setMinter(_minter);
-        }
-    }
-
-    /// @notice set a new owner in given VotingIncentives
-    /// @param _vi     array of voting incentives contract
-    /// @param _owner  new owner address
-    function setVotingIncentivesOwner(address[] calldata _vi, address _owner) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
-        uint i;
-        for(i; i< _vi.length; i++){
-            IVotingIncentives(_vi[i]).setOwner(_owner);
-        }
-    }
-
-    /// @notice Set a new claimer in the VotingIncentives
-    /// @param _vi     array of voting incentives contract
-    /// @param claimer  new claimer contract
-    function setClaimer(address claimer, address[] calldata _vi) external onlyRole(VOTING_INCENTIVES_FACTORY_MANAGER_ROLE) {
-        uint i;
-        for ( i ; i < _vi.length; i++){
-            IVotingIncentives(_vi[i]).setClaimer(claimer);
+            IVotingIncentives(_vi[i]).setVotingIncentivesFactory(_votingIncentivesFactory);
         }
     }
 
@@ -200,7 +198,7 @@ contract VotingIncentivesFactory is AccessControl, IVotingIncentivesFactory {
 
         uint i;
         for(i; i< _vi.length; i++){
-            if(_amounts[i] > 0) IVotingIncentives(_vi[i]).emergencyRecoverERC20(_tokens[i], _amounts[i]);
+            if(_amounts[i] > 0) IVotingIncentives(_vi[i]).emergencyRecoverERC20(_tokens[i], _amounts[i], msg.sender);
         }
     }
 

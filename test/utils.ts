@@ -76,9 +76,7 @@ export const createGaugeForSolidlyPoolWithoutGlobalFactory = async (
   await votingIncentivesFactory.write.createVotingIncentives([
     rewardTokens[0],
     rewardTokens[1],
-    voter.address,
     gaugeAddr,
-    claimer.address,
   ]);
   const votingIncentivesAddr = await votingIncentivesFactory.read.last_votingIncentives();
   await gaugeFactory.write.setVotingIncentives([gaugeAddr, votingIncentivesAddr]);

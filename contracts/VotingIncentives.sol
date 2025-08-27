@@ -16,17 +16,22 @@ import "./interfaces/IVotingIncentives.sol";
 contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     using SafeERC20 for IERC20;
 
-
     /* ========== STATE VARIABLES ========== */
 
     uint256 public constant WEEK = 7 days; // rewards are released over 7 days
     uint256 public constant PRECISION = 1e24;
     uint256 public firstBribeTimestamp;
 
-    address[] public rewardTokens;      //  list of reward tokens
-    address public feeDistributor;               //  underlying feeDistributor linked to this.contract
+    /// @notice list of reward tokens
+    address[] public rewardTokens;
+    /// @notice underlying feeDistributor linked to this contract
+    address public feeDistributor;
+    // => allows to split rewards between external incentives (bribes) and internal incentives (swap fees)
+    // when everything is deployed with GlobalFactory, should be the gauge, which provide the mechanic to claim and distribute
+    // swap fees to VotingIncentives in `claimFees` functions, see Gauge.sol & GaugeEternalFarming.sol
 
-    address public votingIncentivesFactory;//  Voting Incentives deployer
+    /// @notice VotingIncentives deployer, which is also the owner (has priviledged access to admin functions)
+    IVotingIncentivesFactory public votingIncentivesFactory;
 
     // owner -> reward token -> lastTime
     mapping(address => mapping(address => uint256)) public userRewardPerTokenPaid;
@@ -40,48 +45,39 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     mapping(address => mapping(uint => Reward)) public rewardData;
     mapping(address => bool) public isRewardToken;
 
-
-
-
     /* ========== CONSTRUCTOR ========== */
+
     /// @notice Deploy VotingIncentives.sol
-    /// @param _owner   the owner of this contract, multisig
-    /// @param _voter   the voter contract used to interface with this contract
     /// @param _feeDistributor   the feeDistributor linked with this incentive contract (the gauge)
-    constructor(address _owner, address _feeDistributor)  {
-
-        if(msg.sender == address(0)) revert AddressZero();
-        if(_voter == address(0)) revert AddressZero();
-        if(_owner == address(0)) revert AddressZero();
-        if(_claimer == address(0)) revert AddressZero();
-
-        address _ve = IVoter(_voter).ve();
-        if(_ve == address(0)) revert AddressZero();
-
-        address _minter = IVoter(_voter).minter();
-        if(_minter == address(0)) revert AddressZero();
-
-        voter = _voter;
-        votingIncentivesFactory = msg.sender;
-
-        ve = IVotingEscrow(_ve);
-        minter = IMinter(_minter);
-
+    constructor(address _feeDistributor) {
+        votingIncentivesFactory = IVotingIncentivesFactory(msg.sender);
         feeDistributor = _feeDistributor;
+    }
 
-        owner = _owner;
+    function voter() public view returns (IVoter) {
+        return IVoter(votingIncentivesFactory.voter());
+    }
 
-        claimer = _claimer;
+    function votingEscrow() public view returns (IVotingEscrow) {
+        return IVotingEscrow(votingIncentivesFactory.votingEscrow());
+    }
+
+    function minter() public view returns (IMinter) {
+        return IMinter(votingIncentivesFactory.minter());
+    }
+
+    function claimer() public view returns (address) {
+        return votingIncentivesFactory.claimer();
     }
 
     /// @notice get the current epoch
-    function getEpochStart() external view returns(uint){
-        return IMinter(minter).active_period();
+    function getEpochStart() public view returns(uint){
+        return minter().active_period();
     }
 
     /// @notice get next epoch (where bribes are saved)
-    function getNextEpochStart() external view returns(uint){
-        return IMinter(minter).active_period() + WEEK;
+    function getNextEpochStart() public view returns(uint){
+        return minter().active_period() + WEEK;
     }
 
 
@@ -94,8 +90,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
     /// @notice get the last totalSupply (total votes for a pool)
     function totalSupply() external view returns (uint256) {
-        uint256 _currentEpochStart = IMinter(minter).active_period();
-        return _totalSupply[_currentEpochStart];
+        return _totalSupply[getEpochStart()];
     }
 
     /// @notice get a totalSupply given a timestamp
@@ -105,22 +100,20 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
     /// @notice read the balanceOf the tokenId at a given timestamp
     function balanceOfAt(uint256 tokenId, uint256 _timestamp) external view returns (uint256) {
-        address _owner = IVotingEscrow(ve).ownerOf(tokenId);
+        address _owner = votingEscrow().ownerOf(tokenId);
         return _balances[_owner][_timestamp];
     }
 
 
     /// @notice get last deposit available given a tokenID
     function balanceOf(uint256 tokenId) external view returns (uint256) {
-        uint256 _timestamp = IMinter(minter).active_period();
-        address _owner = IVotingEscrow(ve).ownerOf(tokenId);
-        return _balances[_owner][_timestamp];
+        address _owner = votingEscrow().ownerOf(tokenId);
+        return _balances[_owner][getEpochStart()];
     }
 
     /// @notice get the balance of a owner in the current epoch
     function balanceOfOwner(address _owner) external view returns (uint256) {
-        uint256 _timestamp = IMinter(minter).active_period();
-        return _balances[_owner][_timestamp];
+        return _balances[_owner][getEpochStart()];
     }
 
     /// @notice get the balance of a owner given a timestamp
@@ -131,8 +124,8 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
     /// @notice Read earned amount given a tokenID and _token
     function earned(uint256 tokenId, address _token) external view returns(uint256){
-        uint256 _endTimestamp = IMinter(minter).active_period(); // claim until current epoch
-        address _owner = IVotingEscrow(ve).ownerOf(tokenId);
+        uint256 _endTimestamp = getEpochStart(); // claim until current epoch
+        address _owner = votingEscrow().ownerOf(tokenId);
         uint256 _userLastTime = userTimestamp[_owner][_token];
 
         (uint reward, ) = _preEarned(_endTimestamp, _userLastTime, _token, _owner);
@@ -141,7 +134,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
     /// @notice read earned amounts given an address and the reward token
     function earned(address _owner, address _token) external view returns(uint256){
-        uint256 _endTimestamp = IMinter(minter).active_period(); // claim until current epoch
+        uint256 _endTimestamp = getEpochStart(); // claim until current epoch
         uint256 _userLastTime = userTimestamp[_owner][_token];
         (uint reward, ) = _preEarned(_endTimestamp, _userLastTime, _token, _owner);
         return reward;
@@ -149,7 +142,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
     /// @notice read earned amounts given a tokenID and the reward token, at a specific epoch timestamp
     function earnedAtEpochTimestamp(uint256 tokenId, address _token, uint256 _timestamp) external view returns(uint256){
-        address _owner = IVotingEscrow(ve).ownerOf(tokenId);
+        address _owner = votingEscrow().ownerOf(tokenId);
         return _earned(_owner, _token, _timestamp);
     }
 
@@ -180,10 +173,11 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     /// @dev    called on voter.vote() or voter.poke()
     ///         we save into owner "address" and not "tokenID".
     function deposit(uint256 amount, uint256 tokenId) external nonReentrant whenNotPaused {
-        require(amount > 0, "Cannot stake 0");
-        if(msg.sender != voter) revert NotVoter();
-        uint256 _startTimestamp = IMinter(minter).active_period();
-        address _owner = IVotingEscrow(ve).ownerOf(tokenId);
+        require(amount > 0, "VI: deposit 0");
+        if(msg.sender != address(voter())) revert NotVoter();
+
+        uint256 _startTimestamp = getEpochStart();
+        address _owner = votingEscrow().ownerOf(tokenId);
 
         _totalSupply[_startTimestamp] += amount;
         _balances[_owner][_startTimestamp] += amount;
@@ -194,12 +188,11 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     /// @notice User votes withdrawal
     /// @dev    called on voter.reset()
     function withdraw(uint256 amount, uint256 tokenId) external nonReentrant whenNotPaused {
-
-        uint256 _startTimestamp = IMinter(minter).active_period() ;
-        address _owner = IVotingEscrow(ve).ownerOf(tokenId);
-
         require(amount > 0, "VI: withdraw 0");
-        require(msg.sender == voter,'VI: !voter');
+        if(msg.sender != address(voter())) revert NotVoter();
+
+        uint256 _startTimestamp = getEpochStart() ;
+        address _owner = votingEscrow().ownerOf(tokenId);
         require(amount <= _balances[_owner][_startTimestamp],'VI: !user balance');
 
         _totalSupply[_startTimestamp] -= amount;
@@ -210,11 +203,11 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
     /// @notice Claim the TOKENID rewards
     function getReward(uint tokenId, address[] calldata tokens) external nonReentrant whenNotPaused {
-        require(IVotingEscrow(ve).isApprovedOrOwner(msg.sender, tokenId));
+        require(votingEscrow().isApprovedOrOwner(msg.sender, tokenId));
         uint256 _userLastTime;
         uint256 reward;
         uint256 i;
-        address _owner = IVotingEscrow(ve).ownerOf(tokenId);
+        address _owner = votingEscrow().ownerOf(tokenId);
 
         for (i; i < tokens.length; i++) {
             address _token = tokens[i];
@@ -247,12 +240,12 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
     /// @notice Claim rewards from claimer
     function getRewardForOwner(uint tokenId, address[] calldata tokens) external nonReentrant whenNotPaused {
-        if(msg.sender != claimer) revert NotClaimer();
+        if(msg.sender != claimer()) revert NotClaimer();
 
         uint256 _userLastTime;
         uint256 reward;
         uint256 i;
-        address _owner = IVotingEscrow(ve).ownerOf(tokenId);
+        address _owner = votingEscrow().ownerOf(tokenId);
 
         for (i; i < tokens.length; i++) {
             address _token = tokens[i];
@@ -267,7 +260,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
     /// @notice Claim rewards from claimer
     function getRewardForAddress(address _owner, address[] calldata tokens) external nonReentrant whenNotPaused {
-        if(msg.sender != claimer) revert NotClaimer();
+        if(msg.sender != claimer()) revert NotClaimer();
 
         uint256 _userLastTime;
         uint256 reward;
@@ -290,7 +283,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     function notifyRewardAmountForMultipleEpoch(address _token, uint256[] calldata _rewards) external nonReentrant whenNotPaused {
         require(isRewardToken[_token], "reward token not verified");
 
-        uint256 _startTimestamp = IMinter(minter).active_period();
+        uint256 _startTimestamp = getEpochStart();
         uint256 i;
         uint256 totalReward;
         uint256 numOfEpochs = _rewards.length;
@@ -310,7 +303,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     /// @dev    Rewards are saved into THIS EPOCH mapping.
     function notifyRewardAmount(address _token, uint256 reward) external nonReentrant whenNotPaused {
         require(isRewardToken[_token], "reward token not verified");
-        uint256 _startTimestamp = IMinter(minter).active_period();
+        uint256 _startTimestamp = getEpochStart();
         _notifyReward(_token, reward, _startTimestamp, msg.sender == feeDistributor);
         IERC20(_token).safeTransferFrom(msg.sender,address(this),reward);
     }
@@ -334,7 +327,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     /* ========== INTERNAL FUNCTIONS ========== */
     /// @notice Read earned amount given address and reward token, returns the rewards and the last user timestamp (used in case user do not claim since 50+epochs)
     function _earnedWithTimestamp(address _owner, address _token) internal view returns(uint256,uint256){
-        uint256 _endTimestamp = IMinter(minter).active_period(); // claim until current epoch
+        uint256 _endTimestamp = getEpochStart(); // claim until current epoch
         uint256 _userLastTime = userTimestamp[_owner][_token];
         return _preEarned(_endTimestamp, _userLastTime, _token, _owner);
     }
@@ -376,7 +369,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     /* ========== RESTRICTED FUNCTIONS ========== */
 
     /// @notice add rewards tokens
-    function addRewards(address[] calldata _tokens) external onlyAllowed {
+    function addRewards(address[] calldata _tokens) external onlyVotingIncentivesFactory {
         require(_tokens.length > 0, 'VI: length');
         uint i;
         for(i; i < _tokens.length; i++){
@@ -385,7 +378,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     }
 
     /// @notice add a single reward token
-    function addReward(address _token) external onlyAllowed {
+    function addReward(address _token) external onlyVotingIncentivesFactory {
         _addReward(_token);
     }
     function _addReward(address _token) internal {
@@ -397,7 +390,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
 
     /// @notice Remove rewards tokens
-    function removeRewards(address[] calldata _tokens) external onlyAllowed {
+    function removeRewards(address[] calldata _tokens) external onlyVotingIncentivesFactory {
         require(_tokens.length > 0, 'VI: length');
         uint i;
         for(i; i < _tokens.length; i++){
@@ -406,7 +399,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     }
 
     /// @notice Remove a single reward token
-    function removeReward(address _token) external onlyAllowed {
+    function removeReward(address _token) external onlyVotingIncentivesFactory {
         _removeReward(_token);
     }
 
@@ -432,9 +425,9 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
 
 
     /// @notice Recover ERC20 from last bribe
-    function recoverERC20AndUpdateLastIncentive(address _token, uint256 tokenAmount) external onlyAllowed {
+    function recoverERC20AndUpdateLastIncentive(address _token, uint256 tokenAmount) external onlyVotingIncentivesFactory {
         require(tokenAmount <= IERC20(_token).balanceOf(address(this)));
-        uint timestamp = IMinter(minter).active_period();
+        uint timestamp = getEpochStart();
         rewardData[_token][timestamp].incentivesAmount -= tokenAmount;
         rewardData[_token][timestamp].rewardsPerEpoch -= tokenAmount;
         rewardData[_token][timestamp].lastUpdateTime = block.timestamp;
@@ -442,54 +435,33 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     }
 
     /// @notice Recover some ERC20 from the contract.
-    /// @dev    Be careful --> if called then getReward() will fail because some reward are missing!
-    ///         Think about calling recoverERC20AndUpdateData()
-    function emergencyRecoverERC20(address tokenAddress, uint256 tokenAmount) external onlyAllowed {
+    /// @dev    Be careful --> if called then getReward() will fail because some reward are missing !
+    function emergencyRecoverERC20(address tokenAddress, uint256 tokenAmount, address recipient) external onlyVotingIncentivesFactory {
         require(tokenAmount <= IERC20(tokenAddress).balanceOf(address(this)));
-        IERC20(tokenAddress).safeTransfer(owner, tokenAmount);
+        IERC20(tokenAddress).safeTransfer(recipient, tokenAmount);
         emit Recovered(tokenAddress, tokenAmount);
     }
 
-    /// @notice Set a new voter
-    function setVoter(address _voter) external onlyAllowed {
-        require(_voter != address(0));
-        voter = _voter;
-        emit SetVoter(_voter);
+    /// @notice Set a new VotingIncentivesFactory
+    function setVotingIncentivesFactory(address _votingIncentivesFactory) external onlyVotingIncentivesFactory {
+        require(_votingIncentivesFactory != address(0));
+        votingIncentivesFactory = IVotingIncentivesFactory(_votingIncentivesFactory);
+        emit SetVotingIncentivesFactory(_votingIncentivesFactory);
     }
 
-    /// @notice Set a new minter
-    function setMinter(address _minter) external onlyAllowed {
-        require(_minter != address(0));
-        minter = IMinter(_minter);
-        emit SetMinter(_minter);
-    }
 
-    /// @notice Set a new Owner
-    function setOwner(address _owner) external onlyAllowed {
-        require(_owner != address(0));
-        owner = _owner;
-        emit SetOwner(_owner);
-    }
-
-    ///@notice set a new claimer contract
-    function setClaimer(address _claimer) external onlyAllowed {
-        require(_claimer != address(0), "zero addr");
-        require(_claimer != claimer, "same addr");
-        claimer = _claimer;
-        emit SetClaimer(_claimer);
-    }
 
     /// @notice Pause contract
     /// @param status   true = pause, false = unpause
-    function pause(bool status) external onlyAllowed {
+    function pause(bool status) external onlyVotingIncentivesFactory {
         status ? _pause() : _unpause();
     }
 
 
     /* ========== MODIFIERS ========== */
 
-    modifier onlyAllowed() {
-        require( (msg.sender == owner || msg.sender == votingIncentivesFactory), "permission is denied!" );
+    modifier onlyVotingIncentivesFactory() {
+        if (msg.sender != address(votingIncentivesFactory)) revert NotVotingIncentivesFactory();
         _;
     }
 

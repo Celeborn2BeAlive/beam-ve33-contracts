@@ -4,11 +4,12 @@ import BeamSolidyDEX from "./Beam.SolidyDEX";
 import { beamAlgebraFactory, beamMultisigAddress, POOL_TYPE_ALGEBRA, wzetaAddress, ZERO_ADDRESS } from "./constants";
 
 const VotingIncentivesFactory = buildModule("VotingIncentivesFactory", (m) => {
-  const { beamToken } = m.useModule(BeamCore);
+  const { beamToken, minterProxy, votingEscrow, voter, claimer} = m.useModule(BeamCore);
 
   const globalFactory = ZERO_ADDRESS; // Set after deployment of GlobalFactory
-  const defaultTokens = [beamToken];
-  const votingIncentivesFactory = m.contract("VotingIncentivesFactory", [globalFactory, defaultTokens]);
+  const defaultTokens = [beamToken, wzetaAddress];
+  // constructor(address _globalFactory, address[] memory defaultTokens, address _minter, address _votingEscrow, address _voter, address _claimer)
+  const votingIncentivesFactory = m.contract("VotingIncentivesFactory", [globalFactory, defaultTokens, minterProxy, votingEscrow, voter, claimer]);
 
   return { votingIncentivesFactory };
 });
@@ -26,26 +27,11 @@ const AlgebraVaultFactory = buildModule("AlgebraVaultFactory", (m) => {
 
   const algebraVaultFactory = m.contract("AlgebraVaultFactory", [voter, beamAlgebraFactory]);
 
-  // TODO The AlgebraVaultFactory should be set on the AlgebraFactory
-  // with AlgebraFactory.setVaultFactory
-  // It will call AlgebraVaultFactory.createVaultForPool at each new pool
-  // deployment.
-
-  // TODO For all existing pools we need to call .setCommunityVault on each one to plug-in an AlgebraVault instance.
-  // one issue with that is only the `algebraFactory` recorded in AlgebraVaultFactory can do the .createVaultForPool
-  // and it cannot be changed after AlgebraVaultFactory is instanciated.
-  // TODO Add a new role to AlgebraVaultFactory to allow the creation and assignation of AlgebraVault to an existing pool
-
-  // TODO In order to call AlgebraVaultFactory.setCommunityFee for a pool
-  // we need the AlgebraVaultFactory to have role POOLS_ADMINISTRATOR_ROLE
-  // on the AlgebraFactory.
-
   return { algebraVaultFactory }
 });
 
 const IncentiveMakerUpgradeable = buildModule("IncentiveMaker", (m) => {
-  const { proxyAdmin } = m.useModule(BeamCore);
-  const { beamToken } = m.useModule(BeamCore);
+  const { proxyAdmin, beamToken } = m.useModule(BeamCore);
 
   const incentiveMakerImplementation = m.contract("IncentiveMakerUpgradeable", undefined, {
     id: "IncentiveMakerUpgradeableImplementation",
@@ -68,13 +54,10 @@ const IncentiveMakerUpgradeable = buildModule("IncentiveMaker", (m) => {
 });
 
 const GlobalFactory = buildModule("GlobalFactory", (m) => {
-  const { voter } = m.useModule(BeamCore);
-  const { beamToken } = m.useModule(BeamCore);
-  const { epochDistributorProxy } = m.useModule(BeamCore)
+  const { beamToken, voter, epochDistributorProxy, claimer } = m.useModule(BeamCore);
   const { solidlyPairFactoryProxy } = m.useModule(BeamSolidyDEX);
   const { gaugeFactory } = m.useModule(GaugeFactory);
   const { votingIncentivesFactory } = m.useModule(VotingIncentivesFactory);
-  const { claimer } = m.useModule(BeamCore);
   const { incentiveMakerProxy } = m.useModule(IncentiveMakerUpgradeable);
 
   // constructor(address _voter, address _thena, address _distribution, address _pfsld, address _pfalgb, address _gf, address _vif, address _theNFT, address _claimer, address _incentiveMaker)

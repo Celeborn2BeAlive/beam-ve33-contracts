@@ -2,8 +2,19 @@
 pragma solidity >=0.8.0;
 
 
-interface IVotingIncentivesFactory { // View functions
+interface IVotingIncentivesFactory {
+    /// @notice Read all voting incentives contract deployed
     function votingIncentives() external view returns (address[] memory);
+
+    // Protocol contracts, access is centralized for all deployed VotingIncentives instances
+    function minter() external view returns (address);
+    function setMinter(address _minter) external;
+    function votingEscrow() external view returns (address);
+    function setVotingEscrow(address _votingEscrow) external;
+    function voter() external view returns (address);
+    function setVoter(address _voter) external;
+    function claimer() external view returns (address);
+    function setClaimer(address _claimer) external;
 
     // Management functions
     function setGlobalFactory(address _gf) external;
@@ -17,10 +28,7 @@ interface IVotingIncentivesFactory { // View functions
     function removeRewardsToVotingIncentives(address[] calldata _token, address _vi) external;
 
     // Voting incentives management
-    function setVotingIncentivesVoter(address[] calldata _vi, address _voter) external;
-    function setVotingIncentivesMinter(address[] calldata _vi, address _minter) external;
-    function setVotingIncentivesOwner(address[] calldata _vi, address _owner) external;
-    function setClaimer(address claimer, address[] calldata _vi) external;
+    function setVotingIncentivesFactory(address[] calldata _vi, address _votingIncentivesFactory) external;
 
     // Emergency recovery
     function emergencyRecoverERC20(address[] calldata _vi, address[] calldata _tokens, uint[] calldata _amounts) external;
@@ -34,11 +42,8 @@ interface IVotingIncentivesFactory { // View functions
     function createVotingIncentives(
         address _token0,
         address _token1,
-        address voter,
-        address gauge,
-        address claimer
+        address gauge
     ) external returns (address);
-
 
     error AddressZero();
 }

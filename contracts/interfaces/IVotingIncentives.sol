@@ -39,11 +39,8 @@ interface IVotingIncentives {
     function addRewards(address[] calldata _rewardsToken) external;
     function removeReward(address) external;
     function removeRewards(address[] calldata _rewardsToken) external;
-    function setVoter(address _Voter) external;
-    function setMinter(address _Voter) external;
-    function setOwner(address _Voter) external;
-    function setClaimer(address _claimer) external;
-    function emergencyRecoverERC20(address tokenAddress, uint256 tokenAmount) external;
+    function setVotingIncentivesFactory(address _votingIncentivesFactory) external;
+    function emergencyRecoverERC20(address tokenAddress, uint256 tokenAmount, address recipient) external;
     function recoverERC20AndUpdateLastIncentive(address _rewardsToken, uint256 tokenAmount) external;
     function pause(bool status) external;
 
@@ -51,6 +48,7 @@ interface IVotingIncentives {
     error AddressZero();
     error NotVoter();
     error NotClaimer();
+    error NotVotingIncentivesFactory();
 
     // Events
     event RewardAdded(address rewardToken, uint256 reward, uint256 startTimestamp);
@@ -58,9 +56,6 @@ interface IVotingIncentives {
     event Withdrawn(uint256 indexed tokenId, uint256 amount);
     event RewardPaid(address indexed user, address indexed rewardsToken, uint256 reward);
     event Recovered(address token, uint256 amount);
-    event SetVoter(address indexed voter);
-    event SetMinter(address indexed minter);
-    event SetOwner(address indexed owner);
-    event SetClaimer(address indexed claimer);
+    event SetVotingIncentivesFactory(address indexed votingIncentivesFactory);
 
 }

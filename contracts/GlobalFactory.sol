@@ -184,7 +184,7 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
         }
 
         // Step 3: Create the Voting Incentives contract
-        votingIncentives = votingIncentivesFactory.createVotingIncentives(ADDR_0, ADDR_0, address(voter), gauge, claimer);
+        votingIncentives = votingIncentivesFactory.createVotingIncentives(ADDR_0, ADDR_0, gauge);
 
         // Step 4: Finish setup
         if(pool_type == 1) IFeeVault(feeVault).setGauge(gauge);
