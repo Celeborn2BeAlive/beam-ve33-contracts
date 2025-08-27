@@ -247,6 +247,16 @@ describe("AlgebraFactory", function() {
       await mine();
     }
 
+    const communityFeesPending = await pool_WZETA_BTC_BTC.read.getCommunityFeePending();
+    const token0 = await pool_WZETA_BTC_BTC.read.token0();
+    const token1 = await pool_WZETA_BTC_BTC.read.token1();
+    const feesPending = {
+      [token0]: communityFeesPending[0],
+      [token1]: communityFeesPending[1],
+    };
+    expect(wzeta.address in feesPending).to.be.true;
+    expect(btc_btc.address in feesPending).to.be.true;
+
     // Swap WZETA for BTC.BTC
     await wzeta.write.approve([algebraSwapRouter.address, amountIn]);
     await algebraSwapRouter.write.exactInputSingle([
@@ -267,9 +277,9 @@ describe("AlgebraFactory", function() {
     // The vault should have accumulated WZETA swap fees, but no BTC.BTC
     {
       const wzetaBalanceOfVault = await wzeta.read.balanceOf([vault]);
-      expect(wzetaBalanceOfVault > wzetaBalanceOfVaultBeforeSwap).to.be.true;
+      expect(wzetaBalanceOfVault > (wzetaBalanceOfVaultBeforeSwap + feesPending[wzeta.address])).to.be.true;
       const btcBalanceOfVault = await btc_btc.read.balanceOf([vault]);
-      expect(btcBalanceOfVault).to.equals(btcBalanceOfVaultBeforeSwap);
+      expect(btcBalanceOfVault).to.equals(btcBalanceOfVaultBeforeSwap + feesPending[btc_btc.address]);
     }
 
     // Swap BTC.BTC for WZETA:
@@ -295,7 +305,7 @@ describe("AlgebraFactory", function() {
     // The vault should have accumulated both WZETA swap fees from first swap, and BTC.BTC from second swap
     {
       const btcBalanceOfVault = await btc_btc.read.balanceOf([vault]);
-      expect(btcBalanceOfVault > btcBalanceOfVaultBeforeSwap).to.be.true;
+      expect(btcBalanceOfVault > btcBalanceOfVaultBeforeSwap + feesPending[btc_btc.address]).to.be.true;
     }
   });
 
