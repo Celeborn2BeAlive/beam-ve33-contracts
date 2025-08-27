@@ -3,9 +3,15 @@ import { expect } from "chai";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { getAddress } from "viem";
 import { beamTokenName, beamTokenSymbol } from "../ignition/modules/constants";
-import { INITIAL_BEAM_TOKEN_SUPPLY } from "./constants";
+import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork } from "./constants";
 
 describe("BeamToken", () => {
+  before(async function () {
+    if (!isHardhatNetwork) {
+      this.skip();
+    }
+  });
+
   const deployFixture = async () => {
     const [deployer, otherAccount] = await hre.viem.getWalletClients();
     const deployerAddress = getAddress(deployer.account.address);
