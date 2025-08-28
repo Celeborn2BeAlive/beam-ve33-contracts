@@ -239,3 +239,15 @@ export const TestTokens = buildModule("TestTokens", (m) => {
     WETH,
   }
 });
+
+export const getPairs = <T>(values: T[]) => {
+  const result = [] as [T,T][];
+  for (let firstIdx = 0; firstIdx < values.length; ++firstIdx) {
+    const first = values[firstIdx];
+    for (let secondIdx = firstIdx + 1; secondIdx < values.length; ++secondIdx) {
+      const second = values[secondIdx];
+      result.push([first, second]);
+    }
+  }
+  return result;
+}
