@@ -13,8 +13,12 @@ import "@nomicfoundation/hardhat-foundry";
 import "@nomicfoundation/hardhat-viem";
 import "@nomicfoundation/hardhat-ignition-viem";
 
-const { PRIVATEKEY, APIKEY_BLOCKSCOUT_ZETACHAIN } = require("./pvkey.js");
-const { HARDHAT_NETWORK, ZETACHAIN_RPC_URL } = process.env;
+const {
+  HARDHAT_NETWORK,
+  ZETACHAIN_RPC_URL,
+  PRIVATEKEY,
+  APIKEY_BLOCKSCOUT_ZETACHAIN
+} = process.env;
 
 const config: HardhatUserConfig = {
   // latest Solidity version
@@ -45,7 +49,7 @@ const config: HardhatUserConfig = {
     zetachain: {
       url: ZETACHAIN_RPC_URL || `https://zeta-chain.drpc.org`,
       chainId: 7000,
-      accounts: PRIVATEKEY,
+      accounts: [PRIVATEKEY as `0x${string}`],
     },
 
     hardhat: {},
