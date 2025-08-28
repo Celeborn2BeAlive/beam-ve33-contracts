@@ -1,5 +1,6 @@
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
-import { beamTokenName, beamTokenSymbol, ZERO_ADDRESS } from "./constants";
+import { beamTokenName, beamTokenSymbol, beamUrl, veBeamTokenSymbol, ZERO_ADDRESS } from "./constants";
+import { getBeamLogo } from "./utils";
 
 export const ProxyAdmin = buildModule("ProxyAdmin", (m) => {
   const proxyAdmin = m.contract("ProxyAdmin");
@@ -12,7 +13,7 @@ export const BeamToken = buildModule("BeamToken", (m) => {
 });
 
 export const VeArtProxy = buildModule("VeArtProxy", (m) => {
-  const veArtProxy = m.contract("VeArtProxy");
+  const veArtProxy = m.contract("VeArtProxy", [veBeamTokenSymbol, getBeamLogo(), beamUrl]);
   return { veArtProxy };
 });
 

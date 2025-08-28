@@ -5,6 +5,7 @@ import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork, WEEK } from "./constants";
 import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
 import fs from "node:fs";
+import { veBeamTokenSymbol } from "../ignition/modules/constants";
 
 describe("BeamCore.VotingEscrow", () => {
   before(async function () {
@@ -135,7 +136,7 @@ describe("BeamCore.VotingEscrow", () => {
       const tokenURI = await votingEscrow.read.tokenURI([1n]);
       const tokenJson = JSON.parse(Buffer.from(tokenURI.split("data:application/json;base64,")[1], 'base64').toString());
       expect(tokenJson["name"]).to.equals("lock #1");
-      expect(tokenJson["description"]).to.equals("veNFT locks, can be used to vote on token emissions and receive voting rewards");
+      expect(tokenJson["description"]).to.equals(`${veBeamTokenSymbol} locks, can be used to vote on token emissions and receive voting rewards`);
       expect(tokenJson["image"].split(",")[0]).to.equals("data:image/svg+xml;base64");
       const svgData = Buffer.from(tokenJson["image"].split("data:image/svg+xml;base64,")[1], 'base64').toString();
       const refFile = `${__dirname}/__snapshots__/veNFT.svg`;
