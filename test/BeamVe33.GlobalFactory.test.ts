@@ -3,7 +3,7 @@ import { getAddress } from "viem";
 import { isHardhatNetwork } from "./constants";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
-import { createGaugeForSolidlyPoolWithGlobalFactory, CreateGaugeResult, getPairs, TestTokens } from "./utils";
+import { createGauge, CreateGaugeResult, getPairs, TestTokens } from "./utils";
 import BeamProtocol from "../ignition/modules/BeamProtocol";
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 
@@ -49,18 +49,21 @@ describe("BeamVe33.GlobalFactory", () => {
   it("Should create pool, gauge, votingIncentives and add data to Voter", async () => {
     const { globalFactory, voter, solidlyPairFactoryProxy, tokens } = await loadFixture(deployFixture)
 
-    await globalFactory.write.setPoolType([await globalFactory.read.POOL_TYPE_SOLIDLY(), true]);
+    const POOL_TYPE_SOLIDLY = await globalFactory.read.POOL_TYPE_SOLIDLY();
+    await globalFactory.write.setPoolType([POOL_TYPE_SOLIDLY, true]);
     const allTokenAddrs = tokens.map(({address}) => address);
     await globalFactory.write.addToken([allTokenAddrs]);
 
     const solidlyPools = [] as CreateGaugeResult[];
     for (const [token0, token1] of getPairs(tokens)) {
       await solidlyPairFactoryProxy.write.createPair([token0.address, token1.address, false]);
-        const result = await createGaugeForSolidlyPoolWithGlobalFactory({
-          poolAddr: await solidlyPairFactoryProxy.read.getPair([token0.address, token1.address, false]),
-          globalFactory,
-        });
-        solidlyPools.push(result);
+      const result = await createGauge({
+        poolAddr: await solidlyPairFactoryProxy.read.getPair([token0.address, token1.address, false]),
+        poolType: POOL_TYPE_SOLIDLY,
+        voter,
+        globalFactory,
+      });
+      solidlyPools.push(result);
     }
 
     expect(await voter.read.poolsLength()).to.equals(BigInt(solidlyPools.length));

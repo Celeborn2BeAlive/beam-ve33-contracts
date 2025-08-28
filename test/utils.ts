@@ -1,11 +1,12 @@
 import hre from "hardhat";
-import { time } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
+import { impersonateAccount, setBalance, time } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { WEEK } from "./constants";
 import { ClaimerContract, EmissionTokenContract, EpochDistributorContract, ERC20PresetMinterPauserContract, GaugeFactoryContract, GlobalFactoryContract, MinterContract, SolidlyRouterContract, VoterContract, VotingEscrowContract, VotingIncentivesFactoryContract } from "./types";
-import { Address, getAddress, parseUnits, PublicClient } from "viem";
+import { Address, getAddress, parseEther, parseUnits, PublicClient } from "viem";
 import { ZERO_ADDRESS } from "../ignition/modules/constants";
 import { expect } from "chai";
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
+import { Mulberry32 } from "./random";
 
 export const simulateOneWeek = async (activePeriod: bigint) => {
   const nextPeriod = activePeriod + WEEK;
@@ -41,27 +42,38 @@ export type CreateGaugeResult = {
   poolAddr: Address,
   gaugeAddr: Address,
   votingIncentivesAddr: Address,
-  feeVaultAddr: Address,
 };
 
-export type CreateGaugeForPoolWithGlobalFactoryArgs = {
+export type CreateGaugeArgs = {
   poolAddr: Address,
+  poolType: number;
+  voter: VoterContract,
   globalFactory: GlobalFactoryContract,
 };
 
-// Implement standard workflow of creating a Gauge for a Solidly pool using the GlobalFactory.
+// Implement standard workflow of creating a Gauge for a pool using the GlobalFactory
 // This is how it should be done in production.
-// The creation of gauges for Solidly pools is permissionless, but:
-// - POOL_TYPE_SOLIDLY should be enabled on the GlobalFactory using globalFactory.setPoolType before calling the function
+// The creation of gauges for Solidly pools is permissionless, all others are permissioned with role that the caller must have.
+// - poolType should be enabled on the GlobalFactory using globalFactory.setPoolType before calling the function
 // - tokens of the pool should be whitelisted on the GlobalFactory using globalFactory.addToken
-// Note: Beam protocol will probably not enable Solidly pools, unless required to integrate full-range pools.
-export const createGaugeForSolidlyPoolWithGlobalFactory = async (
+// Note: Beam protocol will only use Algebra pool type at deployment time.
+export const createGauge = async (
   {
     poolAddr,
+    poolType,
+    voter,
     globalFactory,
-  }: CreateGaugeForPoolWithGlobalFactoryArgs
+  }: CreateGaugeArgs
 ): Promise<CreateGaugeResult> => {
-  await globalFactory.write.create([poolAddr, await globalFactory.read.POOL_TYPE_SOLIDLY()]);
+  if (await voter.read.isPool([poolAddr])) {
+    const { gauge, votingIncentives } = await voter.read.poolData([poolAddr]);
+    return {
+      poolAddr,
+      gaugeAddr: gauge,
+      votingIncentivesAddr: votingIncentives,
+    }
+  }
+  await globalFactory.write.create([poolAddr, poolType]);
   const createEvents = await globalFactory.getEvents.Create();
   expect(createEvents).to.have.length(1);
   const {} = createEvents[0].args;
@@ -69,7 +81,6 @@ export const createGaugeForSolidlyPoolWithGlobalFactory = async (
     poolAddr,
     gaugeAddr: getAddress(createEvents[0].args.gauge as Address),
     votingIncentivesAddr: getAddress(createEvents[0].args.votingIncentives as Address),
-    feeVaultAddr: getAddress(createEvents[0].args.feeVault as Address),
   }
 };
 
@@ -131,53 +142,54 @@ export const createGaugeForSolidlyPoolWithoutGlobalFactory = async (
     poolAddr,
     gaugeAddr,
     votingIncentivesAddr,
-    feeVaultAddr,
   };
 };
 
 /// Farming Solidly Pairs
 
 export type AddLiquidityAndStakeForFarmingArgs = {
-  WETH: ERC20PresetMinterPauserContract,
-  USDC: ERC20PresetMinterPauserContract,
-  beamToken: EmissionTokenContract,
   deployerAddress: Address,
   farmerAddress: Address,
   solidlyRouter: SolidlyRouterContract,
   publicClient: PublicClient,
-  solidlyPools: Record<string, {
+  solidlyPools: {
     poolAddr: Address,
     gaugeAddr: Address,
-  }>
+  }[]
 };
 
 export const addLiquidityAndStakeForFarming = async ({
-  WETH,
-  USDC,
-  beamToken,
   deployerAddress,
   farmerAddress,
   solidlyRouter,
   publicClient,
   solidlyPools,
 }: AddLiquidityAndStakeForFarmingArgs) => {
-  const beamBalance = await beamToken.read.balanceOf([deployerAddress]);
-  const wethBalance = await WETH.read.balanceOf([deployerAddress]);
-  const usdcBalance = await USDC.read.balanceOf([deployerAddress]);
-  await beamToken.write.approve([solidlyRouter.address, beamBalance]);
-  await WETH.write.approve([solidlyRouter.address, wethBalance]);
-  await USDC.write.approve([solidlyRouter.address, usdcBalance]);
-  const timestamp = (await publicClient.getBlock()).timestamp;
-  await solidlyRouter.write.addLiquidity([
-    WETH.address, USDC.address, false, wethBalance * 10n / 100n, usdcBalance * 10n / 100n, 0n, 0n, farmerAddress, timestamp + 1000n,
-  ]);
-  await solidlyRouter.write.addLiquidity([
-    WETH.address, beamToken.address, false, wethBalance * 10n / 100n, beamBalance * 10n / 100n, 0n, 0n, farmerAddress, timestamp + 1000n,
-  ]);
-  await solidlyRouter.write.addLiquidity([
-    USDC.address, beamToken.address, false, usdcBalance * 10n / 100n, beamBalance * 10n / 100n, 0n, 0n, farmerAddress, timestamp + 1000n,
-  ]);
-  for (const {poolAddr, gaugeAddr} of Object.values(solidlyPools)) {
+  for (const {poolAddr, gaugeAddr} of solidlyPools) {
+    const pairInfo = await hre.viem.getContractAt("IPairInfo", poolAddr);
+    const [token0Addr, token1Addr] = [await pairInfo.read.token0(), await pairInfo.read.token1()];
+    const [token0, token1] = [await hre.viem.getContractAt("ERC20", token0Addr), await hre.viem.getContractAt("ERC20", token1Addr)];
+    const balances = [await token0.read.balanceOf([deployerAddress]), await token1.read.balanceOf([deployerAddress])]
+
+    const amount0 = balances[0] * 10n / 100n; // 10% of balance
+    const amount1 = balances[1] * 10n / 100n; // 10% of balance
+
+    await token0.write.approve([solidlyRouter.address, amount0]);
+    await token1.write.approve([solidlyRouter.address, amount1]);
+
+    const timestamp = (await publicClient.getBlock()).timestamp;
+    await solidlyRouter.write.addLiquidity([
+      token0Addr,
+      token1Addr,
+      false,
+      amount0,
+      amount1,
+      0n,
+      0n,
+      farmerAddress,
+      timestamp + 1000n,
+    ]);
+
     const gauge = await hre.viem.getContractAt("Gauge", gaugeAddr);
     const pool = await hre.viem.getContractAt("ERC20", poolAddr);
     await pool.write.approve([gaugeAddr, await pool.read.balanceOf([farmerAddress])], { account: farmerAddress });
@@ -188,41 +200,62 @@ export const addLiquidityAndStakeForFarming = async ({
 /// Deposit of Voting incentives
 
 export type AddVotingIncentivesArgs = {
-  pools: Record<string, {
+  pools: {
     poolAddr: Address,
+    gaugeAddr: Address,
     votingIncentivesAddr: Address,
-  }>,
+  }[],
   beamToken: EmissionTokenContract,
   deployerAddress: Address,
 };
+
+export type VotingIncentivesReward = {
+  incentivesAmount: bigint;
+  feesAmount: bigint;
+}
 
 export const addVotingIncentives = async ({
   pools,
   beamToken,
   deployerAddress,
 }: AddVotingIncentivesArgs) => {
-  const addedIncentives = {
-    [beamToken.address]: 0n
-  };
-  for (const {poolAddr, votingIncentivesAddr} of Object.values(pools)) {
-    const votingIncentives = await hre.viem.getContractAt("VotingIncentives", votingIncentivesAddr);
-    const beamRewardAmount = parseUnits("1000000", 18); // 1M BEAM tokens
-    await beamToken.write.approve([votingIncentives.address, beamRewardAmount]);
-    await votingIncentives.write.notifyRewardAmount([beamToken.address, beamRewardAmount]);
-    addedIncentives[beamToken.address] += beamRewardAmount;
+  const addedIncentives: Record<Address, Record<Address, VotingIncentivesReward>> = {};
+  for (const {poolAddr, gaugeAddr, votingIncentivesAddr} of pools) {
     const pairInfo = await hre.viem.getContractAt("IPairInfo", poolAddr);
     const pairTokens = [await pairInfo.read.token0(), await pairInfo.read.token1()];
+    addedIncentives[poolAddr] = {
+      [beamToken.address]: {
+        incentivesAmount: 0n,
+        feesAmount: 0n,
+      },
+      [pairTokens[0]]: {
+        incentivesAmount: 0n,
+        feesAmount: 0n,
+      },
+      [pairTokens[1]]: {
+        incentivesAmount: 0n,
+        feesAmount: 0n,
+      },
+    }
+    const votingIncentives = await hre.viem.getContractAt("VotingIncentives", votingIncentivesAddr);
+    const balance = await beamToken.read.balanceOf([deployerAddress]);
+    const beamRewardAmount = balance * 10n / 100n; // 10% of balance
+    expect(beamRewardAmount > 0n).to.be.true;
+    await beamToken.write.approve([votingIncentives.address, beamRewardAmount]);
+    await votingIncentives.write.notifyRewardAmount([beamToken.address, beamRewardAmount]);
+    addedIncentives[poolAddr][beamToken.address].incentivesAmount += beamRewardAmount;
+
+    await impersonateAccount(gaugeAddr); // Impersonate gauge to simulate distribution of swap fees
+    await setBalance(gaugeAddr, parseEther("1")); // Provide some gas
     for (const tokenAddr of pairTokens) {
-      if (tokenAddr == beamToken.address) continue;
-      if (!(tokenAddr in addedIncentives)) {
-        addedIncentives[tokenAddr] = 0n;
-      }
       const token = await hre.viem.getContractAt("ERC20", tokenAddr);
       const balance = await token.read.balanceOf([deployerAddress]);
       const rewardAmount = balance * 10n / 100n; // 10% of balance
-      await token.write.approve([votingIncentives.address, rewardAmount]);
-      await votingIncentives.write.notifyRewardAmount([tokenAddr, rewardAmount]);
-      addedIncentives[tokenAddr] += rewardAmount;
+      expect(rewardAmount > 0n).to.be.true;
+      await token.write.transfer([gaugeAddr, rewardAmount]);
+      await token.write.approve([votingIncentives.address, rewardAmount], {account: gaugeAddr});
+      await votingIncentives.write.notifyRewardAmount([tokenAddr, rewardAmount], {account: gaugeAddr});
+      addedIncentives[poolAddr][tokenAddr].feesAmount += rewardAmount;
     }
   }
   return addedIncentives;
@@ -250,4 +283,9 @@ export const getPairs = <T>(values: T[]) => {
     }
   }
   return result;
+}
+
+export const getRandomVoteWeight = (rng: Mulberry32) => {
+  const MAX_SINGLE_WEIGHT = 10000; // Constant defined in Voter.sol
+  return BigInt(rng.nextInt(0, MAX_SINGLE_WEIGHT));
 }
