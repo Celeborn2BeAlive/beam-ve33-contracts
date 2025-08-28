@@ -42,8 +42,6 @@ interface IGauge {
     event Harvest(address indexed user, address indexed token, uint256 reward);
     event ClaimFees(address indexed from, uint claimed0, uint claimed1);
     event ClaimFees(address indexed from, address indexed token, uint claimed);
-    event SetClaimer(address indexed claimer);
-    event SetDistribution(address indexed distribution);
     event SetVotingIncentives(address indexed vi);
     event SetFeeVault(address indexed feeVault);
     event ActivateEmergencyMode();

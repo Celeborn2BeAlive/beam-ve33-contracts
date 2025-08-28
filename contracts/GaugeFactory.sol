@@ -81,7 +81,7 @@ contract GaugeFactory is IGaugeFactory, AccessControl {
 
     function epochDistributor() external view returns(address) {
         require(globalFactory != address(0), 'GF: ZeroAddress');
-        return IGlobalFactory(globalFactory).distribution();
+        return IGlobalFactory(globalFactory).epochDistributor();
     }
 
     function claimer() external view returns(address) {

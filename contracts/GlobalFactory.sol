@@ -34,7 +34,7 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
     address public claimer;
 
     /// @notice EpochDistributor contract
-    address public distribution;
+    address public epochDistributor;
 
     /// @notice IncentiveMaker contract
     address public incentiveMaker;
@@ -74,7 +74,7 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
     /// @notice Constructor for GlobalFactory
     /// @param _voter Voter contract
     /// @param _emissionToken Emission token contract
-    /// @param _distribution EpochDistributor contract
+    /// @param _epochDistributor EpochDistributor contract
     /// @param _pfsld Solidly Pair Factory contract
     /// @param _pfalgb Algebra Pair Factory contract
     /// @param _gf Gauge Factory contract
@@ -82,10 +82,10 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
     /// @param _treasury Treasury address or contract
     /// @param _claimer Claimer contract
     /// @param _incentiveMaker Eternal Farming contract
-    constructor(address _voter, address _emissionToken, address _distribution, address _pfsld, address _pfalgb, address _gf, address _vif, address _treasury, address _claimer, address _incentiveMaker) {
+    constructor(address _voter, address _emissionToken, address _epochDistributor, address _pfsld, address _pfalgb, address _gf, address _vif, address _treasury, address _claimer, address _incentiveMaker) {
 
         if(_voter == ADDR_0) revert AddressZero();
-        if(_distribution == ADDR_0) revert AddressZero();
+        if(_epochDistributor == ADDR_0) revert AddressZero();
         if(_pfsld == ADDR_0) revert AddressZero();
         if(_pfalgb == ADDR_0) revert AddressZero();
         if(_gf == ADDR_0) revert AddressZero();
@@ -101,7 +101,7 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
         defaultGaugeRewardTokens.push(_emissionToken);
 
         claimer = _claimer;
-        distribution = _distribution;
+        epochDistributor = _epochDistributor;
         gaugeFactory = IGaugeFactory(_gf);
         pairFactorySld = IPairFactory(_pfsld);
         algebraFactory = IAlgebraFactory(_pfalgb);
@@ -330,20 +330,20 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
         emit SetTreasury(_treasury);
     }
 
-    /// @notice Set the distribution contract (epochDistributor contract)
-    /// @param distro Address of the new distribution contract
-    function setDistribution(address distro) external onlyRole(GLOBAL_FACTORY_MANAGER_ROLE) {
-        if(distro == ADDR_0) revert AddressZero();
-        distribution = distro;
-        emit SetDistribution(distro);
+    /// @notice Set the EpochDistributor contract
+    /// @param _epochDistributor Address of the new distribution contract
+    function setDistribution(address _epochDistributor) external onlyRole(GLOBAL_FACTORY_MANAGER_ROLE) {
+        if(_epochDistributor == ADDR_0) revert AddressZero();
+        epochDistributor = _epochDistributor;
+        emit SetEpochDistributor(_epochDistributor);
     }
 
     /// @notice Set the Claimer contract
-    /// @param claim Address of the new Claimer contract
-    function setClaimer(address claim) external onlyRole(GLOBAL_FACTORY_MANAGER_ROLE) {
-        if(claim == ADDR_0) revert AddressZero();
-        claimer = claim;
-        emit SetClaimer(claim);
+    /// @param _claimer Address of the new Claimer contract
+    function setClaimer(address _claimer) external onlyRole(GLOBAL_FACTORY_MANAGER_ROLE) {
+        if(_claimer == ADDR_0) revert AddressZero();
+        claimer = _claimer;
+        emit SetClaimer(_claimer);
     }
 
 

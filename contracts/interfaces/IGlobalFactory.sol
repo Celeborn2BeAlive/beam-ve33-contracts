@@ -36,7 +36,7 @@ interface IGlobalFactory {
     event SetGaugeFactory(address indexed gf);
     event SetVotingIncentivesFactory(address indexed vif);
     event SetTreasury(address indexed treasury);
-    event SetDistribution(address indexed distribution);
+    event SetEpochDistributor(address indexed epochDistributor);
     event SetClaimer(address indexed claimer);
     event SetIncentiveMaker(address indexed incentiveMaker);
 
@@ -46,7 +46,7 @@ interface IGlobalFactory {
     function emissionToken() external view returns (address);
     function treasury() external view returns (address);
     function claimer() external view returns (address);
-    function distribution() external view returns (address);
+    function epochDistributor() external view returns (address);
     function incentiveMaker() external view returns (address);
     function tokens(uint256) external view returns (address);
     function defaultGaugeRewardTokens(uint256) external view returns (address);
