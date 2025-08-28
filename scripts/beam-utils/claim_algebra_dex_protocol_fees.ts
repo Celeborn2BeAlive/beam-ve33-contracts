@@ -6,6 +6,8 @@ async function main () {
   const publicClient = await hre.viem.getPublicClient();
 
   const tokenAddresses = [
+    "0x8344d6f84d26f998fa070bbea6d2e15e359e2641",
+    "0x2db395976cdb9eefcc8920f4f2f0736f1d575794",
     "0x5f0b1a82749cb4e2278ec87f8bf6b618dc71a8bf",
     "0x48f80608b672dc30dc7e3dbbd0343c5f02c738eb",
     "0x0cbe0df132a6c6b4a2974fa1b7fb953cf0cc798a",
