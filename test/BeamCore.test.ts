@@ -43,16 +43,6 @@ describe("BeamCore", () => {
         expect(await proxyAdmin.read.getProxyImplementation([minterProxy.address])).to.equal(minterImplementation.address);
       });
 
-      it("Should set proxy admin for VeArtProxy", async () => {
-        const { proxyAdmin, veArtProxyProxy } = await loadFixture(deployFixture);
-        expect(await proxyAdmin.read.getProxyAdmin([veArtProxyProxy.address])).to.equal(proxyAdmin.address);
-      });
-
-      it("Should set implementation for VeArtProxy", async () => {
-        const { proxyAdmin, veArtProxyProxy, veArtProxyImplementation } = await loadFixture(deployFixture);
-        expect(await proxyAdmin.read.getProxyImplementation([veArtProxyProxy.address])).to.equal(veArtProxyImplementation.address);
-      });
-
       it("Should set proxy admin for EpochDistributor", async () => {
         const { proxyAdmin, epochDistributorProxy } = await loadFixture(deployFixture);
         expect(await proxyAdmin.read.getProxyAdmin([epochDistributorProxy.address])).to.equal(proxyAdmin.address);
@@ -107,9 +97,9 @@ describe("BeamCore", () => {
         expect(await votingEscrow.read.token()).to.equal(beamToken.address);
       });
 
-      it("Should set `artProxy` as the VeArtProxy proxy contract address", async () => {
-        const { votingEscrow, veArtProxyProxy } = await loadFixture(deployFixture);
-        expect(await votingEscrow.read.artProxy()).to.equal(veArtProxyProxy.address);
+      it("Should set `artProxy` as the VeArtProxy contract address", async () => {
+        const { votingEscrow, veArtProxy } = await loadFixture(deployFixture);
+        expect(await votingEscrow.read.artProxy()).to.equal(veArtProxy.address);
       });
     });
 

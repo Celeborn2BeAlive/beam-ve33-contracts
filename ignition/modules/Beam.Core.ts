@@ -11,32 +11,16 @@ export const BeamToken = buildModule("BeamToken", (m) => {
   return { beamToken };
 });
 
-export const VeArtProxyUpgradeable = buildModule("VeArtProxyUpgradeable", (m) => {
-  const { proxyAdmin } = m.useModule(ProxyAdmin);
-
-  const veArtProxyImplementation = m.contract("VeArtProxyUpgradeable", undefined, {
-    id: "VeArtProxyUpgradeableImplementation",
-  });
-  const encodedInitializeCall = m.encodeFunctionCall(veArtProxyImplementation, "initialize");
-
-  const veArtProxyTransparentProxy = m.contract("TransparentUpgradeableProxy", [
-    veArtProxyImplementation,
-    proxyAdmin,
-    encodedInitializeCall,
-  ]);
-
-  const veArtProxyProxy = m.contractAt("VeArtProxyUpgradeable", veArtProxyTransparentProxy, {
-    id: "VeArtProxyUpgradeableProxy"
-  })
-
-  return { veArtProxyImplementation, veArtProxyProxy, proxyAdmin };
+export const VeArtProxy = buildModule("VeArtProxy", (m) => {
+  const veArtProxy = m.contract("VeArtProxy");
+  return { veArtProxy };
 });
 
 export const VotingEscrow = buildModule("VotingEscrow", (m) => {
   const { beamToken } = m.useModule(BeamToken);
-  const { veArtProxyProxy } = m.useModule(VeArtProxyUpgradeable);
+  const { veArtProxy } = m.useModule(VeArtProxy);
 
-  const votingEscrow = m.contract("VotingEscrow", [beamToken, veArtProxyProxy]);
+  const votingEscrow = m.contract("VotingEscrow", [beamToken, veArtProxy]);
 
   return { votingEscrow };
 });
@@ -134,7 +118,7 @@ export const Claimer = buildModule("Claimer", (m) => {
 
 export default buildModule("BeamCore", (m) => {
   const { beamToken } = m.useModule(BeamToken);
-  const { veArtProxyProxy, veArtProxyImplementation } = m.useModule(VeArtProxyUpgradeable);
+  const { veArtProxy } = m.useModule(VeArtProxy);
   const { votingEscrow } = m.useModule(VotingEscrow);
   const { rebaseDistributor } = m.useModule(RebaseDistributor);
   const { proxyAdmin } = m.useModule(ProxyAdmin)
@@ -146,8 +130,7 @@ export default buildModule("BeamCore", (m) => {
   return {
     proxyAdmin,
     beamToken,
-    veArtProxyImplementation,
-    veArtProxyProxy,
+    veArtProxy,
     votingEscrow,
     rebaseDistributor,
     minterImplementation,

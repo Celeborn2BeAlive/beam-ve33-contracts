@@ -1,10 +1,10 @@
 import hre, { ignition } from "hardhat";
 import BeamCore from "../ignition/modules/Beam.Core";
-import { getAddress } from "viem";
-import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork } from "./constants";
-import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
+import { getAddress, parseEther } from "viem";
+import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork, WEEK } from "./constants";
+import { loadFixture, time } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
-import { beamTokenName, beamTokenSymbol, veBeamTokenName, veBeamTokenSymbol } from "../ignition/modules/constants";
+import fs from "node:fs";
 
 describe("BeamCore.VotingEscrow", () => {
   before(async function () {
@@ -19,10 +19,13 @@ describe("BeamCore.VotingEscrow", () => {
     const teamAddress = getAddress(team.account.address);
     const userAddress = getAddress(user.account.address);
     const voterAddress = getAddress(voter.account.address);
+    const publicClient = await hre.viem.getPublicClient()
 
     const beamCore = await ignition.deploy(BeamCore);
 
     const { beamToken, votingEscrow } = beamCore;
+
+    await beamToken.write.mint([userAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
 
     // Change voter in order to test security
     await votingEscrow.write.setVoter([voterAddress]);
@@ -39,6 +42,7 @@ describe("BeamCore.VotingEscrow", () => {
       userAddress,
       voter,
       voterAddress,
+      publicClient,
     };
   };
 
@@ -101,6 +105,47 @@ describe("BeamCore.VotingEscrow", () => {
       await expect(votingEscrow.write.abstain([42n], {account: deployerAddress})).to.be.rejectedWith("");
       await expect(votingEscrow.write.abstain([12n], {account: userAddress})).to.be.rejectedWith("");
       await expect(votingEscrow.write.abstain([128n], {account: teamAddress})).to.be.rejectedWith("");
+    })
+  });
+
+  describe("Lock", () => {
+    it("Should lock tokens and create veNFT", async () => {
+      const { beamToken, votingEscrow, userAddress, publicClient } = await loadFixture(deployFixture);
+
+      const balanceBeforeLock = await beamToken.read.balanceOf([userAddress]);
+      const amount = parseEther("1000000"); // 1M
+      const duration = await votingEscrow.read.MAXTIME() / 2n;
+
+      await beamToken.write.approve([votingEscrow.address, amount], {account: userAddress});
+      const timestamp = (await publicClient.getBlock()).timestamp;
+      const timestampTarget = (timestamp / WEEK * WEEK) + WEEK;
+      await time.setNextBlockTimestamp(timestampTarget); // Align next block to a weekly timestamp to get predictable results
+
+      const expectedUnlockTime = (timestampTarget + duration) / WEEK * WEEK; // Round to week
+      await votingEscrow.write.create_lock([amount, duration], {account: userAddress});
+      const balanceAfterLock = await beamToken.read.balanceOf([userAddress]);
+
+      expect(await votingEscrow.read.tokenOfOwnerByIndex([userAddress, 0n])).to.equals(1n);
+      expect(await votingEscrow.read.ownerOf([1n])).to.equals(userAddress);
+      expect(balanceAfterLock).to.equals(balanceBeforeLock - amount);
+      const [lockedAmount, lockedEnd] = await votingEscrow.read.locked([1n]);
+      expect(lockedAmount).to.equals(amount);
+      expect(lockedEnd).to.equals(expectedUnlockTime);
+
+      const tokenURI = await votingEscrow.read.tokenURI([1n]);
+      const tokenJson = JSON.parse(Buffer.from(tokenURI.split("data:application/json;base64,")[1], 'base64').toString());
+      expect(tokenJson["name"]).to.equals("lock #1");
+      expect(tokenJson["description"]).to.equals("veNFT locks, can be used to vote on token emissions and receive voting rewards");
+      expect(tokenJson["image"].split(",")[0]).to.equals("data:image/svg+xml;base64");
+      const svgData = Buffer.from(tokenJson["image"].split("data:image/svg+xml;base64,")[1], 'base64').toString();
+      const refFile = `${__dirname}/__snapshots__/veNFT.svg`;
+
+      if (!fs.existsSync(refFile)) {
+        fs.writeFileSync(refFile, svgData);
+      } else {
+        const refData = fs.readFileSync(refFile, {encoding: "utf-8"});
+        expect(svgData).to.equals(refData);
+      }
     })
   });
 });
