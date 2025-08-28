@@ -126,9 +126,13 @@ describe("BeamCore.EpochDistributor", () => {
     await globalFactory.write.setPoolType([POOL_TYPE_SOLIDLY, true]); // type need to be enabled
     const solidlyPools = [] as CreateGaugeResult[];
     for (const [token0, token1] of allTokenPairs) {
-      await solidlyPairFactoryProxy.write.createPair([token0, token1, false]);
+      const pairId = [token0, token1, false] as [Address, Address, boolean];
+      if (ZERO_ADDRESS == await solidlyPairFactoryProxy.read.getPair(pairId)) {
+        await solidlyPairFactoryProxy.write.createPair(pairId);
+      }
+      const poolAddr = await solidlyPairFactoryProxy.read.getPair(pairId);
       const result = await createGauge({
-        poolAddr: await solidlyPairFactoryProxy.read.getPair([token0, token1, false]),
+        poolAddr,
         poolType: POOL_TYPE_SOLIDLY,
         voter,
         globalFactory,
@@ -148,8 +152,6 @@ describe("BeamCore.EpochDistributor", () => {
       await minterProxy.write._initialize();
 
       await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
-    } else {
-      console.log(`Minter already initialized`);
     }
     const veNFTId = await votingEscrow.read.tokenOfOwnerByIndex([deployerAddress, 0n]);
     const activePeriod = await minterProxy.read.active_period();
@@ -241,6 +243,9 @@ describe("BeamCore.EpochDistributor", () => {
     expect(poolsLengthEpoch0).to.equals(await voter.read.poolsLength());
 
     const algebraEternalFarmingRewardAmountBeforeDistribute = await beamToken.read.balanceOf([algebraEternalFarming.address]);
+    const gaugesRewardAmountBeforeDistribute = Object.fromEntries(await Promise.all(
+      solidlyPools.map(async ({gaugeAddr}) => [gaugeAddr, await beamToken.read.balanceOf([gaugeAddr])])
+    ));
 
     await epochDistributorProxy.write.setAutomation([deployerAddress, true]);
     await epochDistributorProxy.write.distributeAll();
@@ -254,15 +259,17 @@ describe("BeamCore.EpochDistributor", () => {
     let solidlyGaugesRewardAddedEventCount = 0;
     const poolAddrToRewardAmount: Record<Address, bigint> = {}
     for (const {poolAddr, gaugeAddr} of solidlyPools) {
-      const rewardAmount = await beamToken.read.balanceOf([gaugeAddr]);
+      const rewardAmountAfterDistribute = await beamToken.read.balanceOf([gaugeAddr]);
+      const rewardAmount = rewardAmountAfterDistribute - gaugesRewardAmountBeforeDistribute[gaugeAddr];
       solidlyGaugesDistributedAmount += rewardAmount
       poolAddrToRewardAmount[poolAddr] = rewardAmount;
 
       // Rewards have just been distributed to gauges so we expect 0 farming for now
       const gauge = await hre.viem.getContractAt("Gauge", gaugeAddr);
-      expect(await gauge.read.earned([farmerAddress, beamToken.address])).to.equals(0n);
       const rewardAddedEvents = await gauge.getEvents.RewardAdded();
       expect(rewardAddedEvents.length).to.equals(1);
+      expect(rewardAddedEvents[0].args.token).to.equals(beamToken.address);
+      expect(rewardAddedEvents[0].args.reward).to.equals(rewardAmount);
       solidlyGaugesRewardAddedEventCount += 1;
     }
 
@@ -332,6 +339,10 @@ describe("BeamCore.EpochDistributor", () => {
     }
 
     // Check farming of Solidly gauges
+
+    // Claim already accumulated rewards first
+    await claimer.write.claimRewards([solidlyPools.map(({gaugeAddr}) => gaugeAddr)], { account: farmerAddress });
+
     await simulateOneWeek((await publicClient.getBlock()).timestamp); // After a week almost all rewards should have been farmed
     await mine();
 
