@@ -12,6 +12,7 @@ import "./interfaces/IVotingIncentives.sol";
 
 /// @title Voting Incentives
 /// @author Prometheus - Perseus, ThenaFi $THE
+/// @author c2ba - Beam Team, forked and adapted
 /// @notice Voting Incentives contract for veNFT voters. It manages fees and external incentives.
 contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     using SafeERC20 for IERC20;
