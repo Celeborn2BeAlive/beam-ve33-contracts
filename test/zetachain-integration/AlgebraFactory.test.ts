@@ -2,7 +2,7 @@ import hre, { ignition } from "hardhat";
 import { beamAlgebraFactory, beamMultisigAddress, ZERO_ADDRESS } from "../../ignition/modules/constants";
 import { expect } from "chai";
 import { impersonateAccount, loadFixture, time, mine } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
-import { isLocalhostNetwork, POOL_TYPE_ALGEBRA } from "../constants";
+import { isLocalhostNetwork } from "../constants";
 import { getAddress, parseEther, getContract, Address, formatUnits } from "viem";
 import { ABI_WZETA } from "../abi/WZETA";
 import { ABI_AlgebraFactory } from "../abi/AlgebraFactory";
@@ -67,8 +67,7 @@ describe("AlgebraFactory", function() {
       client: { public: publicClient, wallet: deployer }
     });
 
-    const { beamToken, minterProxy, epochDistributorProxy, voter, claimer, votingEscrow } = beam;
-    const { globalFactory, incentiveMakerProxy, algebraVaultFactory } = beam;
+    const { beamToken, minterProxy, voter, votingEscrow, incentiveMakerProxy, algebraVaultFactory } = beam;
 
     // Initialize Beam protocol and link it to Algebra Farming:
 
@@ -340,7 +339,7 @@ describe("AlgebraFactory", function() {
       const isVotable = await voter.read.isPool([pool.address]);
       if (!isVotable) {
         // Create gauge for the pool and add it to voter
-        await globalFactory.write.create([pool.address, POOL_TYPE_ALGEBRA]);
+        await globalFactory.write.create([pool.address, await globalFactory.read.POOL_TYPE_ALGEBRA()]);
       }
     }
 

@@ -1,6 +1,6 @@
 import hre, { ignition } from "hardhat";
 import { getAddress } from "viem";
-import { isHardhatNetwork, POOL_TYPE_ALGEBRA } from "./constants";
+import { isHardhatNetwork } from "./constants";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
 import BeamProtocol from "../ignition/modules/BeamProtocol";
@@ -48,12 +48,12 @@ describe("BeamVe33Factories", () => {
 
     it("Should have AlgebraPool type enabled", async () => {
       const { globalFactory } = await loadFixture(deployFixture);
-      expect(await globalFactory.read.poolType([POOL_TYPE_ALGEBRA])).to.equals(true);
+      expect(await globalFactory.read.poolType([await globalFactory.read.POOL_TYPE_ALGEBRA()])).to.equals(true);
     });
 
     it("Should allow deployer address to create AlgebraPool gauges", async () => {
       const { deployerAddress, globalFactory } = await loadFixture(deployFixture);
-      expect(await globalFactory.read.canCreatePoolType([POOL_TYPE_ALGEBRA, deployerAddress])).to.equals(true);
+      expect(await globalFactory.read.canCreatePoolType([await globalFactory.read.POOL_TYPE_ALGEBRA(), deployerAddress])).to.equals(true);
     });
 
     it("Should have BEAM token whitelisted for gauge creation", async () => {

@@ -1,15 +1,9 @@
 import hre from "hardhat";
 import { parseEther } from "viem";
-import { POOL_TYPE_ALGEBRA as _POOL_TYPE_ALGEBRA } from "../ignition/modules/constants";
 
 export const isLocalhostNetwork = hre.network.name == "localhost";
 // Tutorial: https://medium.com/@lee.marreros/the-complete-hardhat-testing-guide-for-secure-smart-contracts-a8271893606c#fa46
 export const isHardhatNetwork = hre.network.name == "hardhat";
 
 export const WEEK = 86400n * 7n;
-export const MINTER_PRECISION = 1000n;
-export const POOL_TYPE_ALGEBRA = _POOL_TYPE_ALGEBRA;
-
-export const INITIAL_BEAM_TOKEN_SUPPLY = parseEther("50000000")
-
-export const IGNITION_DEPLOYMENTS_ROOT = `${__dirname}/../ignition/deployments`
+export const INITIAL_BEAM_TOKEN_SUPPLY = parseEther("50000000");

@@ -1,6 +1,6 @@
 import hre, { ignition } from "hardhat";
 import { Address, getAddress } from "viem";
-import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork, POOL_TYPE_ALGEBRA } from "./constants";
+import { INITIAL_BEAM_TOKEN_SUPPLY } from "./constants";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
 import { create10PercentOfTotalSupplyLock, simulateOneWeekAndFlipEpoch } from "./utils";
@@ -117,7 +117,7 @@ describe("BeamCore.EpochDistributor", () => {
         continue;
       }
 
-      await globalFactory.write.create([poolAddr, POOL_TYPE_ALGEBRA]);
+      await globalFactory.write.create([poolAddr, await globalFactory.read.POOL_TYPE_ALGEBRA()]);
     }
 
     // Assign INCENTIVE_MAKER_ROLE to our IncentiveMaker contract instance,

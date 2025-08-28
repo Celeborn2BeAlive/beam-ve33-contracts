@@ -59,6 +59,11 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
     /// @notice Mapping of tokens allowed to be voted
     mapping(address => bool) public isToken;
 
+    uint8 public constant POOL_TYPE_SOLIDLY = 0;
+    uint8 public constant POOL_TYPE_ALM = 1;
+    uint8 public constant POOL_TYPE_ALGEBRA = 2;
+    uint8 public constant POOL_TYPE_WEIGHTED = 3;
+
     /// @notice Mapping of pool types
     /// @dev type:= {0: solidly pairs, 1: ALMs, 2: Manual CL, 3: Weighted Pools}
     mapping(uint8 => bool) public poolType;
@@ -130,7 +135,7 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
         if(voter.isPool(_pool)) revert PoolExists();
         if(_pool.code.length == 0) revert PoolIsNotAContract();
 
-        if(pool_type == 3) {
+        if(pool_type == POOL_TYPE_WEIGHTED) {
             if(!weightedFactory.isPoolFromFactory(_pool)) revert NotValidPool();
             bytes32 _poolId = IWeightedPoolsSimple(_pool).getPoolId();
             (IERC20[] memory _ierc20tokens,,) = IWeightedPoolsSimple(IWeightedPoolsSimple(_pool).getVault()).getPoolTokens(_poolId);
@@ -146,16 +151,16 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
 
             if(!isToken[_tokens[0]] || !isToken[_tokens[1]]) revert TokenNotAllowed();
 
-            if(pool_type == 0){
+            if(pool_type == POOL_TYPE_SOLIDLY){
                 if(!pairFactorySld.isPair(_pool)) revert NotValidPool();
             } else {
                 if(!canCreatePoolType[pool_type][msg.sender]) revert NotAllowed();
                 // only address(0) deployer pools are allowed to create a gauge
                 address _pool_factory = algebraFactory.poolByPair(_tokens[0], _tokens[1]);
-                if (pool_type == 1) {
+                if (pool_type == POOL_TYPE_ALM) {
                     if(IALMStrategy(_pool).pool() != _pool_factory) revert NotValidPool();
                 }
-                else if(pool_type == 2) {
+                else if(pool_type == POOL_TYPE_ALGEBRA) {
                     if(pairFactorySld.isPair(_pool) || _pool_factory == ADDR_0) revert NotValidPool();
                 }
                 else {
@@ -168,26 +173,27 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
     /// @dev deploy the gauge, fee vault and votingincentives. Finish the settings and add data to the voter
     function _deploy(address[] memory _tokens,address _pool, uint8 pool_type) internal returns(address feeVault, address gauge, address votingIncentives) {
         // Step 1: Get Fee Vault
-        if(pool_type == 0) feeVault = _pool;
-        else if(pool_type == 1) feeVault = address( new ALMFeeVault(_pool, ADDR_0, treasury) );
-        else if(pool_type == 3) feeVault = IWeightedPoolsSimple(_pool).feesContract();
+        if(pool_type == POOL_TYPE_SOLIDLY) feeVault = _pool;
+        else if(pool_type == POOL_TYPE_ALM) feeVault = address( new ALMFeeVault(_pool, ADDR_0, treasury) );
+        else if(pool_type == POOL_TYPE_WEIGHTED) feeVault = IWeightedPoolsSimple(_pool).feesContract();
         else {
             feeVault =  IAlgebraPool(_pool).communityVault();
             if(feeVault == ADDR_0) revert AddressZero();
         }
 
         // Step 2: Create the Gauge contract
-        if(pool_type < 2) gauge = gaugeFactory.createGauge(defaultGaugeRewardTokens,_pool,distribution, feeVault,ADDR_0, claimer, false);
-        else if(pool_type == 2) gauge = gaugeFactory.createEternalGauge(_pool, distribution, feeVault, ADDR_0, incentiveMaker);
-        else {
-            gauge = gaugeFactory.createGauge(defaultGaugeRewardTokens,_pool,distribution, feeVault,ADDR_0, claimer, true);
+        if(pool_type == POOL_TYPE_ALGEBRA) {
+            gauge = gaugeFactory.createEternalGauge(_pool, distribution, feeVault, ADDR_0, incentiveMaker);
+        } else {
+            bool isWeighted = (pool_type == POOL_TYPE_WEIGHTED);
+            gauge = gaugeFactory.createGauge(defaultGaugeRewardTokens,_pool,distribution, feeVault,ADDR_0, claimer, isWeighted);
         }
 
         // Step 3: Create the Voting Incentives contract
         votingIncentives = votingIncentivesFactory.createVotingIncentives(ADDR_0, ADDR_0, gauge);
 
         // Step 4: Finish setup
-        if(pool_type == 1) IFeeVault(feeVault).setGauge(gauge);
+        if(pool_type == POOL_TYPE_ALM) IFeeVault(feeVault).setGauge(gauge);
         IGaugeFactory(address(gaugeFactory)).setVotingIncentives(gauge, votingIncentives);
         votingIncentivesFactory.addRewardsToVotingIncentives(_tokens, votingIncentives);
 

@@ -1,7 +1,7 @@
 import hre, { ignition } from "hardhat";
 import BeamCore from "../ignition/modules/Beam.Core";
 import { getAddress, parseUnits } from "viem";
-import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork, MINTER_PRECISION, WEEK } from "./constants";
+import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork, WEEK } from "./constants";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
 import { create10PercentOfTotalSupplyLock, simulateOneWeek, simulateOneWeekAndFlipEpoch } from "./utils";
@@ -211,15 +211,17 @@ describe("BeamCore.Minter", () => {
     });
 
     it("Should decrease emissions each week then increase after tail period", async () => {
-      const { minterProxy, activePeriod, beamToken, votingEscrow } = await loadFixture(initializeMinterFixture);
+      const { minterProxy, beamToken, votingEscrow } = await loadFixture(initializeMinterFixture);
 
       await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
 
       await minterProxy.write.setRebase([200n]); // 20% max going to rebase
       await minterProxy.write.setTeamRate([150n]); // 15% going to team
 
+      const PRECISION = await minterProxy.read.PRECISION();
+
       // Setup emission rates config:
-      const EMISSION = MINTER_PRECISION - 200n; // 20% decay
+      const EMISSION = PRECISION - 200n; // 20% decay
       await minterProxy.write.setEmission([EMISSION]);
       expect(await minterProxy.read.EMISSION()).to.equals(EMISSION);
       const TAIL_EMISSION = 5n; // 0.5% weekly inflation on circulating supply after tail starts
@@ -242,7 +244,7 @@ describe("BeamCore.Minter", () => {
 
         const weekly = await minterProxy.read.weekly();
         // Check emission update:
-        expect(weekly).to.equals((weeklyBefore * EMISSION) / MINTER_PRECISION);
+        expect(weekly).to.equals((weeklyBefore * EMISSION) / PRECISION);
 
         // Check increase of total supply:
         expect(await beamToken.read.totalSupply()).to.equals(totalSupplyBefore + weekly);
@@ -261,7 +263,7 @@ describe("BeamCore.Minter", () => {
 
         const weekly = await minterProxy.read.weekly();
         // Check emission update:
-        expect(weekly).to.equals((circulatingSupplyBefore * TAIL_EMISSION) / MINTER_PRECISION);
+        expect(weekly).to.equals((circulatingSupplyBefore * TAIL_EMISSION) / PRECISION);
 
         // Check increase of total supply:
         expect(await beamToken.read.totalSupply()).to.equals(totalSupplyBefore + weekly);
