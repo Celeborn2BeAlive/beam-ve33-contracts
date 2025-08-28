@@ -86,7 +86,7 @@ describe("AlgebraFactory", function() {
     const hasIncentiveMakerRole = await algebraFactory.read.hasRole([incentiveMakerRole, incentiveMakerProxy.address]);
     if (!hasIncentiveMakerRole) {
       await algebraFactory.write.grantRole([incentiveMakerRole, incentiveMakerProxy.address], {
-        account: beamMultisigAddress
+        account: await algebraFactory.read.owner()
       });
     }
 
