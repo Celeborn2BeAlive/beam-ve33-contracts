@@ -3,9 +3,6 @@ pragma solidity >=0.8.0;
 
 
 interface IGauge {
-
-    function setClaimer(address _claimer) external;
-    function setDistribution(address _distribution) external;
     function setVotingIncentives(address _vi) external;
     function setFeeVault(address _feeVault) external;
     function activateEmergencyMode() external;

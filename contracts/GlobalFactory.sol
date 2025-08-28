@@ -183,10 +183,10 @@ contract GlobalFactory is IGlobalFactory, AccessControl {
 
         // Step 2: Create the Gauge contract
         if(pool_type == POOL_TYPE_ALGEBRA) {
-            gauge = gaugeFactory.createEternalGauge(_pool, distribution, feeVault, ADDR_0, incentiveMaker);
+            gauge = gaugeFactory.createEternalGauge(_pool, feeVault, ADDR_0);
         } else {
             bool isWeighted = (pool_type == POOL_TYPE_WEIGHTED);
-            gauge = gaugeFactory.createGauge(defaultGaugeRewardTokens,_pool,distribution, feeVault,ADDR_0, claimer, isWeighted);
+            gauge = gaugeFactory.createGauge(defaultGaugeRewardTokens, _pool, feeVault, ADDR_0, isWeighted);
         }
 
         // Step 3: Create the Voting Incentives contract

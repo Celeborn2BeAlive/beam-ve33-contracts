@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "contracts/interfaces/IVotingIncentives.sol";
 import "contracts/interfaces/IPairInfo.sol";
 import "contracts/interfaces/IFeeVault.sol";
+import "contracts/interfaces/IGaugeFactory.sol";
 import "./interfaces/IIncentiveMaker.sol";
 
 
@@ -19,15 +20,11 @@ contract GaugeEternalFarming is ReentrancyGuard, Ownable {
     /// @notice Duration of a week in seconds
     uint32 internal constant WEEK = 86400 * 7;
 
-    /// @notice Address that distributes the rewards
-    address public DISTRIBUTION;
     /// @notice Fee vault contract address
     address public feeVault;
 
     /// @notice The underlying pool
     IPairInfo public immutable pool;
-    /// @notice Contract that manages farm updates
-    IIncentiveMaker public incentiveMaker;
     /// @notice The voting incentives contract
     IVotingIncentives public votingIncentives;
 
@@ -42,20 +39,16 @@ contract GaugeEternalFarming is ReentrancyGuard, Ownable {
 
     /// @notice Modifier to control if msg.sender is the distribution contract/EOA
     modifier onlyDistribution() {
-        require(msg.sender == DISTRIBUTION, "!distributor");
+        require(msg.sender == IGaugeFactory(owner()).epochDistributor(), "!distributor");
         _;
     }
 
     /// @notice Deploy the Gauge contract
     /// @param _pool Address of the pool
-    /// @param _distribution Address of the distribution contract
     /// @param _feeVault Address of the fee vault (the plugin)
     /// @param _votingIncentives Address of the voting incentives contract
-    /// @param _incentiveMaker Address of the incentiveMaker contract
-    constructor(address _pool, address _distribution, address _feeVault, address _votingIncentives, address _incentiveMaker) {
-        DISTRIBUTION = _distribution;
+    constructor(address _pool, address _feeVault, address _votingIncentives) {
         feeVault = _feeVault;
-        incentiveMaker = IIncentiveMaker(_incentiveMaker);
         pool = IPairInfo(_pool);
 
         if(_votingIncentives != address(0)) votingIncentives = IVotingIncentives(_votingIncentives);
@@ -79,26 +72,13 @@ contract GaugeEternalFarming is ReentrancyGuard, Ownable {
         emit SetFeeVault(_feeVault);
     }
 
-    /// @notice set distribution address
-    /// @param _distribution New distribution address
-    function setDistribution(address _distribution) external onlyOwner {
-        require(_distribution != address(0), "Addr0");
-        DISTRIBUTION = _distribution;
-    }
-
-    /// @notice set incentive maker address
-    /// @param _incentiveMaker New incentive maker address
-    function setIncentiveMaker(address _incentiveMaker) external onlyOwner {
-        require(_incentiveMaker != address(0), "Addr0");
-        incentiveMaker = IIncentiveMaker(_incentiveMaker);
-    }
-
     /// @notice Receive rewards from distribution
     /// @dev This function is called after the tokens have been transferred to this contract
     /// @param _token Address of the reward token
     /// @param _amount Amount of reward tokens
     /// @dev In this case _token is always emissionToken. Keep compatibility with IGauge.sol
     function notifyRewardAmount(address _token, uint _amount) external nonReentrant onlyDistribution {
+        IIncentiveMaker incentiveMaker = IIncentiveMaker(IGaugeFactory(owner()).incentiveMaker());
         IERC20(_token).safeIncreaseAllowance(address(incentiveMaker), _amount);
         incentiveMaker.updateIncentive(address(pool), _amount);
     }
