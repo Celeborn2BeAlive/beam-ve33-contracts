@@ -3,7 +3,7 @@ import { Address, getAddress, parseUnits, PublicClient } from "viem";
 import { INITIAL_BEAM_TOKEN_SUPPLY, isHardhatNetwork } from "./constants";
 import { loadFixture, mine } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
-import { create10PercentOfTotalSupplyLock, createGaugeForSolidlyPoolWithoutGlobalFactory, simulateOneWeek, simulateOneWeekAndFlipEpoch } from "./utils";
+import { create10PercentOfTotalSupplyLock, createGaugeForSolidlyPoolWithGlobalFactory, simulateOneWeek, simulateOneWeekAndFlipEpoch } from "./utils";
 import BeamProtocol from "../ignition/modules/BeamProtocol";
 import { EmissionTokenContract, ERC20PresetMinterPauserContract, SolidlyRouterContract } from "./types";
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
@@ -76,7 +76,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
   };
 
   const createGaugesFixture = async () => {
-    const { solidlyPairFactoryProxy, tokens, beamToken, gaugeFactory, votingIncentivesFactory, epochDistributorProxy, voter, claimer, ...others } = await loadFixture(deployFixture);
+    const { solidlyPairFactoryProxy, tokens, beamToken, globalFactory, ...others } = await loadFixture(deployFixture);
     const { USDC, WETH } = tokens;
 
     await solidlyPairFactoryProxy.write.createPair([USDC.address, beamToken.address, false]);
@@ -86,43 +86,38 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     const WETH_BEAM = await solidlyPairFactoryProxy.read.getPair([WETH.address, beamToken.address, false]);
     const WETH_USDC = await solidlyPairFactoryProxy.read.getPair([USDC.address, WETH.address, false]);
 
-    const commonArgs = {
-      gaugeFactory,
-      epochDistributor: epochDistributorProxy,
-      claimer,
-      votingIncentivesFactory,
-      voter,
-      beamToken,
-    }
-    const pools = {
-      USDC_BEAM: await createGaugeForSolidlyPoolWithoutGlobalFactory({
+    await globalFactory.write.setPoolType([await globalFactory.read.POOL_TYPE_SOLIDLY(), true]);
+    await globalFactory.write.addToken([[USDC.address, WETH.address]]);
+
+    const solidlyPools = {
+      USDC_BEAM: await createGaugeForSolidlyPoolWithGlobalFactory({
         poolAddr: USDC_BEAM,
-        ...commonArgs,
+        globalFactory,
       }),
-      WETH_BEAM: await createGaugeForSolidlyPoolWithoutGlobalFactory({
+      WETH_BEAM: await createGaugeForSolidlyPoolWithGlobalFactory({
         poolAddr: WETH_BEAM,
-        ...commonArgs,
+        globalFactory,
       }),
-      WETH_USDC: await createGaugeForSolidlyPoolWithoutGlobalFactory({
+      WETH_USDC: await createGaugeForSolidlyPoolWithGlobalFactory({
         poolAddr: WETH_USDC,
-        ...commonArgs,
+        globalFactory,
       }),
     };
 
     return {
-      solidlyPairFactoryProxy, beamToken, gaugeFactory, votingIncentivesFactory, epochDistributorProxy, voter, claimer, tokens, pools, ...others,
+      solidlyPairFactoryProxy, beamToken, tokens, solidlyPools, ...others,
     }
   }
 
   it("Should create pool, gauge, votingIncentives and add data to Voter", async () => {
-    const { voter, pools } = await loadFixture(createGaugesFixture)
+    const { voter, solidlyPools } = await loadFixture(createGaugesFixture)
 
-    expect(await voter.read.poolsLength()).to.equals(BigInt(Object.values(pools).length));
+    expect(await voter.read.poolsLength()).to.equals(BigInt(Object.values(solidlyPools).length));
     for (const {
         poolAddr,
         gaugeAddr,
         votingIncentivesAddr,
-    } of Object.values(pools)) {
+    } of Object.values(solidlyPools)) {
       expect(await voter.read.isPool([poolAddr])).to.be.true;
       const poolData = await voter.read.poolData([poolAddr]);
       expect(poolData.gauge).to.equals(gaugeAddr);
@@ -139,7 +134,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     farmerAddress: Address,
     solidlyRouter: SolidlyRouterContract,
     publicClient: PublicClient,
-    pools: Record<string, {
+    solidlyPools: Record<string, {
       poolAddr: Address,
       gaugeAddr: Address,
     }>
@@ -153,7 +148,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     farmerAddress,
     solidlyRouter,
     publicClient,
-    pools,
+    solidlyPools,
   }: AddLiquidityAndStakeForFarmingArgs) => {
     const beamBalance = await beamToken.read.balanceOf([deployerAddress]);
     const wethBalance = await WETH.read.balanceOf([deployerAddress]);
@@ -171,7 +166,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     await solidlyRouter.write.addLiquidity([
       USDC.address, beamToken.address, false, usdcBalance * 10n / 100n, beamBalance * 10n / 100n, 0n, 0n, farmerAddress, timestamp + 1000n,
     ]);
-    for (const {poolAddr, gaugeAddr} of Object.values(pools)) {
+    for (const {poolAddr, gaugeAddr} of Object.values(solidlyPools)) {
       const gauge = await hre.viem.getContractAt("Gauge", gaugeAddr);
       const pool = await hre.viem.getContractAt("ERC20", poolAddr);
       await pool.write.approve([gaugeAddr, await pool.read.balanceOf([farmerAddress])], { account: farmerAddress });
@@ -221,17 +216,17 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
   }
 
   it("Should distribute farming rewards to gauges", async () => {
-    const { deployerAddress, farmerAddress, publicClient, minterProxy, activePeriod, beamToken, epochDistributorProxy, voter, veNFTId, pools, tokens, solidlyRouter, claimer } = await loadFixture(createGaugesFixture);
+    const { deployerAddress, farmerAddress, publicClient, minterProxy, activePeriod, beamToken, epochDistributorProxy, voter, veNFTId, solidlyPools, tokens, solidlyRouter, claimer } = await loadFixture(createGaugesFixture);
     const { WETH, USDC } = tokens;
 
-    await addLiquidityAndStakeForFarming({WETH, USDC, beamToken, deployerAddress, farmerAddress, solidlyRouter, publicClient, pools});
+    await addLiquidityAndStakeForFarming({WETH, USDC, beamToken, deployerAddress, farmerAddress, solidlyRouter, publicClient, solidlyPools});
 
-    const addedVotingIncentives = await addVotingIncentives({pools, beamToken, deployerAddress});
+    const addedVotingIncentives = await addVotingIncentives({pools: solidlyPools, beamToken, deployerAddress});
 
     const votes: Record<Address, bigint> = {
-      [pools.USDC_BEAM.poolAddr]: 50n,
-      [pools.WETH_BEAM.poolAddr]: 35n,
-      [pools.WETH_USDC.poolAddr]: 15n,
+      [solidlyPools.USDC_BEAM.poolAddr]: 50n,
+      [solidlyPools.WETH_BEAM.poolAddr]: 35n,
+      [solidlyPools.WETH_USDC.poolAddr]: 15n,
     };
 
     await voter.write.vote([veNFTId, Object.keys(votes) as [Address], Object.values(votes)]);
@@ -256,7 +251,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
 
     let distributedAmount = 0n;
     const poolAddrToRewardAmount: Record<Address, bigint> = {}
-    for (const {poolAddr, gaugeAddr} of Object.values(pools)) {
+    for (const {poolAddr, gaugeAddr} of Object.values(solidlyPools)) {
       const rewardAmount = await beamToken.read.balanceOf([gaugeAddr]);
       distributedAmount += rewardAmount
       poolAddrToRewardAmount[poolAddr] = rewardAmount;
@@ -279,7 +274,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     await mine();
 
     // After a week all rewards should have been farmed
-    for (const {poolAddr, gaugeAddr} of Object.values(pools)) {
+    for (const {poolAddr, gaugeAddr} of Object.values(solidlyPools)) {
       const rewardAmount = poolAddrToRewardAmount[poolAddr as Address];
       const gauge = await hre.viem.getContractAt("Gauge", gaugeAddr);
       const earnedAmount = await gauge.read.earned([farmerAddress, beamToken.address]);
@@ -288,7 +283,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
     }
 
     // Use the Claimer to claim rewards on all gauges and check the farmer gets everything
-    await claimer.write.claimRewards([Object.values(pools).map(({gaugeAddr}) => gaugeAddr)], { account: farmerAddress });
+    await claimer.write.claimRewards([Object.values(solidlyPools).map(({gaugeAddr}) => gaugeAddr)], { account: farmerAddress });
     const delta = distributedAmount - await beamToken.read.balanceOf([farmerAddress]);
     expect(delta < distributedAmount * 10n / 1000n).to.be.true; // 1% difference check
 
@@ -300,7 +295,7 @@ describe("BeamCore.EpochDistributorWithPairsFromSolidlyDEX", () => {
 
     const allTokens = [beamToken.address, WETH.address, USDC.address];
     await claimer.write.claimVotingIncentivesAddress([
-      Object.values(pools).map(({votingIncentivesAddr}) => votingIncentivesAddr),
+      Object.values(solidlyPools).map(({votingIncentivesAddr}) => votingIncentivesAddr),
       [allTokens, allTokens, allTokens]
     ])
 
