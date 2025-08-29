@@ -21,11 +21,36 @@
 
 **Dev Log**
 
+- 2025-08-29
+  - DONE
+    - Split tests for zetachain integration
+    - Add guard and revert in functions performing state updates that depend on epoch flip (VotingIncentives, Voter) when epoch flip has not been executed
+      - Prevent casting votes & reset of votes if epoch flip has not been executed
+      - Prevent deposit of voting incentives if epoch flip has not been executed
+    - Improve integration test by simulating multiple Voter users and casting random votes
+    - Randomize epoch simulation when run several times in a persistent deployment
+
+- 2025-08-27/28
+  - DONE:
+    - Centralize access to external singleton contracts for VotingIncentives instances, to ease admin of protocol and reduce coupling
+    - Remove upgradeability of VeArtProxy and add state so we can inject logo, footer and title at deployment time
+    - Update deployment scripts to inject logo of VeArtProxy from a SVG file
+    - Add regression test for VeArtProxy
+    - Expose constants for pool types on GlobalFactory and use them in code for better code readability
+    - Improve tests to match production workflow for Gauges creation
+    - Integrate both Solidly pools and Algebra pools into a single integration test for Epoch distribution
+    - Refactor tests for pool manipulation
+    - Add more state testing
+    - Centralize access to external singleton contracts for Gauges, to ease admin of protocol and reduce coupling
+
 - 2025-08-25
   - DONE:
     - Remove unused attachment mechanic from VotingEscrow
     - Add complete farming test with Solidly pairs & staking
     - Remove old Retro V1 / Thena V1 contracts
+    - Add tests for the deposit of voting incentives and claiming by a single voter
+    - Simplify the implementation of EmissionToken
+    - Add scripts of admin of AlgebraFactory
 
 - 2025-08-21/22
   - DONE:
