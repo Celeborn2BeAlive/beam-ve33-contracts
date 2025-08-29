@@ -48,6 +48,10 @@ const TestProtocol = buildModule("TestProtocol", (m) => {
   }
 });
 
+// This large test integrates all components together and simulates a full epoch with
+// voter users, farmer user.
+// It can be executed several times in a persistent environment where the protocol is
+// deployed on the first run, and next runs simulate new epochs.
 describe("BeamCore.integration.epochSimulation", () => {
   const deployFixture = async () => {
     const allAccounts = await hre.viem.getWalletClients()
@@ -144,7 +148,8 @@ describe("BeamCore.integration.epochSimulation", () => {
       solidlyPools.push(result);
     }
 
-    if (await beamToken.read.minter() != minterProxy.address) {
+    const isMinterInitialized = await beamToken.read.minter() == minterProxy.address;
+    if (!isMinterInitialized) {
       // The Minter requires a non zero total supply or division by zero occurs in `calculate_rebase`:
       await beamToken.write.mint([deployerAddress, INITIAL_BEAM_TOKEN_SUPPLY]);
       await beamToken.write.setMinter([minterProxy.address]);
@@ -156,7 +161,9 @@ describe("BeamCore.integration.epochSimulation", () => {
       await minterProxy.write._initialize();
     }
 
-    const rng = new Mulberry32(42);
+    // Use constant seed the first run, then random seed to change the simulation
+    const rngSeed = isMinterInitialized ? (new Date()).getTime() : 42;
+    const rng = new Mulberry32(rngSeed);
 
     return {
       publicClient,
@@ -265,6 +272,16 @@ describe("BeamCore.integration.epochSimulation", () => {
     const poolWithVotesCount = allPoolAddrs.filter(poolAddr => totalVoteDepositPerPool[poolAddr] > 0n).length;
     const voteSum = Object.values(totalVoteDepositPerPool).reduce((accum, value) => accum + value, 0n);
 
+    // Claim all voter rewards that may be left from previous runs in persistent environment, in order to isolate rewards of this epoch
+    for (const voterUser of voterUsers) {
+      for (const {votingIncentivesAddr} of allPools) {
+        await claimer.write.claimVotingIncentivesAddress([
+          [votingIncentivesAddr],
+          [allTokenAddrs, allTokenAddrs, allTokenAddrs],
+        ], {account: voterUser.account});
+      }
+    }
+
     const balanceOfDistributorBeforeEpochFlip = await beamToken.read.balanceOf([epochDistributorProxy.address]);
     if (balanceOfDistributorBeforeEpochFlip > 0n) {
       await epochDistributorProxy.write.emergencyRecoverERC20([beamToken.address, balanceOfDistributorBeforeEpochFlip]);
@@ -345,6 +362,11 @@ describe("BeamCore.integration.epochSimulation", () => {
     for (const {poolAddr} of algebraPools) {
       const vote = totalVoteDepositPerPool[poolAddr];
       const virtualPoolAddr = await incentiveMakerProxy.read.poolToVirtualPool([poolAddr as Address]);
+      if (!(virtualPoolAddr in virtualPoolAddrToEvent)) {
+        expect(vote).to.equals(0n);
+        continue;
+      }
+
       const rewardAdded = virtualPoolAddrToEvent[virtualPoolAddr];
       const rewardAmount = rewardAdded.args.rewardAmount as bigint;
       const expectedRewardAmount = distributedAmount * vote / voteSum;
@@ -410,7 +432,7 @@ describe("BeamCore.integration.epochSimulation", () => {
 
     // Check farming of Solidly gauges
 
-    // Claim already accumulated rewards first
+    // Claim already accumulated rewards first, that may be left from previous runs in persistent environment, in order to isolate rewards of this epoch
     await claimer.write.claimRewards([solidlyPools.map(({gaugeAddr}) => gaugeAddr)], { account: farmerAddress });
 
     await simulateOneWeek((await publicClient.getBlock()).timestamp); // After a week almost all rewards should have been farmed
