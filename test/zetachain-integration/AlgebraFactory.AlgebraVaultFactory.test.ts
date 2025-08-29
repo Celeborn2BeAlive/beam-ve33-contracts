@@ -22,7 +22,7 @@ const BTC_BTC = getAddress("0x13a0c5930c028511dc02665e7285134b6d11a5f4");
 
 const COMMUNITY_FEE_TRANSFER_FREQUENCY = 8n * 24n * 3600n; // 8 hours
 
-describe("AlgebraFactory", function() {
+describe("AlgebraFactory.AlgebraVaultFactory", function() {
   before(async function () {
     if (!isZetachainForkNetwork) {
       this.skip();

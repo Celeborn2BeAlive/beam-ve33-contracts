@@ -30,7 +30,7 @@ const BTC_BTC = getAddress("0x13a0c5930c028511dc02665e7285134b6d11a5f4");
 const INITIAL_BEAM_TOKEN_SUPPLY = parseEther("50000000");
 const INCENTIVE_ID_ZERO = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
-describe("AlgebraFactory", function() {
+describe("AlgebraFactory.EpochDistributor", function() {
   before(async function () {
     if (!isZetachainForkNetwork) {
       this.skip();
