@@ -52,7 +52,12 @@ const config: HardhatUserConfig = {
       accounts: [PRIVATEKEY as `0x${string}`],
     },
 
-    hardhat: {},
+    hardhat: {
+      forking: {
+        url: ZETACHAIN_RPC_URL as string,
+        // enabled: false, // Comment this line and run `pnpm exec hardhat node` to enable forking
+      }
+    },
   },
   sourcify: {
     enabled: true
