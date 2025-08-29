@@ -48,7 +48,7 @@ const TestProtocol = buildModule("TestProtocol", (m) => {
   }
 });
 
-describe("BeamCore.EpochDistributor", () => {
+describe("BeamCore.integration.epochSimulation", () => {
   const deployFixture = async () => {
     const allAccounts = await hre.viem.getWalletClients()
     const deployer = allAccounts[0];
