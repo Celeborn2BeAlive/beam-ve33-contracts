@@ -151,7 +151,7 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
         }
     }
 
-    // update period can only be called once per cycle (1 week)
+    // @inheritdoc IMinter
     function update_period() external returns (uint) {
         uint _period = active_period;
         if (block.timestamp >= _period + WEEK && _initializer == address(0)) { // only trigger if new week
@@ -189,13 +189,24 @@ contract MinterUpgradeable is IMinter, OwnableUpgradeable {
         return _period;
     }
 
-    function check() external view returns(bool){
+    // @inheritdoc IMinter
+    function check_update_period() external view returns(bool) {
         uint _period = active_period;
         return (block.timestamp >= _period + WEEK && _initializer == address(0));
     }
 
-    function period() external view returns(uint){
-        return(block.timestamp / WEEK) * WEEK;
+    // @inheritdoc IMinter
+    function block_period() external view returns(uint) {
+        return _block_period();
+    }
+
+    // @inheritdoc IMinter
+    function is_period_updated() external view returns(bool) {
+        return active_period == _block_period();
+    }
+
+    function _block_period() internal view returns(uint) {
+        return (block.timestamp / WEEK) * WEEK;
     }
 
     function setRewardDistributor(address _rebaseDistro) external {

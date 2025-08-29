@@ -81,6 +81,10 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
         return minter().active_period() + WEEK;
     }
 
+    function isEpochFlipRequired() public view returns(bool) {
+        return minter().is_period_updated() == false;
+    }
+
 
     /* ========== VIEWS ========== */
 
@@ -283,6 +287,7 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     /// @param _rewards the reward amounts for each epoch
     function notifyRewardAmountForMultipleEpoch(address _token, uint256[] calldata _rewards) external nonReentrant whenNotPaused {
         require(isRewardToken[_token], "reward token not verified");
+        if (isEpochFlipRequired()) revert EpochFlipRequired();
 
         uint256 _startTimestamp = getEpochStart();
         uint256 i;
@@ -304,6 +309,8 @@ contract VotingIncentives is ReentrancyGuard, IVotingIncentives, Pausable {
     /// @dev    Rewards are saved into THIS EPOCH mapping.
     function notifyRewardAmount(address _token, uint256 reward) external nonReentrant whenNotPaused {
         require(isRewardToken[_token], "reward token not verified");
+        if (isEpochFlipRequired()) revert EpochFlipRequired();
+
         uint256 _startTimestamp = getEpochStart();
         _notifyReward(_token, reward, _startTimestamp, msg.sender == feeDistributor);
         IERC20(_token).safeTransferFrom(msg.sender,address(this),reward);

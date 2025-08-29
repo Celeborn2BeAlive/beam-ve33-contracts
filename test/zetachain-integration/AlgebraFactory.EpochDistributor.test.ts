@@ -102,7 +102,6 @@ describe("AlgebraFactory.EpochDistributor", function() {
 
       await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
     }
-    const activePeriod = await minterProxy.read.active_period();
     const veNFTId = await votingEscrow.read.tokenOfOwnerByIndex([deployerAddress, 0n]);
 
     return {
@@ -113,13 +112,12 @@ describe("AlgebraFactory.EpochDistributor", function() {
       ...beam,
       algebraFactory,
       algebraEternalFarming,
-      activePeriod,
       veNFTId,
     }
   };
 
   it("Should distribute farming rewards as Algebra eternal farming incentives", async () => {
-    const { deployer, deployerAddress, algebraVaultFactory, algebraFactory, publicClient, globalFactory, voter, veNFTId, activePeriod, minterProxy, incentiveMakerProxy, algebraEternalFarming, epochDistributorProxy, beamToken } = await loadFixture(deployFixture);
+    const { deployer, deployerAddress, algebraVaultFactory, algebraFactory, publicClient, globalFactory, voter, veNFTId, minterProxy, incentiveMakerProxy, algebraEternalFarming, epochDistributorProxy, beamToken } = await loadFixture(deployFixture);
 
     const pool_WZETA_BTC_BTC = await hre.viem.getContractAt("IAlgebraPool",await algebraFactory.read.poolByPair([WZETA, BTC_BTC]));
     const pool_SOL_ETH = await hre.viem.getContractAt("IAlgebraPool",await algebraFactory.read.poolByPair([SOL_SOL, ETH_ETH]));
@@ -157,6 +155,10 @@ describe("AlgebraFactory.EpochDistributor", function() {
       [pool_WZETA_BTC_BTC.address]: 75n,
       [pool_SOL_ETH.address]: 25n,
     } as {[key: Address]: bigint};
+
+    if (await minterProxy.read.check_update_period()) {
+      await minterProxy.write.update_period();
+    }
 
     await voter.write.vote([veNFTId, Object.keys(votes) as [Address], Object.values(votes)]);
 

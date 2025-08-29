@@ -86,6 +86,7 @@ contract Voter is Ownable, Pausable, IVoter {
     ///         We do not call _vote() to avoid removing calldata.
     function poke(uint256 _tokenId) external whenNotPaused {
         if(!_ve.isApprovedOrOwner(msg.sender, _tokenId)) revert NotOwnerOrApproved();
+        if (isEpochFlipRequired()) revert EpochFlipRequired();
 
         uint256 _currEpochTime = _epochTimestamp();
         TokenIdVote memory tiv = _tokenIdVotes[_tokenId][_currEpochTime - WEEK];
@@ -128,6 +129,7 @@ contract Voter is Ownable, Pausable, IVoter {
     /// @param _tokenId veNFT tokenID
     function reset(uint256 _tokenId) external whenNotPaused {
         if(!_ve.isApprovedOrOwner(msg.sender, _tokenId)) revert NotOwnerOrApproved();
+        if (isEpochFlipRequired()) revert EpochFlipRequired();
         _reset(_tokenId);
     }
 
@@ -161,6 +163,7 @@ contract Voter is Ownable, Pausable, IVoter {
     function vote(uint256 _tokenId, address[] calldata _pools, uint256[] calldata _weights) external whenNotPaused {
         if(!_ve.isApprovedOrOwner(msg.sender, _tokenId)) revert NotOwnerOrApproved();
         if(_pools.length != _weights.length) revert InputMismatch();
+        if (isEpochFlipRequired()) revert EpochFlipRequired();
         _vote(_tokenId, _pools, _weights);
     }
 
@@ -348,6 +351,10 @@ contract Voter is Ownable, Pausable, IVoter {
 
     function _epochTimestamp() internal view returns(uint256) {
         return _minter.active_period();
+    }
+
+    function isEpochFlipRequired() public view returns(bool) {
+        return _minter.is_period_updated() == false;
     }
 
     /// @notice Read the vote data of a tokenID at a given timestamp

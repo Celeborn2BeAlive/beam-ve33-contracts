@@ -43,6 +43,8 @@ interface IVoter {
     error TotalWeightZero();
     error NotPool(address pool);
     error MaxSingleWeight();
+    /// @notice Epoch flip is required before votes can be casted or reset
+    error EpochFlipRequired();
 
     // Functions
     function addPoolData(address pool, address gauge, address votingIncentives) external;

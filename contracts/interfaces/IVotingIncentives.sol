@@ -49,6 +49,8 @@ interface IVotingIncentives {
     error NotVoter();
     error NotClaimer();
     error NotVotingIncentivesFactory();
+    /// @notice Epoch flip is required before votes can be casted or reset
+    error EpochFlipRequired();
 
     // Events
     event RewardAdded(address rewardToken, uint256 reward, uint256 startTimestamp);

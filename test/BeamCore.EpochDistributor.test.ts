@@ -154,7 +154,6 @@ describe("BeamCore.EpochDistributor", () => {
       await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
     }
     const veNFTId = await votingEscrow.read.tokenOfOwnerByIndex([deployerAddress, 0n]);
-    const activePeriod = await minterProxy.read.active_period();
 
     const rng = new Mulberry32(42);
 
@@ -164,7 +163,6 @@ describe("BeamCore.EpochDistributor", () => {
       farmer,
       deployerAddress,
       farmerAddress,
-      activePeriod,
       veNFTId,
       ...beam,
       algebraPools,
@@ -179,7 +177,6 @@ describe("BeamCore.EpochDistributor", () => {
       deployerAddress,
       farmerAddress,
       minterProxy,
-      activePeriod,
       beamToken,
       claimer,
       epochDistributorProxy,
@@ -204,6 +201,11 @@ describe("BeamCore.EpochDistributor", () => {
     const allPools = [...solidlyPools, ...algebraPools];
     const allPoolAddrs = [...algebraPools.map(({poolAddr}) => poolAddr), ...solidlyPools.map(({poolAddr}) => poolAddr)];
     const allTokenAddrs = tokens.map(({address}) => address);
+
+    if (await minterProxy.read.check_update_period()) {
+      await minterProxy.write.update_period();
+    }
+    const activePeriod = await minterProxy.read.active_period();
 
     await addLiquidityAndStakeForFarming({deployerAddress, farmerAddress, solidlyRouter, publicClient, solidlyPools});
     const addedVotingIncentives = await addVotingIncentives({pools: allPools, beamToken, deployerAddress});
