@@ -8,6 +8,10 @@ import { expect } from "chai";
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { Mulberry32 } from "./random";
 
+export const getDiff = (amount0: bigint, amount1: bigint) => {
+  return (amount0 >= amount1) ? amount0 - amount1 : amount1 - amount0;
+}
+
 export const simulateOneWeek = async (activePeriod: bigint) => {
   const nextPeriod = activePeriod + WEEK;
   await time.setNextBlockTimestamp(activePeriod + WEEK);
@@ -37,6 +41,33 @@ export const create10PercentOfTotalSupplyLock = async (
   const events = await votingEscrow.getEvents.Transfer();
   return events[0].args.tokenId as bigint;
 };
+
+export type CreateRandomLockForArgs = {
+  beamToken: EmissionTokenContract,
+  votingEscrow: VotingEscrowContract,
+  depositor: Address,
+  recipient: Address,
+  maxPercentOfBalance: number,
+  rng: Mulberry32,
+}
+
+export const createRandomLockFor = async ({
+  beamToken,
+  votingEscrow,
+  maxPercentOfBalance,
+  depositor,
+  recipient,
+  rng,
+}: CreateRandomLockForArgs) => {
+  expect(maxPercentOfBalance <= 100).to.be.true;
+  const balance = await beamToken.read.balanceOf([depositor]);
+  const ratio = rng.nextFloat(0.1, maxPercentOfBalance) / 100;
+  const lockAmount = balance * BigInt(Math.ceil(ratio * 1000)) / 1000n;
+  await beamToken.write.approve([votingEscrow.address, lockAmount], { account: depositor });
+  await votingEscrow.write.create_lock_for([lockAmount, await votingEscrow.read.MAXTIME(), recipient], { account: depositor });
+  const events = await votingEscrow.getEvents.Transfer();
+  return events[0].args.tokenId as bigint;
+}
 
 export type CreateGaugeResult = {
   poolAddr: Address,
@@ -119,10 +150,8 @@ export const createGaugeForSolidlyPoolWithoutGlobalFactory = async (
   await gaugeFactory.write.createGauge([
     [beamToken.address],
     poolAddr,
-    epochDistributor.address,
     feeVaultAddr,
     ZERO_ADDRESS, // votingIncentives, set after
-    claimer.address,
     false, // isWeighted, false for Solidly pools
   ]);
   const events = await gaugeFactory.getEvents.CreateGauge();

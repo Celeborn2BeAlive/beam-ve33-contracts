@@ -53,11 +53,17 @@ const config: HardhatUserConfig = {
     },
 
     hardhat: {
-      forking: {
-        url: ZETACHAIN_RPC_URL as string,
-        // enabled: false, // Comment this line and run `pnpm exec hardhat node` to enable forking
+      accounts: {
+        count: 100,
       }
     },
+
+    localhost: {
+      forking: {
+        url: ZETACHAIN_RPC_URL as string,
+        enabled: false, // Comment this line and run `pnpm exec hardhat node` to enable forking
+      },
+    }
   },
   sourcify: {
     enabled: true

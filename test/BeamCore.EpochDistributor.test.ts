@@ -3,7 +3,7 @@ import { Address, getAddress } from "viem";
 import { INITIAL_BEAM_TOKEN_SUPPLY, WEEK } from "./constants";
 import { loadFixture, mine } from "@nomicfoundation/hardhat-toolbox-viem/network-helpers";
 import { expect } from "chai";
-import { addLiquidityAndStakeForFarming, addVotingIncentives, create10PercentOfTotalSupplyLock, createGauge, CreateGaugeResult, getPairs, getRandomVoteWeight, simulateOneWeek, simulateOneWeekAndFlipEpoch, TestTokens } from "./utils";
+import { addLiquidityAndStakeForFarming, addVotingIncentives, createGauge, CreateGaugeResult, createRandomLockFor, getDiff, getPairs, getRandomVoteWeight, simulateOneWeek, simulateOneWeekAndFlipEpoch, TestTokens } from "./utils";
 import BeamProtocol from "../ignition/modules/BeamProtocol";
 import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import { ZERO_ADDRESS } from "../ignition/modules/constants";
@@ -50,9 +50,14 @@ const TestProtocol = buildModule("TestProtocol", (m) => {
 
 describe("BeamCore.EpochDistributor", () => {
   const deployFixture = async () => {
-    const [deployer, farmer] = await hre.viem.getWalletClients();
+    const allAccounts = await hre.viem.getWalletClients()
+    const deployer = allAccounts[0];
     const deployerAddress = getAddress(deployer.account.address);
+    const farmer = allAccounts[1];
     const farmerAddress = getAddress(farmer.account.address);
+
+    const voterUsers = allAccounts.slice(2, 8); // 6 voter users
+
     const publicClient = await hre.viem.getPublicClient();
 
     const beam = await ignition.deploy(TestProtocol);
@@ -61,7 +66,6 @@ describe("BeamCore.EpochDistributor", () => {
       beamToken,
       minterProxy,
       voter,
-      votingEscrow,
       globalFactory,
       algebraVaultFactory,
       incentiveMakerProxy,
@@ -150,10 +154,7 @@ describe("BeamCore.EpochDistributor", () => {
       await minterProxy.write.setTeamRate([0n]);
 
       await minterProxy.write._initialize();
-
-      await create10PercentOfTotalSupplyLock(beamToken, votingEscrow);
     }
-    const veNFTId = await votingEscrow.read.tokenOfOwnerByIndex([deployerAddress, 0n]);
 
     const rng = new Mulberry32(42);
 
@@ -163,12 +164,12 @@ describe("BeamCore.EpochDistributor", () => {
       farmer,
       deployerAddress,
       farmerAddress,
-      veNFTId,
       ...beam,
       algebraPools,
       solidlyPools,
       rng,
       tokens,
+      voterUsers,
     };
   };
 
@@ -182,7 +183,6 @@ describe("BeamCore.EpochDistributor", () => {
       epochDistributorProxy,
       algebraEternalFarming,
       voter,
-      veNFTId,
       algebraPools,
       solidlyPools,
       incentiveMakerProxy,
@@ -190,6 +190,8 @@ describe("BeamCore.EpochDistributor", () => {
       solidlyRouter,
       publicClient,
       tokens,
+      votingEscrow,
+      voterUsers,
     } = await loadFixture(deployFixture);
 
     // Utility function to get a map of all token balances for a given address
@@ -211,15 +213,57 @@ describe("BeamCore.EpochDistributor", () => {
     const addedVotingIncentives = await addVotingIncentives({pools: allPools, beamToken, deployerAddress});
     const epochStart = await minterProxy.read.active_period();
 
-    // Cast random votes
-
-    const votes: Record<Address, bigint> = Object.fromEntries(
-      allPoolAddrs.map(poolAddr => [poolAddr, getRandomVoteWeight(rng)])
+    // Generate random veNFTs for voter users and cast random votes
+    const totalVoteDepositPerPool: Record<Address, bigint> = Object.fromEntries(
+      allPoolAddrs.map(poolAddr => [poolAddr, 0n])
     );
-    const voteCount = Object.keys(votes).length;
-    const voteSum = Object.values(votes).reduce((accum, value) => accum + value, 0n);
+    const totalVoteDepositPerUserPerPool: Record<Address, Record<Address, bigint>> = {};
+    const randomPoolExcluded = allPoolAddrs[rng.nextInt(0, allPoolAddrs.length)]
+    for (const voterUser of voterUsers) {
+      totalVoteDepositPerUserPerPool[voterUser.account.address] = Object.fromEntries(
+        allPoolAddrs.map(poolAddr => [poolAddr, 0n])
+      );
+      const veNFTCount = rng.nextInt(1, 5);
+      for (let veNFTIdx = 0; veNFTIdx < veNFTCount; ++veNFTIdx) {
+        const veNFTId = await createRandomLockFor({
+          beamToken,
+          votingEscrow,
+          maxPercentOfBalance: 5, // 5% max of deployer balance to lock
+          depositor: deployerAddress,
+          recipient: voterUser.account.address,
+          rng,
+        });
 
-    await voter.write.vote([veNFTId, Object.keys(votes) as [Address], Object.values(votes)]);
+        const weights: Record<Address, bigint> = Object.fromEntries(
+          allPoolAddrs.map(poolAddr => [poolAddr, getRandomVoteWeight(rng)])
+        );
+        weights[randomPoolExcluded] = 0n; // Remove vote for one pool to check one with zero vote don't mess up the protocol
+        const weightsSum = Object.values(weights).reduce((accum, value) => accum + value, 0n);
+
+        const votingPower = await votingEscrow.read.balanceOfNFT([veNFTId]);
+        // voter.vote() reverts on zero weights:
+        const weightsForVoteCall = Object.fromEntries(
+          allPoolAddrs.filter(poolAddr => weights[poolAddr] > 0n).map(poolAddr => [poolAddr, weights[poolAddr]])
+        );
+        await voter.write.vote([
+          veNFTId,
+          Object.keys(weightsForVoteCall) as [Address],
+          Object.values(weightsForVoteCall)
+        ], { account: voterUser.account });
+
+        for (const { poolAddr, votingIncentivesAddr } of allPools) {
+          const votingPowerForPool = votingPower * weights[poolAddr] / weightsSum;
+          totalVoteDepositPerUserPerPool[voterUser.account.address][poolAddr] += votingPowerForPool
+          totalVoteDepositPerPool[poolAddr] += votingPowerForPool;
+          const votingIncentives = await hre.viem.getContractAt("VotingIncentives", votingIncentivesAddr);
+          const votingPowerBalance = await votingIncentives.read.balanceOfOwner([voterUser.account.address]);
+          const delta = getDiff(votingPowerBalance, totalVoteDepositPerUserPerPool[voterUser.account.address][poolAddr]);
+          expect(delta <= votingPowerForPool * 10n / 10_000n).to.be.true; // 0.1% diff check
+        }
+      }
+    }
+    const poolWithVotesCount = allPoolAddrs.filter(poolAddr => totalVoteDepositPerPool[poolAddr] > 0n).length;
+    const voteSum = Object.values(totalVoteDepositPerPool).reduce((accum, value) => accum + value, 0n);
 
     const balanceOfDistributorBeforeEpochFlip = await beamToken.read.balanceOf([epochDistributorProxy.address]);
     if (balanceOfDistributorBeforeEpochFlip > 0n) {
@@ -266,6 +310,11 @@ describe("BeamCore.EpochDistributor", () => {
       solidlyGaugesDistributedAmount += rewardAmount
       poolAddrToRewardAmount[poolAddr] = rewardAmount;
 
+      if (rewardAmount == 0n) {
+        expect(totalVoteDepositPerPool[poolAddr]).to.equals(0n);
+        continue;
+      }
+
       // Rewards have just been distributed to gauges so we expect 0 farming for now
       const gauge = await hre.viem.getContractAt("Gauge", gaugeAddr);
       const rewardAddedEvents = await gauge.getEvents.RewardAdded();
@@ -279,11 +328,11 @@ describe("BeamCore.EpochDistributor", () => {
 
     expect(distributedAmount > 0n).to.be.true;
     expect(expectedEmission).to.equals(distributedAmount + lefthoverAmount);
-    expect(lefthoverAmount < distributedAmount * 10n / 1000n).to.be.true; // Arbitrary check: less than 0.1% lefthover
+    expect(lefthoverAmount < distributedAmount * 10n / 10_000n).to.be.true; // Arbitrary check: less than 0.1% lefthover
 
     // Check amount of rewards distributed to Algebra pools Gauges
     const rewardsAddedEvents = await algebraEternalFarming.getEvents.RewardsAdded();
-    expect(rewardsAddedEvents.length + solidlyGaugesRewardAddedEventCount).to.equals(voteCount);
+    expect(rewardsAddedEvents.length + solidlyGaugesRewardAddedEventCount).to.equals(poolWithVotesCount);
 
     const virtualPoolAddrToEvent: Record<Address, typeof rewardsAddedEvents[0]> = {};
     for (const rewardAdded of rewardsAddedEvents) {
@@ -294,49 +343,68 @@ describe("BeamCore.EpochDistributor", () => {
     }
 
     for (const {poolAddr} of algebraPools) {
-      const vote = votes[poolAddr];
+      const vote = totalVoteDepositPerPool[poolAddr];
       const virtualPoolAddr = await incentiveMakerProxy.read.poolToVirtualPool([poolAddr as Address]);
       const rewardAdded = virtualPoolAddrToEvent[virtualPoolAddr];
       const rewardAmount = rewardAdded.args.rewardAmount as bigint;
       const expectedRewardAmount = distributedAmount * vote / voteSum;
-      const delta = (rewardAmount >= expectedRewardAmount) ? rewardAmount - expectedRewardAmount : expectedRewardAmount - rewardAmount;
-      expect(delta < 10n).to.be.true; // 10 wei delta check
+      const delta = getDiff(rewardAmount, expectedRewardAmount);
+      expect(delta <= rewardAmount * 10n / 10_000n).to.be.true; // 0.1% diff
     }
 
     // Check amount of rewards distributed to Solidly pools Gauges
     for (const {poolAddr} of solidlyPools) {
-      const vote = votes[poolAddr];
+      const vote = totalVoteDepositPerPool[poolAddr];
       const rewardAmount = poolAddrToRewardAmount[poolAddr as Address];
       const expectedRewardAmount = distributedAmount * vote / voteSum;
-      const delta = (rewardAmount >= expectedRewardAmount) ? rewardAmount - expectedRewardAmount : expectedRewardAmount - rewardAmount;
-      expect(delta < 10n).to.be.true; // 10 wei delta check
+      const delta = getDiff(rewardAmount, expectedRewardAmount);
+      expect(delta <= rewardAmount * 10n / 10_000n).to.be.true; // 0.1% diff
     }
 
     // Check distribution of voting rewards according to votes
     for (const {poolAddr, votingIncentivesAddr} of allPools) {
       const votingIncentives = await hre.viem.getContractAt("VotingIncentives", votingIncentivesAddr);
-      const balanceBeforeVotingIncentiveClaim = await getTokenBalances(deployerAddress);
-      await claimer.write.claimVotingIncentivesAddress([
-        [votingIncentivesAddr],
-        [allTokenAddrs, allTokenAddrs, allTokenAddrs]
-      ]);
-      const balanceAfterVotingIncentiveClaim = await getTokenBalances(deployerAddress);
       for (const tokenAddr of allTokenAddrs) {
-        const claimedReward = balanceAfterVotingIncentiveClaim[tokenAddr] - balanceBeforeVotingIncentiveClaim[tokenAddr];
+        const [periodFinish, incentivesAmount, feesAmount, rewardsPerEpoch, lastUpdateTime] = await votingIncentives.read.rewardData([tokenAddr, epochStart]);
         if (!(tokenAddr in addedVotingIncentives[poolAddr])) {
-          expect(claimedReward).to.equals(0n);
+          expect(incentivesAmount).to.equals(0n);
+          expect(feesAmount).to.equals(0n);
+          expect(rewardsPerEpoch).to.equals(0n);
           continue;
         }
-        const totalVotingRewards = addedVotingIncentives[poolAddr][tokenAddr].incentivesAmount + addedVotingIncentives[poolAddr][tokenAddr].feesAmount;
-        const delta = totalVotingRewards - claimedReward;
-        expect(delta < 100n).to.be.true; // 100 wei check
 
-        const [periodFinish, incentivesAmount, feesAmount, rewardsPerEpoch, lastUpdateTime] = await votingIncentives.read.rewardData([tokenAddr, epochStart]);
+        const totalVotingRewards = addedVotingIncentives[poolAddr][tokenAddr].incentivesAmount + addedVotingIncentives[poolAddr][tokenAddr].feesAmount;
         expect(periodFinish).to.equals(epochStart + WEEK - 1n);
         expect(incentivesAmount).to.equals(addedVotingIncentives[poolAddr][tokenAddr].incentivesAmount);
         expect(feesAmount).to.equals(addedVotingIncentives[poolAddr][tokenAddr].feesAmount);
         expect(rewardsPerEpoch).to.equals(totalVotingRewards);
         expect(lastUpdateTime >= epochStart).to.be.true;
+      }
+    }
+
+    for (const voterUser of voterUsers) {
+      for (const {poolAddr, votingIncentivesAddr} of allPools) {
+        const balanceBeforeVotingIncentiveClaim = await getTokenBalances(voterUser.account.address);
+        await claimer.write.claimVotingIncentivesAddress([
+          [votingIncentivesAddr],
+          [allTokenAddrs, allTokenAddrs, allTokenAddrs],
+        ], {account: voterUser.account});
+        const balanceAfterVotingIncentiveClaim = await getTokenBalances(voterUser.account.address);
+        for (const tokenAddr of allTokenAddrs) {
+          const claimedReward = balanceAfterVotingIncentiveClaim[tokenAddr] - balanceBeforeVotingIncentiveClaim[tokenAddr];
+          if (!(tokenAddr in addedVotingIncentives[poolAddr])) {
+            expect(claimedReward).to.equals(0n);
+            continue;
+          }
+          if (totalVoteDepositPerPool[poolAddr] == 0n) {
+            expect(claimedReward).to.equals(0n);
+            continue;
+          }
+          const totalVotingRewards = addedVotingIncentives[poolAddr][tokenAddr].incentivesAmount + addedVotingIncentives[poolAddr][tokenAddr].feesAmount;
+          const totalVotingRewardsForVote = totalVotingRewards * totalVoteDepositPerUserPerPool[voterUser.account.address][poolAddr] / totalVoteDepositPerPool[poolAddr];
+          const delta = getDiff(totalVotingRewardsForVote, claimedReward);
+          expect(delta <= totalVotingRewardsForVote * 10n / 10_000n).to.be.true; // 0.1% diff
+        }
       }
     }
 
@@ -351,6 +419,6 @@ describe("BeamCore.EpochDistributor", () => {
     // Use the Claimer to claim rewards on all gauges and check the farmer gets everything
     await claimer.write.claimRewards([solidlyPools.map(({gaugeAddr}) => gaugeAddr)], { account: farmerAddress });
     const delta = solidlyGaugesDistributedAmount - await beamToken.read.balanceOf([farmerAddress]);
-    expect(delta < solidlyGaugesDistributedAmount * 10n / 1000n).to.be.true; // 1% difference check
+    expect(delta < solidlyGaugesDistributedAmount * 10n / 10_000n).to.be.true; // 0.1% difference check
   });
 });
