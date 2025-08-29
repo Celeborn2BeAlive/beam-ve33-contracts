@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "chainId": "7000",
+  "createdAt": 1749494381555,
+  "meta": {
+    "name": "Transactions Batch",
+    "description": "",
+    "txBuilderVersion": "1.16.5",
+    "createdFromSafeAddress": "0x0029eD88Ec602d32eB93d1c42b73a5206Ec046A3",
+    "createdFromOwnerAddress": "",
+    "checksum": "0x49ea867800b68d11c39e370b1129d751c8890440d7b93ec4af78b827714a5b66"
+  },
+  "transactions": [
+    {
+      "to": "0x28b5244B6CA7Cb07f2f7F40edE944c07C2395603",
+      "value": "0",
+      "data": null,
+      "contractMethod": { "inputs": [{ "internalType": "uint16", "name": "newDefaultCommunityFee", "type": "uint16" }], "name": "setDefaultCommunityFee", "payable": false },
+      "contractInputsValues": { "newDefaultCommunityFee": "150" }
+    },
+    {
+      "to": "0xDe3b76539271E2c634f0c41F5261855234d05879",
+      "value": "0",
+      "data": null,
+      "contractMethod": { "inputs": [{ "internalType": "uint16", "name": "newAlgebraFee", "type": "uint16" }], "name": "proposeAlgebraFeeChange", "payable": false },
+      "contractInputsValues": { "newAlgebraFee": "200" }
+    },
+    {
+      "to": "0xDe3b76539271E2c634f0c41F5261855234d05879",
+      "value": "0",
+      "data": null,
+      "contractMethod": { "inputs": [{ "internalType": "uint16", "name": "newAlgebraFee", "type": "uint16" }], "name": "acceptAlgebraFeeChangeProposal", "payable": false },
+      "contractInputsValues": { "newAlgebraFee": "200" }
+    }
+  ]
+}

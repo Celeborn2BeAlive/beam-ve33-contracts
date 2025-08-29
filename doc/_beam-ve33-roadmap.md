@@ -1,0 +1,212 @@
+**Minimal contract set to deploy:**
+- Core emission & lock protocol:
+  - EmissionToken (BEAM)
+  - VotingEscrow (veBEAM)
+  - Rebase veBEAM (RewardsDistributor)
+  - Minter
+- Voting:
+  - Epoch Distributor (fork & adapt Thena V3)
+  - Voter (fork & adapt Thena V3)
+- Voters rewarding:
+  - Gauge Factory (fork & adapt Thena V3)
+  - Algebra Vault (fork & adapt Thena V3)
+  - Voting Incentive (fork & adapt Thena V3)
+  - Voting Incentive Factory (fork & adapt Thena V3)
+- Farming:
+  - Incentive Maker (fork & adapt Thena V3)
+  - Gauge Algebra Eternal Farming (fork & adapt Thena V3)
+- UniV2 DEX (optional, can be added after)
+  - Router V2
+  - Classic PairFactory
+
+**Dev Log**
+
+- 2025-08-29
+  - DONE
+    - Split tests for zetachain integration
+    - Add guard and revert in functions performing state updates that depend on epoch flip (VotingIncentives, Voter) when epoch flip has not been executed
+      - Prevent casting votes & reset of votes if epoch flip has not been executed
+      - Prevent deposit of voting incentives if epoch flip has not been executed
+    - Improve integration test by simulating multiple Voter users and casting random votes
+    - Randomize epoch simulation when run several times in a persistent deployment
+
+- 2025-08-27/28
+  - DONE:
+    - Centralize access to external singleton contracts for VotingIncentives instances, to ease admin of protocol and reduce coupling
+    - Remove upgradeability of VeArtProxy and add state so we can inject logo, footer and title at deployment time
+    - Update deployment scripts to inject logo of VeArtProxy from a SVG file
+    - Add regression test for VeArtProxy
+    - Expose constants for pool types on GlobalFactory and use them in code for better code readability
+    - Improve tests to match production workflow for Gauges creation
+    - Integrate both Solidly pools and Algebra pools into a single integration test for Epoch distribution
+    - Refactor tests for pool manipulation
+    - Add more state testing
+    - Centralize access to external singleton contracts for Gauges, to ease admin of protocol and reduce coupling
+
+- 2025-08-25
+  - DONE:
+    - Remove unused attachment mechanic from VotingEscrow
+    - Add complete farming test with Solidly pairs & staking
+    - Remove old Retro V1 / Thena V1 contracts
+    - Add tests for the deposit of voting incentives and claiming by a single voter
+    - Simplify the implementation of EmissionToken
+    - Add scripts of admin of AlgebraFactory
+
+- 2025-08-21/22
+  - DONE:
+    - Implement VotingEscrowERC20 contract with tests, to support an ERC20 wrapper of locked position, for bribing and bonding
+    - Add more documentation as excalidraw figures, for better explanation of Voter and its interactions in the system
+    - More cleanup
+    - Refactor tests
+
+- 2025-08-20
+  - DONE:
+    - Improve mocking of some Algebra contracts (Farming Center, Eternal Farming, Factory, pools, roles for security) so we can test integration locally at a deeper level (no more mock for IncentiveMaker, we directly test the real one, but we mock its interactions with Algebra)
+    - Rename FeeVault => ALMFeeVault for clarity of usage in the infrastructure
+    - Cleanup repository, remove unused files, to start preparing for audit
+    - Write more technical documentation
+
+- 2025-08-19
+  - DONE:
+    - Refactor tests to extract utility functions
+    - Minor refactor to some forked contracts (naming, comments)
+    - Add tests for Solidly DEX
+    - Fix tests to make them runnable several times in a persistent environment where the protocol is already deployed
+    - Add complete zetachain integration test, simulating farming on a CL position, checking farming rewards are distributed to farmer on Algebra Farming Center
+      - This is the more important test, it validates that we can integrate with our currently deployed Algebra DEX
+    - Refactor EmissionToken & Minter to remove initialMint and initial creation of lock
+      - This process can be done before initializing the protocol in prod, so it's better to remove unused features to simplify contracts logic
+
+- 2025-08-18
+  - DONE:
+    - Upgrade AlgebraVaultFactory to support creation of vaults for already existing pools
+      - Required for us because the DEX is already deployed and active
+    - Add complete test for EpochDistributor, simulating epoch flip and distribution of farming rewards
+      - This test moch some parts such as IncentiveMaker to be used locally
+      - This DEX used the Solidly pools as if they were AlgebraPool, to check GaugeEternalFarming -> to be changed later
+    - Add test for integration with our AlgebraFactory deployed on Zetachain, simulate swaps and ensure swap fees ends up in our VotingIncentives instances
+
+- 2025-08-15/16
+  - DONE:
+    - Add tests for deployment & security
+    - Add tests for Minter
+    - Write some technical documentation
+
+- 2025-08-14
+  - DONE:
+    - Made another overview of all contracts with connections between them and notes about contracts logic
+    - Made an excalidraw figure to draw all connections
+    - Managed to run an integration test with local fork of Zetachain, where we connect the AlgebraVaultFactory (from our codebase, forked and adapted from Thena) to the AlgebraFactory, checked that when a pool is created then it also creates a fee vault and connect it to the pool
+      - => required step to distribute swap fees to voters
+  - TODO:
+    - Implement full integration tests for the whole protocol, check routing of swap fees to voters, check ve(3,3) complete logic
+
+- 2025-08-08
+  - DONE:
+    - Investigated how to run automated tests on hardhat and localhost networks + use of ignition to deploy
+    - Implemented simple tests for BeamToken contract
+    - Rename RewardsDistributorV2 to RebaseDistributor for clarity
+      - In Minter rename state variable to match
+    - Add Proxy suffix to ignition deployed contracts that are proxies, for clarity
+    - Deploy veNFT Art contract
+    - Adapt IncentiveMaker => rename thena to emissionToken, and wbnb to wrappedGasToken
+    - Adapt remaining Thena V3 contracts to remove theNFT related stuff, BNB stuff, etc.
+    - Include Algebra fees to AlgebraVault
+      - NOTE: the AlgebraVault supports a treasury and treasuryShare, so we can put behind a contract splitting accross several receivers, Algebra would be among them
+        - The initial setup could be treasuryShare = 3%, and all is sent to Algebra
+  - Notes:
+    - FeeVault is not very scalable for fee sharing to treasury and other actors because it stores the address
+      - A better design would centralize that information on another contract, similar to AlgebraVaultFactory
+      - It's still possible to call setTreasury_feeVault on GlobalFactory for each fee vault in a script
+  - TODO
+    - Deploy bveToken contract
+    - Adapt AlgebraVaultFactory so we can create AlgebraVault for already deployed CL pool
+    - Deployment: handle setup script to connect all contracts together
+    - Test farming & reward distribution in prod with a fake Beam token
+      - Think about a way to easily test the required parts without the epoch system
+
+- 2025-08-05
+  - DONE:
+    - From Retro:
+      - Migrated Minter contracts
+        - Updated to rename `voter` to `epochDistributor`
+      - Migrated "Rebase veBEAM" (RewardsDistributorV2) contract
+      - Migrated "Solidy UniV2" DEX contracts (PairFactory, Pair, PairFees, RouterV2)
+        - *NOTE*: Probably won't be used for Beam, but if we need they are ready.
+          - They're quite limited though (same fee tier for all pairs)
+          - Would be better to fork another adaptation (Velodrome or Ramses)
+    - Forked from Thena V3
+      - EpochDistributorUpgradeable (from EpochDistributorBSC)
+        - Removed crosschain distribution
+        - Adapted variable names, removed references to THE and BNB
+        - This contract received liquid emission tokens from the Minter and distribute them to gauges at each epoch
+      - VotingIncentives
+        - This contract replace bribe contracts from Retro / Thena V2, with cleaner code
+      - VotingIncentivesFactory
+        - Used to deploy VotingIncentives for each pool
+      - Voter
+        - This new Voter only handles vote allocation while reward distribution is handled by EpochDistributor
+      - Gauge
+        - This is the staking contract for UniV2 LP tokens and ALM tokens
+        - Probably won't be used for Beam, but if we need they are ready.
+        - Each Gauge has a VotingIncentive
+      - FeeVault
+        - Aggregate swap fees for legacy pools, so gauge can claim them and distribute to VotingIncentive contracts
+      - GaugeFactory
+        - Used by GlobalFactory to deploy gauge contracts
+      - GlobalFactory
+        - Used to deploy gauges and track whitelisted tokens
+      - Algebra farming and voting incentives distribution:
+        - AlgebraVault
+          - This contract should be instanciated for each Algebra pool and set as communityVault of that pool
+          - The GaugeEternalFarming claims aggregated swap fees from it to route them to VotingIncentive
+        - AlgebraVaultFactory
+          - This contract is used to create AlgebraVault
+          - It should be set as the `vaultFactory` of the AlgebraFactory
+          - Current limitation for us is that we cannot create new vault for existing pools => needs adaptation
+        - GaugeEternalFarming
+          - Manage swap fee claiming from AlgebraVault and route them to VotingIncentive
+          - Managed distribution of farming rewards to Algebra Farming Center using IncentiveMaker
+        - IncentiveMakerUpgradeable
+          - Manage creation & management of farming campaign on the Algebra Farming Center
+    - Deployment
+      - Iterated on hardhat ignition modules to deploy everything
+  - TODO:
+    - ~~Rename RewardsDistributorV2 to RebaseDistributor for clarity~~
+      - ~~In Minter rename state variable to match~~
+    - Adapt AlgebraVaultFactory so we can create AlgebraVault for already deployed CL pool
+    - ~~Adapt remaining Thena V3 contracts to remove theNFT related stuff, BNB stuff, etc.~~
+    - Deployment: handle setup script to connect all contracts together
+    - Test farming & reward distribution in prod with a fake Beam token
+      - Think about a way to easily test the required parts without the epoch system
+    - ~~Include Algebra fees to AlgebraVault~~
+      - ~~Check with Chase if we also have some treasuryShare ?~~
+    - ~~Adapt IncentiveMaker => rename thena to emissionToken, and wbnb to wrappedGasToken~~
+    - ~~Add Proxy suffix to ignition deployed contracts that are proxies, for clarity~~
+    - ~~Deploy veNFT Art contract~~
+
+- 2025-08-03
+  - DONE:
+    - Migrate Retro as EmissionToken to new codebase
+    - Migrate VotingEscrow to new codebase
+    - Write Beam ignition deployment script
+  - TODO:
+    - Re-read VotingEscrow code and document it
+    - ~~Migrate Minter to new codebase~~
+      - Re-read code and document it
+      - ~~Make some adaptation, for example rename "voter" => "epochDistributor"~~
+    - ~~Migrate "Rebase veBEAM" (RewardsDistributor) contract~~
+      - Re-read code and document it
+    - Thena V3 forking for CL farming
+      - Read Epoch Distributor and document it
+      - Read Voter and document it
+        - ~~Ensure we can integrate new gauge systems for future extension of the DEX~~
+      - Read Incentive Maker and document it
+        - Check that it can be used for our version of Algebra
+        - If not, adapt the contract
+      - Read Gauge Algebra Eternal Farming and document it
+      - Read Algebra Vault and document it
+      - Read Gauge Factory and document it
+      - ~~Adapt and migrate all code to our codebase~~
+    - Finish deployment script and try it onchain
+      - Try to run the protocol at high frequency (one epoch = 1 minute)

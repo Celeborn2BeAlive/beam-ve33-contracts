@@ -1,0 +1,273 @@
+This document lists all contracts and their reference to other contracts / addresses, + notes about the interactions between them.
+
+# Core
+
+- EmissionToken
+  - `minter` => MinterUpgradeable
+    - Initially => deployer address
+  - `initialMint` mechanics:
+    - Can be called once
+    - TODO Is it required ?
+      - We can mint manually once, then set the MinterUpgradeable
+
+- MinterUpgradeable
+  - `_initialize` mechanics:
+    - `_initializer` => deployer address
+    - Create locks for claimants
+    - TODO Is it required ?
+      - We can initial mint what's required and create locks manually or with another contract
+    - Still important for setting `active_period`
+  - `team` => address
+    - Received team share of minted tokens
+    - Initially set to deployer address
+    - TODO Rename to treasury ?
+  - `_emissionToken` => EmissionToken
+    - minted
+  - `_epochDistributor` => EpochDistributeUpgradeable
+    - receive liquid tokens to be distributed to gauges
+  - `_rebase_distributor` => RebaseDistributor
+    - received tokens to be locked as rebase
+  - `_ve` => VotingEscrow
+    - Used for `_initialize` mechanics
+    - Used to compute `circulating_supply()`
+  - `PRECISION`: 1000
+    - => each rate unit is 0.1%
+  - TODO Inherit from `OwnableUpgradeable` but not used
+  - TODO Maybe better to have non upgradeable minter, but allow to change it at the EmissionToken level
+    - Should be behind a timelock
+    - Depends if Minter is used at many places
+
+- VotingEscrow
+  - `team` => address
+    - Administrator for setter functions
+  - `artProxy` => address
+    - Used to compute `tokenURI`
+  - `voter` => address
+    - Used to guard calls to `voting` and `abstain`
+  - `token` => address => EmissionToken
+    - Used in `_deposit_for` to transfer tokens and lock them in the contract
+
+- RebaseDistributor
+  - `owner` => address
+    - Initially set to deployer address
+    - Can call checkpoint functions
+    - Can lock / unlock an address from claiming rebase
+    - Can withdraw any token balance from the contract
+    - Can `increaseOrRemoveAllowances` of `token` to the VotingEscrow contract
+  - `voting_escrow` => address => VotingEscrow
+    - Set in constructor
+  - `token` => address => EmissionToken
+    - Read from `.token()` of Voting Escrow in constructor
+  - `depositor` => address
+    - Set to `address(0)` in constructor
+    - TODO Should be set to `MinterUpgradeable` by owner
+
+- Voter
+  - `Ownable` => owner is deployer
+  - `_minter` => MinterUpgradeable
+    - Set in constructor
+    - Used to read `active_period()` in `_epochTimestamp`
+  - `_ve` => VotingEscrow
+    - Set in constructor
+    - Used to retrieve `balanceOfNFT` as voting power
+    - Used to set `voting` or `abstain`
+    - Used to check `isApprovedOrOwner` in voting functions:
+      - `poke`
+      - `reset`
+      - `vote`
+  - `_pool` => address[] => pools to vote for
+    - ` _poolData[pool].gauge` => gauge contract for pool
+    - `_poolData[pool].votingIncentives` => voting incentives contractfor pool
+  - `_isManager` => `mapping(address => bool)`
+    - Owner is set as manager in constructor
+    - Only owner can set manager status in `setManagerStatus`
+    - `_onlyManager` => called in admin functions
+      - `addPoolData`
+      - `removePoolData`
+      - `banPool`
+      - `revivePool`
+      - `setVotingEscrow`
+      - `setMinter`
+
+- EpochDistributorUpgradeable
+  - `Ownable`
+    - Used to control access to admin functions
+  - `minter` => address => `MinterUpgradeable`
+    - Used to compute `active_period`
+    - => `_isMinter()` check function
+      - => used in `notifyRewardAmount`, only the minter can deposit rewards
+  - `emissionToken` => address => `EmissionToken`
+    - Used to transfer tokens in distribution functions
+  - `voter` => address => `Voter`
+    - Used to compute `totalWeights`, `poolsLength`, `pools`, `gaugeForPool`, `poolTotalWeights`
+      - In order to distribute farming rewards according to votes
+      - Use `notifyRewardAmount` on each gauge
+  - `isAutomation` => mapping(address => bool)
+    - => `_isAutomation()` check function
+    - Called in `distributeAll` and `distribute`
+
+- Claimer
+  - `IVotingEscrow public ve;`
+    - Used to check if `isApprovedOrOwner`
+
+- ProxyAdmin
+
+---
+
+- VotingIncentives
+  - Manage accountability of votes
+  - Distribute voting rewards according to votes
+  - `address[] public rewardTokens;      //  list of reward tokens`
+  - `address public voter;               //  voter contract`
+    - Used to check caller in `deposit` and `withdraw`
+  - `address public votingIncentivesFactory;//  Voting Incentives deployer`
+    - Used in `onlyAllowed` modifier
+  - `address public feeDistributor;               //  underlying feeDistributor linked to this.contract`
+    - Used in `notifyRewardAmount` to provide a boolean `isFee` to `_notifyReward`
+      - Then `_notifyReward` increase `rewardData[_token][timestamp].feesAmount` or `rewardData[_token][timestamp].incentivesAmount` based on this boolean
+  - `address public owner;               //  owner of this contract (should be MultiSig)`
+    - TODO Comment is wrong => should be VotingIncentivesFactory
+    - Can be changed with `setOwner`, which can be called from VotingIncentivesFactory
+    - Used in `onlyAllowed` modifier
+  - `address public claimer;             // allow multiple claims`
+    - Only `claimer` can call `getRewardFor...` external functions
+  - `IVotingEscrow public ve;            //  VotingEscrow contract`
+    - Used to get owner of a veNFT and check `isApprovedOrOwner` in `getReward`
+  - `IMinter public minter;              //  EmissionToken minter contract`
+    - Used to get `active_period()`
+
+- VotingIncentivesFactory
+  - `globalFactory` => address => GlobalFactory
+  - `_votingIncentives` => address[] => VotingIncentives[]
+  - `defaultRewardToken` => address[] => ERC20[]
+
+- GaugeFactory
+  - Utility contract to instantiate gauge contracts
+  - `address public globalFactory;` => GlobalFactory
+
+- Gauge
+  - Allow to stake ERC20 tokens representing LP tokens of pools
+    - using `deposit()`
+  - Receive farming rewards from EpochDistributorUpgradeable
+  - Distribute farming rewards to stakers
+  - `address public DISTRIBUTION;` => EpochDistributorUpgradeable
+    - Guard `notifyRewardAmount()` and `notifyRewardAmountTransferFrom()`
+  - `address public claimer;` => Claimer
+    - Guard `getRewardFor()`
+  - `address public feeVault;` => FeeVault
+    - The gauge claim fees on it in `_claimFees()` and `_claimFeesWeighted()`
+  - `address[] public rewardTokens;` => ERC20[]
+    - Tokens that are claimed in getReward functions
+    - Only these tokens can be added as reward in `_notifyRewardAmount`
+    - Most common case: only EmissionToken
+ - `IERC20 public immutable TOKEN;`
+   - The token to stake in the gauge
+ - `IVotingIncentives public votingIncentives;`
+   - claim fees functions get fees from the fee vault, and deposit on the `votingIncentives` through `notifyRewardAmount`
+
+- FeeVault
+  - Use to accumulate swap fees from full range LPs
+  - `address public pool;` => IPairInfo
+    - Used in constructor to retrieve `token0` and `token1`
+  - `address public gauge;`
+    - Not really used, but must be set in order for `claimFees` to work
+  - `address public treasury;`
+    - Receives a share of fees
+  - `address public token0;`
+  - `address public token1;`
+  - `mapping(address => bool) public isAllowed;`
+    - Allow addresses to claim fees
+    - The gauge is set in constructor
+
+- GaugeEternalFarming
+  - Receive farming rewards from EpochDistributorUpgradeable and distribute them to Algebra Farming Center using `incentiveMaker.updateIncentive`
+  - `address public DISTRIBUTION;` => EpochDistributorUpgradeable
+  - `address public feeVault;` => AlgebraVault
+  - `IAlgebraPool public immutable TOKEN;` => IAlgebraPool
+    - Not a token but the contract address of a AlgebraPool
+  - `IIncentiveMaker public incentiveMaker;`
+    - Used to add incentives for a specific pools
+  - `IVotingIncentives public votingIncentives;`
+    - claim fees functions get fees from the fee vault, and deposit on the `votingIncentives` through `notifyRewardAmount`
+
+- AlgebraVault
+  - Accumulate fees from an AlgebraPool
+  - Should be set as `communityVault` of the pool by using Algebra smart contracts
+  - `address public immutable factory;` => AlgebraVaultFactory
+    - Used to retrieve several addresses and parameters
+  - `address public immutable pool;` => IAlgebraPool
+    - Used to retrieve `token0` and `token1` in constructor
+    - Used to retrieve gauge address from voter in `claimFees()`
+  - `address public immutable voter;` => Voter
+    - Used to retrieve gauge address of the pool in `claimFees()`
+  - `IERC20 private token0;`
+  - `IERC20 private token1;`
+
+- AlgebraVaultFactory
+  - Used to deploy AlgebraVault
+  - Aggregate common config for all AlgebraVault instances
+  - Should be set as `vaultFactory` of the AlgebraFactory
+  - `address public voter;`
+    - Passed to constructor of AlgebraVault
+  - `address public algebraFactory;` => AlgebraFactory
+    - Only it can call `createVaultForPool`
+    - TODO it's an issue for our existing pool, we need to be able to call it from an admin address
+
+- IncentiveMakerUpgradeable
+  - Used to create incentive campaigns on Algebra Farming Center
+  - `address public emissionToken;` => EmissionToken
+  - `address public wGasToken;` => WZETA
+  - `IVoter public voter;` => Voter
+    - Used to retrieve the gauge of a pool => GaugeEternalFarming
+    - Only it can call `updateIncentive()`
+  - `IAlgebraEternalFarming public algebraEternalFarming;`
+    - Used to `createEternalFarming`
+    - Receives incentive, using `addRewards()` and `setRates()`
+  - `IFarmingCenter public farmingCenter;`
+    - Obtained from `algebraEternalFarming.farmingCenter()`
+    - Not really used
+    - Users should use that contract to stake their CL NFTs, using `enterFarming` with the corresponding `IncentiveKey`
+      - `exitFarming` to exit
+
+- GlobalFactory
+  - Used to deploy gauge, feeVault and votingIncentives for each pool
+  - The pool must have been deployed already, using another factory
+    - Solidly Pairs => PairFactoryUpgradeable
+    - Algebra pools => AlgebraFactory
+  - `address public immutable emissionToken;` => EmissionToken
+  - `address public treasury;`
+  - `address public claimer;` => Claimer
+  - `address public distribution;` => EpochDistributorUpgradeable
+  - `address public incentiveMaker;` => IncentiveMakerUpgradeable
+  - `address[] public tokens;` => List of tokens allowed to be voted
+  - `address[] public defaultGaugeRewardTokens;` => ERC20[]
+  - IGaugeFactory public gaugeFactory;
+  - IVotingIncentivesFactory public votingIncentivesFactory;
+  - IPairFactory public pairFactorySld;
+  - IAlgebraFactory public algebraFactory;
+  - IWeightedPoolsSimple public weightedFactory;
+  - IVoter public voter;
+  - `create()` => Create gauge, feeVault and votingIncentives for a given pool
+    - Use `pool_type` parameter for type of pool
+    - First call `_beforeCreate` to perform checks
+      - Each token of the pool should have `isToken` to true => whitelisting
+    - Then call `_deploy` for the deployment logic
+      - `pool_type` = 0 => Solidly Pairs
+        - In that case `feeVault` is the pool itself
+        - A Gauge contract is deployed with `gaugeFactory.createGauge()`
+      - `pool_type` = 1 => ALMs
+        - A FeeVault is created
+        - A Gauge contract is deployed with `gaugeFactory.createGauge()`
+        - I assume the connection between the FeeVault and the ALM contract should be made outside
+        - The gauge is linked to the fee vault using `IFeeVault(feeVault).setGauge(gauge);`
+      - `pool_type` = 2 => AlgebraPool
+        - Fee vault is obtained from `communityVault()` of the pool
+          - TODO it means we need to have it created and set before creating the gauge
+        - A Gauge contract is deployed with `gaugeFactory.createEternalGauge()`
+      - `pool_type` = 3 => Weighted Pools
+        - Fee vault is obtained from `feesContract()` on the pool
+        - A Gauge contract is deployed with `gaugeFactory.createGauge()`
+      - A VotingIncentives contract is deployed with `votingIncentivesFactory.createVotingIncentives`
+        - Set to the gauge factory with `IGaugeFactory(address(gaugeFactory)).setVotingIncentives(gauge, votingIncentives)`
+        - Rewards tokens added to the VotingIncentives with `votingIncentivesFactory.addRewardsToVotingIncentives(_tokens, votingIncentives);`
+      - `voter.addPoolData` is called to add the pool as votable

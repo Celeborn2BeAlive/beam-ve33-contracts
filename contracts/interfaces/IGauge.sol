@@ -1,16 +1,52 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity >=0.8.0;
+
 
 interface IGauge {
-    function notifyRewardAmount(address token, uint amount) external;
-    function getReward(address account, address[] memory tokens) external;
-    function getReward(address account) external;
+    function setVotingIncentives(address _vi) external;
+    function setFeeVault(address _feeVault) external;
+    function activateEmergencyMode() external;
+    function stopEmergencyMode() external;
+    function addRewardToken(address _token) external;
+    function removeRewardToken(address _token) external;
+    function pause(bool status) external;
+
+    function rewardTokensLength() external view returns(uint256);
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function rewardRate(address _token) external view returns(uint256);
+    function rewardPerToken(address _token) external view returns(uint256);
+    function rewardForDuration(address _token) external view returns (uint256);
+    function earned(address _account, address _token) external view returns (uint256);
+    function earnedAll(address _account) external view returns(uint256[] memory amounts);
+    function periodFinish(address _token) external view returns (uint256);
+
+    function depositAll() external;
+    function deposit(uint256 amount) external;
+    function withdrawAllAndHarvest() external;
+    function withdrawAll() external;
+    function withdraw(uint256 amount) external;
+    function emergencyWithdraw() external;
+    function emergencyWithdrawAmount(uint256 _amount) external;
+    function getReward() external;
+    function getRewardFor(address user) external;
+    function notifyRewardAmount(address _token, uint _amount) external;
+    function notifyRewardAmountTransferFrom(address _token, uint _amount) external;
     function claimFees() external returns (uint claimed0, uint claimed1);
-    function left(address token) external view returns (uint);
-    function rewardRate(address _pair) external view returns (uint);
-    function balanceOf(address _account) external view returns (uint);
-    function isForPair() external view returns (bool);
-    function totalSupply() external view returns (uint);
-    function earned(address token, address account) external view returns (uint);
-    
+
+
+    // Events
+    event RewardAdded(address indexed token, uint256 reward);
+    event Deposit(address indexed user, uint256 amount);
+    event Withdraw(address indexed user, uint256 amount);
+    event Harvest(address indexed user, address indexed token, uint256 reward);
+    event ClaimFees(address indexed from, uint claimed0, uint claimed1);
+    event ClaimFees(address indexed from, address indexed token, uint claimed);
+    event SetVotingIncentives(address indexed vi);
+    event SetFeeVault(address indexed feeVault);
+    event ActivateEmergencyMode();
+    event StopEmergencyMode();
+    event AddRewardToken(address indexed token);
+    event RemoveRewardToken(address indexed token);
+
 }

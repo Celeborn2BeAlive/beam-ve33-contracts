@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity >=0.8.0;
 
 interface IERC20 {
     function totalSupply() external view returns (uint256);
     function transfer(address recipient, uint amount) external returns (bool);
     function decimals() external view returns (uint8);
+    function name() external view returns (string memory);
     function symbol() external view returns (string memory);
     function balanceOf(address) external view returns (uint);
     function transferFrom(address sender, address recipient, uint amount) external returns (bool);

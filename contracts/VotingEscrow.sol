@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity >=0.8.0;
 
 import {IERC721, IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
@@ -88,7 +88,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
     uint internal tokenId;
 
     /// @notice Contract constructor
-    /// @param token_addr `RETRO` token address
+    /// @param token_addr Emission token address
     constructor(address token_addr, address art_proxy) {
         token = token_addr;
         voter = msg.sender;
@@ -101,6 +101,12 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         supportedInterfaces[ERC165_INTERFACE_ID] = true;
         supportedInterfaces[ERC721_INTERFACE_ID] = true;
         supportedInterfaces[ERC721_METADATA_INTERFACE_ID] = true;
+
+        string memory tokenName = IERC20(token_addr).name();
+        name = string(abi.encodePacked("ve", tokenName));
+        string memory tokenSymbol =IERC20(token_addr).symbol();
+        symbol = string(abi.encodePacked("ve", tokenSymbol));
+
 
         // mint-ish
         emit Transfer(address(0), address(this), tokenId);
@@ -127,8 +133,8 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
                              METADATA STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    string constant public name = "veRetro";
-    string constant public symbol = "veRETRO";
+    string public name;
+    string public symbol;
     string constant public version = "1.0.0";
     uint8 constant public decimals = 18;
 
@@ -283,7 +289,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         uint _tokenId,
         address _sender
     ) internal {
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], "attached");
+        require(!voted[_tokenId], "voted");
         // Check requirements
         require(_isApprovedOrOwner(_sender, _tokenId));
         // Clear approval. Throws if `_from` is not the current owner
@@ -505,7 +511,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         // Remove token
         //_removeTokenFrom(msg.sender, _tokenId);
         _removeTokenFrom(owner, _tokenId);
-        
+
         emit Transfer(owner, address(0), _tokenId);
     }
 
@@ -520,8 +526,8 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
     mapping(uint => int128) public slope_changes; // time -> signed slope change
     uint public supply;
 
-    uint internal constant WEEK = 1 weeks;
-    uint internal constant MAXTIME = 2 * 365 * 86400;
+    uint public constant WEEK = 1 weeks;
+    uint public constant MAXTIME = 2 * 365 * 86400;
     int128 internal constant iMAXTIME = 2 * 365 * 86400;
     uint internal constant MULTIPLIER = 1 ether;
 
@@ -826,7 +832,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
     /// @dev Only possible if the lock has expired
     function withdraw(uint _tokenId) external nonreentrant {
         assert(_isApprovedOrOwner(msg.sender, _tokenId));
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], "attached");
+        require(!voted[_tokenId], "voted");
 
         LockedBalance memory _locked = locked[_tokenId];
         require(block.timestamp >= _locked.end, "The lock didn't expire");
@@ -841,7 +847,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         // Both can have >= 0 amount
         _checkpoint(_tokenId, _locked, LockedBalance(0,0));
 
-        // todo: send exit fee % to rewardsdistributorv2 
+        // todo: send exit fee % to rewardsdistributorv2
         assert(IERC20(token).transfer(msg.sender, value));
 
         // Burn the NFT
@@ -1037,7 +1043,6 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
                             GAUGE VOTING LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    mapping(uint => uint) public attachments;
     mapping(uint => bool) public voted;
 
     function setVoter(address _voter) external {
@@ -1055,18 +1060,8 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         voted[_tokenId] = false;
     }
 
-    function attach(uint _tokenId) external {
-        require(msg.sender == voter);
-        attachments[_tokenId] = attachments[_tokenId] + 1;
-    }
-
-    function detach(uint _tokenId) external {
-        require(msg.sender == voter);
-        attachments[_tokenId] = attachments[_tokenId] - 1;
-    }
-
     function merge(uint _from, uint _to) external {
-        require(attachments[_from] == 0 && !voted[_from], "attached");
+        require(!voted[_from], "voted");
         require(_from != _to);
         require(_isApprovedOrOwner(msg.sender, _from));
         require(_isApprovedOrOwner(msg.sender, _to));
@@ -1089,9 +1084,9 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
      * @param _tokenId  NFTs ID
      */
     function split(uint[] memory amounts, uint _tokenId) external {
-        
+
         // check permission and vote
-        require(attachments[_tokenId] == 0 && !voted[_tokenId], "attached");
+        require(!voted[_tokenId], "voted");
         require(_isApprovedOrOwner(msg.sender, _tokenId));
 
         // save old data and totalWeight
@@ -1100,7 +1095,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         uint end = _locked.end;
         uint value = uint(int256(_locked.amount));
         require(value > 0); // dev: need non-zero value
-        
+
         // reset supply, _deposit_for increase it
         supply = supply - value;
 
@@ -1119,16 +1114,16 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         uint unlock_time = end;
         require(unlock_time > block.timestamp, 'Can only lock until time in the future');
         require(unlock_time <= block.timestamp + MAXTIME, 'Voting lock can be 2 years max');
-        
-        // mint 
+
+        // mint
         uint _value = 0;
-        for(i = 0; i < amounts.length; i++){   
+        for(i = 0; i < amounts.length; i++){
             ++tokenId;
             _tokenId = tokenId;
             _mint(_to, _tokenId);
             _value = value * amounts[i] / totalWeight;
             _deposit_for(_tokenId, _value, unlock_time, locked[_tokenId], DepositType.SPLIT_TYPE);
-        }     
+        }
 
     }
 
@@ -1395,7 +1390,7 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
     ) public {
         require(delegatee != msg.sender);
         require(delegatee != address(0));
-        
+
         bytes32 domainSeparator = keccak256(
             abi.encode(
                 DOMAIN_TYPEHASH,

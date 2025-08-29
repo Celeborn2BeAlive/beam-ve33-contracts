@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity >=0.8.0;
 
 interface IVotingEscrow {
 
@@ -35,8 +35,6 @@ interface IVotingEscrow {
     function attachments(uint) external view returns (uint);
     function voting(uint tokenId) external;
     function abstain(uint tokenId) external;
-    function attach(uint tokenId) external;
-    function detach(uint tokenId) external;
 
     function checkpoint() external;
     function deposit_for(uint tokenId, uint value) external;
@@ -48,7 +46,9 @@ interface IVotingEscrow {
     function balanceOfNFTAt(uint _tokenId, uint _t) external view returns (uint);
     function balanceOfAtNFT(uint _tokenId, uint _t) external view returns (uint);
 
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function decimals() external view returns (uint8);
 
-
-    function decimals() external view returns(uint8);
+    function MAXTIME() external view returns (uint);
 }
