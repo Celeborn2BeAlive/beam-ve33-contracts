@@ -29,6 +29,8 @@ async function main () {
     "0x0327f0660525b15cdb8f1f5fbf0dd7cd5ba182ad",
     "0x48f80608b672dc30dc7e3dbbd0343c5f02c738eb",
     "0xd97b1de3619ed2c6beb3860147e30ca8a7dc9891",
+    "0xa52ad01a1d62b408ffe06c2467439251da61e4a9",
+    "0xa614aebf7924a3eb4d066adca5595e4980407f1d",
   ];
   const beamAlgebraCommunityVault = getContract({
     address: getAddress("0xDe3b76539271E2c634f0c41F5261855234d05879"),
