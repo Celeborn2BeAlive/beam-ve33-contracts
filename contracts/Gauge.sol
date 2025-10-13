@@ -151,7 +151,7 @@ contract Gauge is ReentrancyGuard, Ownable, Pausable, IGauge {
 
     /// @notice Remove a reward token
     function removeRewardToken(address _token) external onlyOwner {
-        require(!isRewardToken[_token], '!isRewardToken');
+        require(isRewardToken[_token], '!isRewardToken');
         uint256 len = rewardTokens.length;
         uint i;
         for(i; i < len; i++){
