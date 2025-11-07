@@ -94,11 +94,11 @@ contract RebaseDistributor is ReentrancyGuard, IRebaseDistributor {
             if (t > rounded_timestamp) {
                 break;
             } else {
-                uint epoch = _find_timestamp_epoch(ve, t);
+                uint epoch = _find_timestamp_epoch(ve, t - 1);
                 IVotingEscrow.Point memory pt = IVotingEscrow(ve).point_history(epoch);
                 int128 dt = 0;
-                if (t > pt.ts) {
-                    dt = int128(int256(t - pt.ts));
+                if (t - 1 > pt.ts) {
+                    dt = int128(int256(t - 1 - pt.ts));
                 }
                 ve_supply[t] = Math.max(uint(int256(pt.bias - pt.slope * dt)), 0);
             }
@@ -207,6 +207,22 @@ contract RebaseDistributor is ReentrancyGuard, IRebaseDistributor {
         return to_claim;
     }
 
+    function _find_user_timestamp_point(address ve, uint _timestamp, uint tokenId) internal view returns (IVotingEscrow.Point memory) {
+        uint _min = 0;
+        uint _max = IVotingEscrow(ve).user_point_epoch(tokenId);
+        for (uint i = 0; i < 128; i++) {
+            if (_min >= _max) break;
+            uint _mid = (_min + _max + 2) / 2;
+            IVotingEscrow.Point memory pt = IVotingEscrow(ve).user_point_history(tokenId, _mid);
+            if (pt.ts <= _timestamp) {
+                _min = _mid;
+            } else {
+                _max = _mid - 1;
+            }
+        }
+        return IVotingEscrow(ve).user_point_history(tokenId, _min);
+    }
+
     function _toClaim(uint id, uint t) internal view returns(uint to_claim) {
 
         IVotingEscrow.Point memory userData = IVotingEscrow(voting_escrow).user_point_history(id,1);
@@ -215,9 +231,13 @@ contract RebaseDistributor is ReentrancyGuard, IRebaseDistributor {
         if(tokens_per_week[t] == 0) return 0;
         if(userData.ts > t) return 0;
 
-        //uint id_bal = IVotingEscrow(voting_escrow).balanceOfNFTAt(id, t);
-        uint id_bal = IVotingEscrow(voting_escrow).balanceOfAtNFT(id, time_to_block[t]);
-        uint share =  id_bal * 1e18 / ve_supply[t];
+        IVotingEscrow.Point memory pt = _find_user_timestamp_point(voting_escrow, t-1, id);
+        int128 dt = 0;
+        if (t - 1 > pt.ts) {
+            dt = int128(int256(t - 1 - pt.ts));
+        }
+        uint id_bal = Math.max(uint(int256(pt.bias - pt.slope * dt)), 0);
+        uint share = id_bal * 1e18 / ve_supply[t];
 
         to_claim = share * tokens_per_week[t] / 1e18;
     }
