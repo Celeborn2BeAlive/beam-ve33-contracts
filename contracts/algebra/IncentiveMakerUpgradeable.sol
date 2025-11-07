@@ -106,52 +106,6 @@ contract IncentiveMakerUpgradeable is AccessControlUpgradeable {
         init = true;
     }
 
-    /// @notice Creates an incentive for a Concentrated Liquidity pool
-    /// @param pool The CL pool address
-    /// @param emissionTokenAmount The emission token amount to distribute over a week
-    /// @param wGasTokenAmount The wrapped gas token amount to distribute over a week
-    /// @return The address of the created virtual pool
-    /// @dev Pool must exist, wGasTokenAmount can be 0, emissionTokenAmount must be > 0
-    function createIncentive(address pool, uint128 emissionTokenAmount, uint128 wGasTokenAmount) external onlyRole(INCENTIVE_MAKER_MANAGER_ROLE) returns(address) {
-        IncentiveKey memory key = _verifyIncentive(pool, emissionTokenAmount);
-        IAlgebraEternalFarming.IncentiveParams memory params = _getParams(emissionTokenAmount, wGasTokenAmount);
-        return _createAndSaveIncentive(key, params, IAlgebraPool(pool).plugin());
-    }
-
-    /// @notice Internal function to create and save an incentive
-    /// @param key The incentive key
-    /// @param params The incentive parameters
-    /// @param plugin The plugin address
-    /// @return The address of the created virtual pool
-    function _createAndSaveIncentive(IncentiveKey memory key, IAlgebraEternalFarming.IncentiveParams memory params, address plugin) internal returns(address) {
-        IERC20Upgradeable(emissionToken).safeTransferFrom(msg.sender, address(this), params.reward);
-        IERC20Upgradeable(emissionToken).safeIncreaseAllowance(address(algebraEternalFarming),params.reward);
-
-        if(params.bonusReward > 0){
-            IERC20Upgradeable(wGasToken).safeTransferFrom(msg.sender, address(this), params.bonusReward);
-            IERC20Upgradeable(wGasToken).safeIncreaseAllowance(address(algebraEternalFarming),params.bonusReward);
-        }
-
-        address _virtualPool = algebraEternalFarming.createEternalFarming(key, params, plugin);
-        poolToKey[address(key.pool)] = key;
-        poolToVirtualPool[address(key.pool)] = _virtualPool;
-        incentiveExists[address(key.pool)] = true;
-        return _virtualPool;
-    }
-
-    /// @notice Internal function to verify incentive parameters
-    /// @param pool The pool address
-    /// @param emissionTokenAmount The emission token amount
-    /// @return key The verified incentive key
-    function _verifyIncentive(address pool, uint128 emissionTokenAmount) internal view returns(IncentiveKey memory key) {
-        if(emissionTokenAmount == 0) revert RewardAmount();
-        if(pool == address(0)) revert ZeroAddress();
-
-        key = poolToKey[pool];
-        if(incentiveExists[pool]) revert IncentiveExists();
-        key = IncentiveKey(IERC20Minimal(emissionToken),IERC20Minimal(wGasToken),IAlgebraPool(pool), algebraEternalFarming.numOfIncentives());
-    }
-
     /// @notice Internal function to calculate incentive parameters
     /// @param amnt0 The amount of first token
     /// @param amnt1 The amount of second token
@@ -198,34 +152,9 @@ contract IncentiveMakerUpgradeable is AccessControlUpgradeable {
         }
     }
 
-    /// @notice Updates the extra incentive for a given pool
-    /// @param pool The address of the pool
-    /// @param reward The amount of extra reward to set
-    function updateExtraIncentive(address pool, uint128 reward) external onlyRole(INCENTIVE_MAKER_MANAGER_ROLE) {
-        if(reward == 0) revert RewardAmount();
-        if(pool == address(0)) revert ZeroAddress();
-
-        IncentiveKey memory key = poolToKey[pool];
-        uint128 rate_reward = reward/WEEK;
-
-        IERC20Upgradeable(wGasToken).safeTransferFrom(msg.sender, address(this), reward);
-        IERC20Upgradeable(wGasToken).safeIncreaseAllowance(address(algebraEternalFarming), reward);
-
-        address plugin = IAlgebraPool(pool).plugin();
-        IAlgebraEternalFarming.IncentiveParams memory params = IAlgebraEternalFarming.IncentiveParams(0, reward, 0, rate_reward, MINIMAL_POSITION_WIDTH);
-
-        if(address(key.pool) == address(0)) {
-            key = IncentiveKey(IERC20Minimal(emissionToken),IERC20Minimal(wGasToken),IAlgebraPool(pool), algebraEternalFarming.numOfIncentives());
-            algebraEternalFarming.createEternalFarming(key, params, plugin);
-        } else {
-            algebraEternalFarming.addRewards(key, 0, reward);
-            algebraEternalFarming.setRates(key, 0, rate_reward);
-        }
-    }
-
     /// @notice Sets the eternal farming contract address
     /// @param _algebraEternalFarming The address of the new eternal farming contract
-    function setAlgebraEnternalFarming(address _algebraEternalFarming) external onlyRole(INCENTIVE_MAKER_MANAGER_ROLE) {
+    function setAlgebraEternalFarming(address _algebraEternalFarming) external onlyRole(INCENTIVE_MAKER_MANAGER_ROLE) {
         if(_algebraEternalFarming == address(0)) revert ZeroAddress();
         algebraEternalFarming = IAlgebraEternalFarming(_algebraEternalFarming);
         emit SetEternalFarming(_algebraEternalFarming);
