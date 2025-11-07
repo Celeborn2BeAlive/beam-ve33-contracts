@@ -80,7 +80,7 @@ describe("BeamVe33.GlobalFactory", () => {
     }
   });
 
-  it.only("Should add and remove reward token from Gauge", async () => {
+  it("Should add and remove reward token from Gauge", async () => {
     const { globalFactory, voter, solidlyPairFactoryProxy, tokens, gaugeFactory } = await loadFixture(deployFixture)
 
     const POOL_TYPE_SOLIDLY = await globalFactory.read.POOL_TYPE_SOLIDLY();

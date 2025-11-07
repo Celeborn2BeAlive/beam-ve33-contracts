@@ -147,6 +147,33 @@ describe("BeamCore.VotingEscrow", () => {
         const refData = fs.readFileSync(refFile, {encoding: "utf-8"});
         expect(svgData).to.equals(refData);
       }
-    })
+    });
+
+    it("Should prevent `supply` inflation on repeated `merge()`", async () => {
+      // Check issue#127 from Sherlock's audit is fixed
+      const { beamToken, votingEscrow, userAddress, publicClient } = await loadFixture(deployFixture);
+
+      const amount = parseEther("1000000"); // 1M
+      const duration = await votingEscrow.read.MAXTIME() / 2n;
+      const totalLockAmount = amount + amount;
+      await beamToken.write.approve([votingEscrow.address, totalLockAmount], {account: userAddress});
+
+      await votingEscrow.write.create_lock([amount, duration], {account: userAddress});
+      await votingEscrow.write.create_lock([amount, duration], {account: userAddress});
+
+      expect(await votingEscrow.read.tokenOfOwnerByIndex([userAddress, 0n])).to.equals(1n);
+      expect(await votingEscrow.read.tokenOfOwnerByIndex([userAddress, 1n])).to.equals(2n);
+      expect(await votingEscrow.read.balanceOf([userAddress])).to.equals(2n);
+
+      expect(await votingEscrow.read.supply()).to.equals(totalLockAmount);
+
+      await votingEscrow.write.merge([1n, 2n], {account: userAddress});
+      expect(await votingEscrow.read.tokenOfOwnerByIndex([userAddress, 0n])).to.equals(2n);
+      expect(await votingEscrow.read.balanceOf([userAddress])).to.equals(1n);
+
+      // Before the fix, we have votingEscrow.read.supply() == totalLockAmount + amount
+      // but the correct behavior is no change
+      expect(await votingEscrow.read.supply()).to.equals(totalLockAmount);
+    });
   });
 });
