@@ -1071,6 +1071,9 @@ contract VotingEscrow is IERC721, IERC721Metadata, IVotes {
         uint value0 = uint(int256(_locked0.amount));
         uint end = _locked0.end >= _locked1.end ? _locked0.end : _locked1.end;
 
+        // reset supply, _deposit_for increase it; audit fix issue#127
+        supply = supply - value0;
+
         locked[_from] = LockedBalance(0, 0);
         _checkpoint(_from, _locked0, LockedBalance(0, 0));
         _burn(_from);

@@ -29,6 +29,9 @@ contract Gauge is ReentrancyGuard, Ownable, Pausable, IGauge {
     /// @dev total supply of the deposit
     uint256 internal _totalSupply;
 
+    /// @dev Precision multiplier for token amounts before dividing
+    uint256 public constant PRECISION_MULTIPLIER = 1e18;
+
     /// @dev Fee vault contract address
     address public feeVault;
     /// @dev list of all reward tokens
@@ -151,7 +154,7 @@ contract Gauge is ReentrancyGuard, Ownable, Pausable, IGauge {
 
     /// @notice Remove a reward token
     function removeRewardToken(address _token) external onlyOwner {
-        require(!isRewardToken[_token], '!isRewardToken');
+        require(isRewardToken[_token], '!isRewardToken');
         uint256 len = rewardTokens.length;
         uint i;
         for(i; i < len; i++){
@@ -193,7 +196,7 @@ contract Gauge is ReentrancyGuard, Ownable, Pausable, IGauge {
         return _balances[account];
     }
 
-    /// @notice Reward per seconds
+    /// @notice Reward per seconds multiplied by PRECISION_MULTIPLIER (should be accounted by callers, or use `rewardForDuration` instead and divide by DURATION)
     function rewardRate(address _token) external view returns(uint256){
         return _rewardRate[_token];
     }
@@ -205,7 +208,7 @@ contract Gauge is ReentrancyGuard, Ownable, Pausable, IGauge {
 
     ///@notice get total reward for the duration
     function rewardForDuration(address _token) external view returns (uint256) {
-        return _rewardRate[_token] * DURATION;
+        return _rewardRate[_token] * DURATION / PRECISION_MULTIPLIER;
     }
 
     ///@notice see earned rewards for user
@@ -394,7 +397,8 @@ contract Gauge is ReentrancyGuard, Ownable, Pausable, IGauge {
     /// @notice Find the reward amount of a token for a given user
     /// @dev return all past _rewards with any new rewards
     function _earned(address _account, address _token) internal view returns(uint256) {
-        uint256 _newRewards = _balances[_account] * (_rewardPerToken(_token) - _userRewardPerTokenPaid[_account][_token]) / 1e18;
+        uint256 PRECISION_DIVIDER = PRECISION_MULTIPLIER * PRECISION_MULTIPLIER; // Cancels PRECISION_MULTIPLIER from rewardRate and from _rewardPerToken
+        uint256 _newRewards = _balances[_account] * (_rewardPerToken(_token) - _userRewardPerTokenPaid[_account][_token]) / PRECISION_DIVIDER;
         return  _newRewards + _rewards[_account][_token];
     }
 
@@ -404,7 +408,7 @@ contract Gauge is ReentrancyGuard, Ownable, Pausable, IGauge {
         if (_totalSupply == 0) {
             return _rewPTS;
         } else {
-            return _rewPTS + (_lastTimeRewardApplicable(_token) - _lastUpdateTime[_token]) * _rewardRate[_token] * 1e18 / _totalSupply;
+            return _rewPTS + (_lastTimeRewardApplicable(_token) - _lastUpdateTime[_token]) * _rewardRate[_token] * PRECISION_MULTIPLIER / _totalSupply;
         }
     }
 
@@ -443,11 +447,11 @@ contract Gauge is ReentrancyGuard, Ownable, Pausable, IGauge {
         uint256 _periodEnd = _periodFinish[_token];
 
         if (block.timestamp >= _periodEnd) {
-            _rewardRate[_token] = _amount / DURATION;
+            _rewardRate[_token] = _amount * PRECISION_MULTIPLIER / DURATION;
         } else {
             uint256 _rewRate = _rewardRate[_token];
             uint256 leftover = (_periodEnd - block.timestamp) * _rewRate;
-            _rewardRate[_token] = (_amount + leftover) / DURATION;
+            _rewardRate[_token] = (_amount * PRECISION_MULTIPLIER + leftover) / DURATION;
         }
 
         _lastUpdateTime[_token] = block.timestamp;
@@ -459,7 +463,7 @@ contract Gauge is ReentrancyGuard, Ownable, Pausable, IGauge {
         // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
         if(isTransferFrom) IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         uint256 balance = IERC20(_token).balanceOf(address(this));
-        require(_rewardRate[_token] <= balance / DURATION, "!rate");
+        require(_rewardRate[_token] <= balance * PRECISION_MULTIPLIER / DURATION, "!rate");
 
 
         emit RewardAdded(_token, _amount);

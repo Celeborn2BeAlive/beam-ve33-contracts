@@ -79,4 +79,29 @@ describe("BeamVe33.GlobalFactory", () => {
       expect(await voter.read.poolTotalWeights([poolAddr, await voter.read.epochTimestamp()])).to.equals(0n);
     }
   });
+
+  it("Should add and remove reward token from Gauge", async () => {
+    const { globalFactory, voter, solidlyPairFactoryProxy, tokens, gaugeFactory } = await loadFixture(deployFixture)
+
+    const POOL_TYPE_SOLIDLY = await globalFactory.read.POOL_TYPE_SOLIDLY();
+    await globalFactory.write.setPoolType([POOL_TYPE_SOLIDLY, true]);
+
+    const [token0, token1] = tokens;
+    await globalFactory.write.addToken([[token0.address, token1.address]]);
+
+    await solidlyPairFactoryProxy.write.createPair([token0.address, token1.address, false]);
+    const result = await createGauge({
+      poolAddr: await solidlyPairFactoryProxy.read.getPair([token0.address, token1.address, false]),
+      poolType: POOL_TYPE_SOLIDLY,
+      voter,
+      globalFactory,
+    });
+
+    await gaugeFactory.write.addRewardToken([result.gaugeAddr, token0.address]);
+    const gauge = await hre.viem.getContractAt("Gauge", result.gaugeAddr);
+    expect(await gauge.read.isRewardToken([token0.address,])).to.be.true;
+
+    await gaugeFactory.write.removeRewardToken([result.gaugeAddr, token0.address]);
+    expect(await gauge.read.isRewardToken([token0.address,])).to.be.false;
+  });
 });
